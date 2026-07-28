@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 import { GlassPanel } from "./Primitives";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -58,8 +59,9 @@ export default function FinalCtaSection() {
                     className="absolute -inset-1 rounded-full blur opacity-35 group-hover:opacity-60 transition-opacity duration-500"
                     style={{ background: "hsl(var(--primary))" }}
                   />
-                  <button
-                    className="relative flex items-center justify-center gap-2.5 font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:brightness-110 shrink-0"
+                  <Link
+                    to="/dashboard"
+                    className="relative flex items-center justify-center gap-2.5 font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:brightness-110 shrink-0 text-center"
                     style={{
                       backgroundColor: "hsl(var(--primary))",
                       color: "hsl(var(--primary-foreground))",
@@ -67,12 +69,15 @@ export default function FinalCtaSection() {
                   >
                     <GithubIcon className="w-5 h-5" />
                     Connect GitHub
-                  </button>
+                  </Link>
                 </div>
 
-                <button className="glass-chip font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 text-white hover:bg-white/12 hover:border-white/25 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shrink-0">
+                <Link
+                  to="/dashboard"
+                  className="glass-chip font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 text-white hover:bg-white/12 hover:border-white/25 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shrink-0 text-center"
+                >
                   Explore Demo
-                </button>
+                </Link>
               </div>
             </div>
           </GlassPanel>

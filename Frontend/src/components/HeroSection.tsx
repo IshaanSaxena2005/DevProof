@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,7 +71,8 @@ export default function HeroSection() {
             className="opacity-0 animate-fade-up flex flex-wrap gap-4 font-semibold"
             style={{ animationDelay: "0.65s" }}
           >
-            <button
+            <Link
+              to="/dashboard"
               className="flex items-center gap-2.5 text-xs md:text-sm rounded-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_24px_rgba(119,252,117,0.25)] hover:shadow-[0_0_36px_rgba(119,252,117,0.45)] hover:brightness-110 shrink-0"
               style={{
                 backgroundColor: "hsl(var(--primary))",
@@ -80,14 +82,15 @@ export default function HeroSection() {
             >
               <GithubIcon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
               Connect GitHub
-            </button>
+            </Link>
 
-            <button
-              className="glass-chip text-white text-xs md:text-sm cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:bg-white/[0.12] hover:border-white/30 shrink-0"
+            <Link
+              to="/dashboard"
+              className="glass-chip text-white text-xs md:text-sm cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:bg-white/[0.12] hover:border-white/30 shrink-0 text-center"
               style={{ padding: "0.95rem 2.25rem" }}
             >
               Explore Demo
-            </button>
+            </Link>
           </div>
 
           <p
