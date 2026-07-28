@@ -1,8 +1,15 @@
 import { motion } from "motion/react";
-import { Github, Code2, GitCommit, Target, Award, Briefcase, FolderGit2 } from "lucide-react";
+import { Code2, GitCommit, Target, Award, Briefcase, FolderGit2, ArrowDown } from "lucide-react";
+import { GlassPanel, SectionShell, SectionTitle } from "./Primitives";
+
+const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3-.3 6-1.5 6-6.5 0-1.4-.5-2.5-1.5-3.4.1-.3.4-1.6-.1-3.3 0 0-1.2-.4-3.8 1.4a12.8 12.8 0 0 0-7 0C6.2 2.6 5 3 5 3c-.5 1.7-.2 3 .1 3.3C4.1 7.2 3.6 8.3 3.6 9.7c0 5 3 6.2 6 6.5-.4.4-.8 1-.9 2-.9.4-3.2.1-4.6-1.3 0 0-.8-1.5-2.2-1.5 0 0-1.4 0 0 1.3 1.2 1.5 2 3.2 2 3.2 1.4 2 4 1.5 4 1.5"/>
+  </svg>
+);
 
 const SIGNALS = [
-  { icon: Github, label: "GitHub" },
+  { icon: GithubIcon, label: "GitHub" },
   { icon: Code2, label: "Code" },
   { icon: GitCommit, label: "Commits" },
   { icon: Target, label: "Problem Solving" },
@@ -13,96 +20,92 @@ const SIGNALS = [
 
 export default function ProductProofStrip() {
   return (
-    <section id="how-it-works" className="relative w-full bg-hero-bg py-24 md:py-32 border-t border-white/5 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        
-        {/* Headline */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-20"
-        >
-          <h2 className="text-2xl md:text-4xl font-bold uppercase tracking-tight text-foreground">
-            Your development activity<br className="hidden md:block" />
-            <span className="text-muted-foreground font-light"> is more than a contribution graph.</span>
-          </h2>
-        </motion.div>
+    <SectionShell
+      id="how-it-works"
+      decor={
+        <div className="ambient-glow-green w-[700px] h-[400px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-glow-pulse" />
+      }
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.7 }}
+        className="text-center mb-14 md:mb-16"
+      >
+        <SectionTitle align="center">
+          Your development activity
+          <br />
+          <span className="font-light" style={{ color: "var(--text-secondary)" }}>
+            is more than a contribution graph.
+          </span>
+        </SectionTitle>
+      </motion.div>
 
-        {/* Visual Strip */}
-        <div className="relative flex flex-col items-center">
-          
-          {/* Connecting Line */}
-          <div className="absolute top-[40px] left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent hidden md:block" />
-          <div className="absolute top-[40px] bottom-0 left-1/2 w-px bg-gradient-to-b from-white/10 to-transparent md:hidden block -translate-x-1/2" />
+      <GlassPanel hover={false} className="relative p-6 md:p-10 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-40"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 0%, rgba(119,252,117,0.08), transparent 55%)",
+          }}
+        />
 
-          {/* Signals Grid */}
-          <div className="flex flex-col md:flex-row justify-center items-center gap-6 md:gap-4 lg:gap-8 w-full z-10 mb-16">
-            {SIGNALS.map((signal, idx) => {
-              const Icon = signal.icon;
-              return (
-                <motion.div
-                  key={signal.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  className="flex flex-col items-center gap-3 bg-hero-bg p-2"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 hover:border-white/20 transition-all cursor-default group relative">
-                    <Icon className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    {/* Glowing dot underneath */}
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary/0 group-hover:bg-primary/50 blur-[2px] transition-all" />
-                  </div>
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-center max-w-[80px]">
-                    {signal.label}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </div>
+        {/* Signal chips */}
+        <div className="relative flex flex-wrap justify-center gap-3 md:gap-4 mb-10">
+          {SIGNALS.map((signal, idx) => {
+            const Icon = signal.icon;
+            return (
+              <motion.div
+                key={signal.label}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.45, delay: idx * 0.06 }}
+                className="glass-inset flex items-center gap-2.5 px-4 py-3 group cursor-default hover:border-white/20 transition-all duration-300"
+              >
+                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/55 group-hover:text-primary group-hover:border-primary/30 transition-colors">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-medium text-white/65 group-hover:text-white tracking-wide whitespace-nowrap transition-colors">
+                  {signal.label}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
 
-          {/* Flowing Down Indicator */}
+        {/* Flow into hub */}
+        <div className="relative flex flex-col items-center gap-4">
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            whileInView={{ opacity: 1, height: "40px" }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.5 }}
-            className="w-px bg-gradient-to-b from-white/10 via-primary/50 to-primary hidden md:block mb-6 relative"
+            className="flex flex-col items-center text-white/30"
           >
-            {/* Animated dot */}
-            <motion.div
-              animate={{ y: [0, 40] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-4 bg-primary rounded-full blur-[1px]"
-            />
+            <div className="w-px h-10 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
+            <ArrowDown className="w-4 h-4 text-primary/70 -mt-1" />
           </motion.div>
 
-          {/* Center Hub */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.7 }}
-            className="relative flex flex-col items-center z-10"
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col items-center gap-3"
           >
-            <div className="px-8 py-4 rounded-full bg-black border border-white/10 shadow-[0_0_30px_rgba(119,252,117,0.1)] flex items-center justify-center">
-              <span className="text-xl font-bold tracking-widest text-foreground flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-sm shadow-[0_0_8px_rgba(119,252,117,0.8)]" />
-                DEVPROOF
-              </span>
+            <div
+              className="px-8 py-3.5 rounded-full border border-white/15 flex items-center gap-2.5 shadow-[0_0_40px_rgba(119,252,117,0.15)]"
+              style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(16px)" }}
+            >
+              <div className="w-2 h-2 bg-primary rounded-sm shadow-[0_0_10px_rgba(119,252,117,1)]" />
+              <span className="text-sm font-bold tracking-[0.2em] text-white">DEVPROOF</span>
             </div>
-            
-            <div className="w-px h-8 bg-gradient-to-b from-white/10 to-transparent my-4" />
-            
-            <p className="text-sm font-semibold tracking-[0.2em] text-primary uppercase">
+            <p className="text-xs font-semibold tracking-[0.22em] uppercase" style={{ color: "hsl(var(--primary))" }}>
               Developer Intelligence
             </p>
           </motion.div>
-
         </div>
-      </div>
-    </section>
+      </GlassPanel>
+    </SectionShell>
   );
 }

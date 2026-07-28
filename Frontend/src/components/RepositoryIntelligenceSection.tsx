@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { FolderGit2, Activity, ShieldAlert, CheckCircle2, ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
+import { GlassPanel, PanelHeader, SectionShell, SectionTitle, WindowDots } from "./Primitives";
 
 const METRICS = [
   { label: "Architecture", score: 82 },
@@ -13,161 +14,225 @@ const METRICS = [
 
 export default function RepositoryIntelligenceSection() {
   return (
-    <section id="intelligence" className="relative w-full bg-black py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16 md:mb-24">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7 }}
-          >
-            <h2 className="text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground">
-              Your Repository.<br />
-              <span className="text-muted-foreground font-light">Explained.</span>
-            </h2>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7 }}
-            className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-full px-6 py-3"
-          >
-            <FolderGit2 className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-medium tracking-wide text-foreground">SpendWise Pro</span>
-            <div className="w-px h-4 bg-white/20 mx-2" />
-            <div className="flex items-center gap-2 text-sm font-bold">
-              <span className="text-muted-foreground">Health</span>
-              <span className="text-primary">74<span className="text-muted-foreground text-xs font-normal">/100</span></span>
-            </div>
-          </motion.div>
-        </div>
+    <SectionShell
+      id="intelligence"
+      decor={
+        <div className="ambient-glow-green w-[600px] h-[400px] top-1/2 right-0 -translate-y-1/2 translate-x-1/4 animate-glow-pulse" />
+      }
+    >
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 md:mb-14">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+        >
+          <SectionTitle>
+            Your Repository.
+            <br />
+            <span className="font-light" style={{ color: "var(--text-secondary)" }}>
+              Explained.
+            </span>
+          </SectionTitle>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Metrics Grid */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+          className="glass-chip flex items-center gap-3 px-5 py-2.5 shrink-0"
+        >
+          <FolderGit2 className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
+          <span className="text-sm font-medium text-white">SpendWise Pro</span>
+          <div className="w-px h-4 bg-white/20" />
+          <div className="flex items-center gap-2 text-sm">
+            <span style={{ color: "var(--text-tertiary)" }}>Health</span>
+            <span className="font-bold" style={{ color: "hsl(var(--primary))" }}>
+              74<span className="text-xs font-normal" style={{ color: "var(--text-tertiary)" }}>/100</span>
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Dashboard preview */}
+      <GlassPanel hover={false} className="overflow-hidden">
+        <PanelHeader className="justify-between">
+          <div className="flex items-center gap-3">
+            <WindowDots />
+            <span className="text-sm font-semibold text-white/90">Repository Intelligence</span>
+          </div>
+          <span className="text-[10px] italic tracking-wide" style={{ color: "var(--text-tertiary)" }}>
+            Illustrative Preview
+          </span>
+        </PanelHeader>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:divide-x lg:divide-white/[0.06]">
+          {/* Metrics sidebar */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7 }}
-            className="lg:col-span-4 flex flex-col gap-3"
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-4 p-4 md:p-5 flex flex-col gap-2 border-b lg:border-b-0 border-white/[0.06]"
           >
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-2 px-1" style={{ color: "var(--text-tertiary)" }}>
+              Health Dimensions
+            </p>
             {METRICS.map((metric) => (
-              <div 
+              <div
                 key={metric.label}
                 className={cn(
-                  "flex items-center justify-between p-4 rounded-xl border transition-all cursor-default",
-                  metric.isWarning 
-                    ? "bg-destructive/10 border-destructive/30 relative overflow-hidden" 
-                    : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
+                  "flex items-center justify-between px-3.5 py-3 rounded-xl border transition-all relative overflow-hidden",
+                  metric.isWarning
+                    ? "border-red-500/30 bg-red-500/[0.08]"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.04]"
                 )}
               >
                 {metric.isWarning && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-destructive" />
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-500" />
                 )}
-                <span className={cn("text-sm font-medium", metric.isWarning ? "text-foreground" : "text-muted-foreground")}>
+                <span
+                  className={cn("text-sm font-medium", metric.isWarning && "pl-1.5 text-white")}
+                  style={!metric.isWarning ? { color: "var(--text-secondary)" } : {}}
+                >
                   {metric.label}
                 </span>
-                <span className={cn(
-                  "font-bold font-mono",
-                  metric.isWarning ? "text-destructive" : "text-foreground"
-                )}>
-                  {metric.score}
-                </span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-16 h-1 rounded-full bg-white/10 hidden sm:block">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${metric.score}%`,
+                        background: metric.isWarning
+                          ? "rgb(248,113,113)"
+                          : "hsl(var(--primary))",
+                        opacity: metric.isWarning ? 1 : 0.7,
+                      }}
+                    />
+                  </div>
+                  <span
+                    className={cn(
+                      "font-bold font-mono text-sm tabular-nums w-7 text-right",
+                      metric.isWarning ? "text-red-400" : "text-white"
+                    )}
+                  >
+                    {metric.score}
+                  </span>
+                </div>
               </div>
             ))}
           </motion.div>
 
-          {/* Deep Dive Panel */}
+          {/* Deep dive */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="lg:col-span-8 flex flex-col rounded-2xl border border-white/10 bg-hero-bg overflow-hidden"
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="lg:col-span-8 p-5 md:p-7 flex flex-col gap-6"
           >
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-white/10 bg-white/[0.02] flex flex-wrap items-center gap-3">
-              <span className="px-3 py-1 bg-destructive/20 text-destructive text-xs font-bold tracking-widest rounded-full border border-destructive/30">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border"
+                style={{
+                  background: "rgba(220,38,38,0.12)",
+                  color: "rgb(248,113,113)",
+                  borderColor: "rgba(220,38,38,0.3)",
+                }}
+              >
                 SCORE: 38
               </span>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground tracking-wide">TESTING ANALYSIS</span>
-              <span className="ml-auto text-xs text-muted-foreground italic">Illustrative Preview</span>
+              <ChevronRight className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
+              <span className="text-sm font-semibold text-white tracking-wide">TESTING ANALYSIS</span>
             </div>
 
-            {/* Body */}
-            <div className="p-6 md:p-8 flex flex-col gap-8">
-              
-              {/* Evidence */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                  <Activity className="w-4 h-4" />
-                  Evidence Detected
-                </div>
-                <ul className="flex flex-col gap-3">
-                  <li className="flex items-start gap-3 text-sm text-foreground/80">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/20 mt-1.5 shrink-0" />
-                    11 test files detected across the repository
+            <div className="flex flex-col gap-3">
+              <div
+                className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                Evidence Detected
+              </div>
+              <ul className="flex flex-col gap-2.5">
+                {[
+                  { text: "11 test files detected across the repository", warn: false },
+                  { text: "Critical authentication paths lack integration coverage", warn: true },
+                  { text: "Several core modules have no tests", warn: true },
+                ].map(({ text, warn }) => (
+                  <li
+                    key={text}
+                    className="glass-inset flex items-start gap-3 text-sm px-3.5 py-2.5"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    <div
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
+                        warn ? "bg-red-400" : "bg-white/30"
+                      )}
+                    />
+                    {text}
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-foreground/80">
-                    <div className="w-1.5 h-1.5 rounded-full bg-destructive/50 mt-1.5 shrink-0" />
-                    Critical authentication paths lack integration coverage
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-foreground/80">
-                    <div className="w-1.5 h-1.5 rounded-full bg-destructive/50 mt-1.5 shrink-0" />
-                    Several core modules have no tests
-                  </li>
-                </ul>
+                ))}
+              </ul>
+            </div>
+
+            <div className="h-px w-full bg-white/[0.06]" />
+
+            <div className="flex flex-col gap-3">
+              <div
+                className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Findings &amp; Actions
               </div>
 
-              <div className="h-px w-full bg-white/5" />
-
-              {/* Findings */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                  <ShieldAlert className="w-4 h-4" />
-                  Findings & Actions
+              <div
+                className="flex flex-col md:flex-row gap-4 p-4 rounded-xl border"
+                style={{ background: "rgba(220,38,38,0.06)", borderColor: "rgba(220,38,38,0.2)" }}
+              >
+                <div className="flex flex-col gap-0.5 md:w-28 shrink-0">
+                  <span className="text-[10px] font-bold tracking-widest" style={{ color: "rgb(248,113,113)" }}>
+                    HIGH
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                    Action Required
+                  </span>
                 </div>
-                
-                <div className="flex flex-col gap-4">
-                  {/* Negative Finding */}
-                  <div className="flex flex-col md:flex-row gap-4 p-4 rounded-xl bg-destructive/5 border border-destructive/20">
-                    <div className="flex flex-col gap-1 md:w-32 shrink-0">
-                      <span className="text-xs font-bold text-destructive tracking-widest">HIGH</span>
-                      <span className="text-xs text-muted-foreground">Action Required</span>
-                    </div>
-                    <p className="text-sm text-foreground/90 leading-relaxed">
-                      Authentication routes lack integration tests. <span className="text-primary cursor-pointer hover:underline">Add integration tests to src/auth/routes.ts</span> to improve score and demonstrate backend reliability.
-                    </p>
-                  </div>
-
-                  {/* Positive Finding */}
-                  <div className="flex flex-col md:flex-row gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                    <div className="flex flex-col gap-1 md:w-32 shrink-0">
-                      <span className="text-xs font-bold text-primary tracking-widest">GOOD</span>
-                      <span className="text-xs text-muted-foreground">Best Practice</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <p className="text-sm text-foreground/90 leading-relaxed">
-                        Environment secrets are separated from source configuration securely.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  Authentication routes lack integration tests.{" "}
+                  <span className="cursor-pointer hover:underline" style={{ color: "hsl(var(--primary))" }}>
+                    Add integration tests to src/auth/routes.ts
+                  </span>{" "}
+                  to improve score and demonstrate backend reliability.
+                </p>
               </div>
 
+              <div
+                className="flex flex-col md:flex-row gap-4 p-4 rounded-xl border"
+                style={{ background: "rgba(119,252,117,0.05)", borderColor: "rgba(119,252,117,0.18)" }}
+              >
+                <div className="flex flex-col gap-0.5 md:w-28 shrink-0">
+                  <span className="text-[10px] font-bold tracking-widest" style={{ color: "hsl(var(--primary))" }}>
+                    GOOD
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                    Best Practice
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--primary))" }} />
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                    Environment secrets are separated from source configuration securely.
+                  </p>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
-
-      </div>
-    </section>
+      </GlassPanel>
+    </SectionShell>
   );
 }

@@ -1,69 +1,111 @@
 import { motion } from "motion/react";
-import { cn } from "../lib/utils";
+import { GlassPanel, PanelHeader, SectionLead, SectionShell, SectionTitle, WindowDots } from "./Primitives";
 
 const DIMENSIONS = [
-  { name: "Frontend", score: 88, color: "bg-primary" },
-  { name: "Backend", score: 72, color: "bg-white/80" },
-  { name: "Databases", score: 65, color: "bg-white/60" },
-  { name: "Problem Solving", score: 92, color: "bg-primary" },
-  { name: "Testing", score: 45, color: "bg-white/40" },
-  { name: "DevOps", score: 30, color: "bg-white/20" },
-  { name: "Security", score: 55, color: "bg-white/50" },
+  { name: "Frontend", score: 88, isHighlight: true },
+  { name: "Backend", score: 72, isHighlight: false },
+  { name: "Databases", score: 65, isHighlight: false },
+  { name: "Problem Solving", score: 92, isHighlight: true },
+  { name: "Testing", score: 45, isHighlight: false },
+  { name: "DevOps", score: 30, isHighlight: false },
+  { name: "Security", score: 55, isHighlight: false },
 ];
 
 export default function Developer360Section() {
   return (
-    <section className="relative w-full bg-hero-bg py-24 md:py-32 border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          
-          {/* Text Content */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7 }}
-            className="flex flex-col gap-6"
-          >
-            <h2 className="text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground">
-              One Developer.<br />
-              <span style={{ color: "hsl(var(--primary))" }}>Multiple Signals.</span>
-            </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-md font-light">
-              DevProof correlates evidence across projects, activity, learning, and experience instead of judging developers from a single platform.
-            </p>
-          </motion.div>
+    <SectionShell>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        <motion.div
+          initial={{ opacity: 0, x: -28 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+          className="lg:col-span-5 flex flex-col gap-5"
+        >
+          <SectionTitle>
+            One Developer.
+            <br />
+            <span style={{ color: "hsl(var(--primary))" }}>Multiple Signals.</span>
+          </SectionTitle>
+          <SectionLead>
+            DevProof correlates evidence across projects, activity, learning,
+            and experience — not just a single platform.
+          </SectionLead>
+        </motion.div>
 
-          {/* Horizontal Bars Visualization */}
-          <div className="flex flex-col gap-6 p-8 rounded-2xl bg-black border border-white/10 shadow-2xl relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent rounded-2xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Skill Dimension</span>
-              <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Evidence Level</span>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="lg:col-span-7"
+        >
+          <GlassPanel hover={false} className="overflow-hidden relative">
+            <div
+              className="absolute top-0 right-0 w-56 h-56 rounded-full blur-[90px] pointer-events-none"
+              style={{ background: "rgba(119,252,117,0.08)" }}
+            />
+            <PanelHeader>
+              <WindowDots />
+              <span className="text-sm font-semibold text-white/90">Developer 360</span>
+              <span
+                className="ml-auto text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full border"
+                style={{
+                  color: "hsl(var(--primary))",
+                  borderColor: "rgba(119,252,117,0.25)",
+                  background: "rgba(119,252,117,0.08)",
+                }}
+              >
+                Analytics
+              </span>
+            </PanelHeader>
 
-            {DIMENSIONS.map((dim, idx) => (
-              <div key={dim.name} className="flex flex-col gap-2 z-10">
-                <div className="flex justify-between items-end">
-                  <span className="text-sm font-medium text-foreground">{dim.name}</span>
-                  <span className="text-xs text-muted-foreground font-mono">{dim.score}%</span>
-                </div>
-                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${dim.score}%` }}
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 1, delay: 0.2 + (idx * 0.1), ease: "easeOut" }}
-                    className={cn("h-full rounded-full shadow-[0_0_10px_currentColor]", dim.color)}
-                  />
-                </div>
+            <div className="p-6 md:p-7 flex flex-col gap-4 relative z-10">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: "var(--text-tertiary)" }}>
+                  Skill Dimension
+                </span>
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: "var(--text-tertiary)" }}>
+                  Evidence Level
+                </span>
               </div>
-            ))}
-          </div>
 
-        </div>
+              {DIMENSIONS.map((dim, idx) => (
+                <div key={dim.name} className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-white">{dim.name}</span>
+                    <span
+                      className="text-xs font-mono tabular-nums"
+                      style={{
+                        color: dim.isHighlight ? "hsl(var(--primary))" : "var(--text-secondary)",
+                      }}
+                    >
+                      {dim.score}%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${dim.score}%` }}
+                      viewport={{ once: true, margin: "-40px" }}
+                      transition={{ duration: 1, delay: 0.12 + idx * 0.07, ease: "easeOut" }}
+                      className="h-full rounded-full"
+                      style={{
+                        background: dim.isHighlight
+                          ? "hsl(var(--primary))"
+                          : dim.score > 60
+                          ? "rgba(255,255,255,0.55)"
+                          : "rgba(255,255,255,0.28)",
+                        boxShadow: dim.isHighlight ? "0 0 10px rgba(119,252,117,0.5)" : "none",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlassPanel>
+        </motion.div>
       </div>
-    </section>
+    </SectionShell>
   );
 }

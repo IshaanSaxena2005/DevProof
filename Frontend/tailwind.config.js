@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -36,6 +36,7 @@ export default {
         ring:         "hsl(var(--ring))",
         "nav-button": "hsl(var(--nav-button) / <alpha-value>)",
         "hero-bg":    "hsl(var(--hero-bg))",
+        "section-bg": "hsl(var(--section-bg))",
       },
       borderRadius: {
         lg: "var(--radius)",

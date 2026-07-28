@@ -1,8 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
-/* ─── CSS Custom Properties (HSL channel values only) ─── */
+/* ─── CSS Custom Properties ─── */
 :root {
   --background:          0 0% 10%;
   --foreground:          0 0% 96%;
@@ -11,16 +10,26 @@
   --secondary:           0 0% 18%;
   --secondary-foreground:0 0% 96%;
   --muted:               0 0% 16%;
-  --muted-foreground:    0 0% 60%;
+  --muted-foreground:    0 0% 72%;
   --accent:              119 99% 46%;
   --accent-foreground:   0 0% 4%;
   --destructive:         0 84% 60%;
   --border:              0 0% 20%;
   --input:               0 0% 20%;
   --ring:                119 99% 46%;
-  --radius:              0.5rem;
+  --radius:              0.75rem;
   --nav-button:          0 0% 18%;
   --hero-bg:             0 0% 8%;
+  --section-bg:          0 0% 6%;
+
+  --glass-bg:            rgba(12, 14, 16, 0.72);
+  --glass-bg-hover:      rgba(16, 18, 22, 0.82);
+  --glass-border:        rgba(255, 255, 255, 0.12);
+  --glass-border-hover:  rgba(255, 255, 255, 0.22);
+  --glass-shadow:        0 12px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --text-primary:        rgba(255, 255, 255, 0.96);
+  --text-secondary:      rgba(255, 255, 255, 0.78);
+  --text-tertiary:       rgba(255, 255, 255, 0.55);
 }
 
 /* ─── Base Reset ─── */
@@ -29,13 +38,19 @@ body {
   font-family: "Sora", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: hsl(var(--hero-bg));
+  background-color: #050505;
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 ::selection {
-  background-color: hsl(var(--primary) / 0.25);
+  background-color: hsl(var(--primary) / 0.3);
   color: hsl(var(--foreground));
 }
 
@@ -43,8 +58,8 @@ body {
 @keyframes fade-up {
   0% {
     opacity: 0;
-    transform: translateY(20px);
-    filter: blur(4px);
+    transform: translateY(24px);
+    filter: blur(6px);
   }
   100% {
     opacity: 1;
@@ -58,12 +73,130 @@ body {
   100% { opacity: 1; }
 }
 
-/* ─── Custom Animation Utilities (fallback ensures they work in Tailwind v4) ─── */
-@layer utilities {
-  .animate-fade-up {
-    animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-  }
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.65; }
+}
+
+@utility animate-fade-up {
+  animation: fade-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+@utility animate-glow-pulse {
+  animation: glow-pulse 5s ease-in-out infinite;
+}
+
+/* ─── Glass surfaces ─── */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  box-shadow: var(--glass-shadow);
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--glass-border-hover);
+  background: var(--glass-bg-hover);
+}
+
+.glass-panel-static {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-inset {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 0.875rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-chip {
+  background: rgba(12, 14, 16, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Soft dark veil behind section content — keeps 3D visible */
+.section-veil {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.12) 0%,
+    rgba(0, 0, 0, 0.22) 50%,
+    rgba(0, 0, 0, 0.12) 100%
+  );
+}
+
+.section-veil-strong {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.32) 50%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+
+/* Section divider hairline */
+.section-divider {
+  position: relative;
+}
+.section-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, 80%);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+/* Ambient glows */
+.ambient-glow-green {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(119, 252, 117, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.ambient-glow-white {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Typography helpers */
+.text-display {
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  color: var(--text-primary);
+}
+
+.text-body {
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-tertiary);
+}
+
+.spline-bg canvas {
+  outline: none;
 }
