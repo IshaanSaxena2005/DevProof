@@ -1,126 +1,211 @@
 import { motion } from "motion/react";
 import { Briefcase, Target, ArrowRight, Zap } from "lucide-react";
 import { cn } from "../lib/utils";
+import { GlassPanel, PanelHeader, SectionLead, SectionShell, SectionTitle, WindowDots } from "./Primitives";
 
 const DIMENSIONS = [
-  { name: "Programming", level: "Strong", score: 85 },
-  { name: "Problem Solving", level: "Good", score: 75 },
-  { name: "Development", level: "Strong", score: 80 },
-  { name: "Databases", level: "Moderate", score: 50 },
-  { name: "Testing", level: "Weak", score: 30, isWarning: true },
-  { name: "System Design", level: "Limited Evidence", score: 15 },
+  { name: "Programming", level: "Strong", tier: "high" },
+  { name: "Problem Solving", level: "Good", tier: "med" },
+  { name: "Development", level: "Strong", tier: "high" },
+  { name: "Databases", level: "Moderate", tier: "med" },
+  { name: "Testing", level: "Weak", tier: "low" },
+  { name: "System Design", level: "Limited Evidence", tier: "low" },
 ];
+
+function getTierStyle(tier: string) {
+  if (tier === "high")
+    return { color: "hsl(var(--primary))", labelBg: "rgba(119,252,117,0.1)", border: "rgba(119,252,117,0.2)" };
+  if (tier === "low")
+    return { color: "rgb(248,113,113)", labelBg: "rgba(220,38,38,0.08)", border: "rgba(220,38,38,0.2)" };
+  return { color: "var(--text-secondary)", labelBg: "rgba(255,255,255,0.03)", border: "rgba(255,255,255,0.08)" };
+}
 
 export default function CareerIntelligenceSection() {
   return (
-    <section id="career" className="relative w-full bg-hero-bg py-24 md:py-32 border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        
-        {/* Header */}
+    <SectionShell id="career">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.7 }}
+        className="text-center mb-16"
+      >
+        <SectionTitle align="center">
+          Don't follow a
+          <br className="hidden md:block" />
+          <span style={{ color: "hsl(var(--primary))" }}> Generic Roadmap.</span>
+        </SectionTitle>
+        <SectionLead align="center" className="mt-5">
+          Recommendations come from what you have actually built — not from a generic checklist.
+        </SectionLead>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Target role dashboard */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-16 md:mb-24"
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.65 }}
+          className="lg:col-span-5"
         >
-          <h2 className="text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground">
-            Don't follow a<br className="hidden md:block" />
-            <span style={{ color: "hsl(var(--primary))" }}>Generic Roadmap.</span>
-          </h2>
-          <p className="text-sm md:text-base text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed">
-            Recommendations should come from what you have actually built — not from a generic checklist.
-          </p>
+          <GlassPanel hover={false} className="h-full overflow-hidden shadow-2xl">
+            <PanelHeader>
+              <WindowDots />
+              <span className="text-sm font-bold text-white/90 ml-2">Career Readiness</span>
+            </PanelHeader>
+
+            <div className="p-6 md:p-7 flex flex-col gap-6">
+              <div className="flex items-center gap-4.5 pb-6 border-b border-white/[0.06]">
+                <div
+                  className="w-12 h-12 rounded-xl border border-white/10 flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(119,252,117,0.08)" }}
+                >
+                  <Briefcase className="w-5 h-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Target Role
+                  </div>
+                  <div className="text-xl font-bold text-white tracking-tight">SDE Intern</div>
+                </div>
+                <div className="ml-auto text-right shrink-0">
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Readiness
+                  </div>
+                  <div className="text-xl font-bold text-primary font-mono tracking-tight">
+                    74%
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress bar visual */}
+              <div className="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: "74%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                  className="h-full rounded-full"
+                  style={{
+                    background: "hsl(var(--primary))",
+                    boxShadow: "0 0 12px rgba(119,252,117,0.5)",
+                  }}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <div
+                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-1"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  <Target className="w-3.5 h-3.5 text-primary" />
+                  Skill Breakdown
+                </div>
+
+                {DIMENSIONS.map((dim) => {
+                  const style = getTierStyle(dim.tier);
+                  return (
+                    <div
+                      key={dim.name}
+                      className="flex items-center justify-between py-2 px-3.5 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:border-white/10 transition-colors duration-300"
+                    >
+                      <span className="text-sm font-medium text-white/90">{dim.name}</span>
+                      <span
+                        className="text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-md border"
+                        style={{
+                          color: style.color,
+                          background: style.labelBg,
+                          borderColor: style.border,
+                        }}
+                      >
+                        {dim.level}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </GlassPanel>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Target Role Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7 }}
-            className="lg:col-span-5 flex flex-col p-8 rounded-2xl bg-black border border-white/10"
-          >
-            <div className="flex items-center gap-3 mb-8 pb-8 border-b border-white/5">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-primary" />
-              </div>
+        {/* Recommendation panel */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.65, delay: 0.1 }}
+          className="lg:col-span-7"
+        >
+          <GlassPanel hover={false} className="h-full overflow-hidden relative shadow-2xl">
+            <div
+              className="absolute top-0 right-0 w-72 h-72 rounded-full blur-[100px] pointer-events-none"
+              style={{ background: "rgba(119,252,117,0.05)" }}
+            />
+            <PanelHeader>
+              <WindowDots />
+              <span className="text-sm font-bold text-white/90 ml-2">Recommended Action</span>
+            </PanelHeader>
+
+            <div className="p-8 md:p-10 flex flex-col gap-8 relative z-10 h-full justify-center">
               <div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Target Role</div>
-                <div className="text-xl font-bold text-foreground">SDE Intern</div>
-              </div>
-              <div className="ml-auto text-right">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Readiness</div>
-                <div className="text-xl font-bold text-primary">74%</div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                Skill Breakdown
-              </div>
-              
-              {DIMENSIONS.map((dim) => (
-                <div key={dim.name} className="flex items-center justify-between">
-                  <span className="text-sm text-foreground/90">{dim.name}</span>
-                  <span className={cn(
-                    "text-xs font-bold tracking-wider uppercase px-2 py-1 rounded-sm",
-                    dim.isWarning ? "text-destructive bg-destructive/10 border border-destructive/20" : 
-                    dim.score >= 80 ? "text-primary" : 
-                    dim.score >= 60 ? "text-foreground" : "text-muted-foreground"
-                  )}>
-                    {dim.level}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Action Recommendation */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="lg:col-span-7 flex flex-col h-full"
-          >
-            <div className="flex flex-col h-full rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-white/10 p-1">
-              <div className="flex flex-col h-full bg-hero-bg rounded-xl p-8 overflow-hidden relative">
-                {/* Background Glow */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-                
-                <div className="flex items-center gap-2 text-xs font-bold text-destructive tracking-widest uppercase mb-4">
-                  <Zap className="w-4 h-4" />
+                <div
+                  className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase mb-4"
+                  style={{ color: "rgb(248,113,113)" }}
+                >
+                  <Zap className="w-4 h-4 animate-pulse" />
                   Largest Current Engineering Gap
                 </div>
-                
-                <h3 className="text-2xl md:text-3xl font-bold text-foreground uppercase tracking-tight mb-8">
+                <h3
+                  className="text-display uppercase tracking-tight"
+                  style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", lineHeight: 1.1 }}
+                >
                   Automated Testing
                 </h3>
+              </div>
 
-                <div className="mt-auto">
-                  <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                    Recommended Next Action
-                  </div>
-                  
-                  <div className="p-6 rounded-xl bg-black border border-white/10 relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl" />
-                    <p className="text-base text-foreground/90 leading-relaxed pr-8">
-                      Add authentication integration tests and transaction-service unit tests to <span className="text-primary cursor-pointer hover:underline">SpendWise Pro</span>.
-                    </p>
-                    <ArrowRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
+              <div>
+                <div
+                  className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-4"
+                  style={{ color: "hsl(var(--primary))" }}
+                >
+                  Recommended Next Action
                 </div>
 
+                <div className="glass-inset p-6 relative group cursor-default hover:border-primary/30 hover:bg-white/[0.05] transition-all duration-300">
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
+                    style={{ background: "hsl(var(--primary))" }}
+                  />
+                  <p
+                    className="text-base leading-relaxed pr-8 pl-2"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    Add authentication integration tests and transaction-service unit tests to{" "}
+                    <span
+                      className="cursor-pointer hover:underline font-semibold"
+                      style={{ color: "hsl(var(--primary))" }}
+                    >
+                      SpendWise Pro
+                    </span>
+                    .
+                  </p>
+                  <ArrowRight
+                    className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"
+                    style={{ color: "hsl(var(--primary))" }}
+                  />
+                </div>
               </div>
             </div>
-          </motion.div>
-
-        </div>
+          </GlassPanel>
+        </motion.div>
       </div>
-    </section>
+    </SectionShell>
   );
 }
