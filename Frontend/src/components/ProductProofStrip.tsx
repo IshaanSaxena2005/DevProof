@@ -27,11 +27,11 @@ export default function ProductProofStrip() {
       }
     >
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-14 md:mb-16"
+        className="text-center mb-16"
       >
         <SectionTitle align="center">
           Your development activity
@@ -42,16 +42,16 @@ export default function ProductProofStrip() {
         </SectionTitle>
       </motion.div>
 
-      <GlassPanel hover={false} className="relative p-6 md:p-10 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none opacity-40"
+      <GlassPanel hover={false} className="relative p-8 md:p-12 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 pointer-events-none opacity-45"
           style={{
             background:
-              "radial-gradient(ellipse at 50% 0%, rgba(119,252,117,0.08), transparent 55%)",
+              "radial-gradient(ellipse at 50% 0%, rgba(119,252,117,0.08), transparent 60%)",
           }}
         />
 
         {/* Signal chips */}
-        <div className="relative flex flex-wrap justify-center gap-3 md:gap-4 mb-10">
+        <div className="relative flex flex-wrap justify-center gap-3.5 md:gap-4.5 mb-12">
           {SIGNALS.map((signal, idx) => {
             const Icon = signal.icon;
             return (
@@ -60,13 +60,14 @@ export default function ProductProofStrip() {
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.45, delay: idx * 0.06 }}
-                className="glass-inset flex items-center gap-2.5 px-4 py-3 group cursor-default hover:border-white/20 transition-all duration-300"
+                transition={{ duration: 0.5, delay: idx * 0.05 }}
+                whileHover={{ y: -3, scale: 1.02 }}
+                className="glass-inset flex items-center gap-3 px-4.5 py-3 group cursor-default hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_8px_24px_-10px_rgba(0,0,0,0.5)] transition-all duration-300"
               >
-                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/55 group-hover:text-primary group-hover:border-primary/30 transition-colors">
-                  <Icon className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/50 group-hover:text-primary group-hover:border-primary/40 group-hover:bg-primary/5 transition-all duration-300">
+                  <Icon className="w-4.5 h-4.5" />
                 </div>
-                <span className="text-xs font-medium text-white/65 group-hover:text-white tracking-wide whitespace-nowrap transition-colors">
+                <span className="text-xs font-semibold text-white/65 group-hover:text-white tracking-wide whitespace-nowrap transition-colors">
                   {signal.label}
                 </span>
               </motion.div>
@@ -82,25 +83,25 @@ export default function ProductProofStrip() {
             viewport={{ once: true }}
             className="flex flex-col items-center text-white/30"
           >
-            <div className="w-px h-10 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
-            <ArrowDown className="w-4 h-4 text-primary/70 -mt-1" />
+            <div className="w-px h-12 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
+            <ArrowDown className="w-4 h-4 text-primary/80 -mt-1 animate-bounce" style={{ animationDuration: "2s" }} />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
             className="flex flex-col items-center gap-3"
           >
             <div
-              className="px-8 py-3.5 rounded-full border border-white/15 flex items-center gap-2.5 shadow-[0_0_40px_rgba(119,252,117,0.15)]"
-              style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(16px)" }}
+              className="px-9 py-4 rounded-full border border-white/[0.12] flex items-center gap-3 shadow-[0_0_40px_rgba(119,252,117,0.12)] hover:border-white/20 transition-all duration-300"
+              style={{ background: "rgba(8,9,11,0.55)", backdropFilter: "blur(20px)" }}
             >
-              <div className="w-2 h-2 bg-primary rounded-sm shadow-[0_0_10px_rgba(119,252,117,1)]" />
-              <span className="text-sm font-bold tracking-[0.2em] text-white">DEVPROOF</span>
+              <div className="w-2.5 h-2.5 bg-primary rounded-sm shadow-[0_0_12px_rgba(119,252,117,1)]" />
+              <span className="text-sm font-bold tracking-[0.22em] text-white">DEVPROOF</span>
             </div>
-            <p className="text-xs font-semibold tracking-[0.22em] uppercase" style={{ color: "hsl(var(--primary))" }}>
+            <p className="text-xs font-bold tracking-[0.24em] uppercase" style={{ color: "hsl(var(--primary))" }}>
               Developer Intelligence
             </p>
           </motion.div>

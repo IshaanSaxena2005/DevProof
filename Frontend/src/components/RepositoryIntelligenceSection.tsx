@@ -20,7 +20,7 @@ export default function RepositoryIntelligenceSection() {
         <div className="ambient-glow-green w-[600px] h-[400px] top-1/2 right-0 -translate-y-1/2 translate-x-1/4 animate-glow-pulse" />
       }
     >
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 md:mb-14">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 md:mb-16">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -35,20 +35,20 @@ export default function RepositoryIntelligenceSection() {
             </span>
           </SectionTitle>
         </motion.div>
-
+        
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="glass-chip flex items-center gap-3 px-5 py-2.5 shrink-0"
+          className="glass-chip flex items-center gap-3.5 px-6 py-3 shrink-0"
         >
-          <FolderGit2 className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
-          <span className="text-sm font-medium text-white">SpendWise Pro</span>
+          <FolderGit2 className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold text-white">SpendWise Pro</span>
           <div className="w-px h-4 bg-white/20" />
           <div className="flex items-center gap-2 text-sm">
             <span style={{ color: "var(--text-tertiary)" }}>Health</span>
-            <span className="font-bold" style={{ color: "hsl(var(--primary))" }}>
+            <span className="font-bold text-white">
               74<span className="text-xs font-normal" style={{ color: "var(--text-tertiary)" }}>/100</span>
             </span>
           </div>
@@ -56,14 +56,14 @@ export default function RepositoryIntelligenceSection() {
       </div>
 
       {/* Dashboard preview */}
-      <GlassPanel hover={false} className="overflow-hidden">
+      <GlassPanel hover={false} className="overflow-hidden shadow-2xl">
         <PanelHeader className="justify-between">
           <div className="flex items-center gap-3">
             <WindowDots />
-            <span className="text-sm font-semibold text-white/90">Repository Intelligence</span>
+            <span className="text-sm font-bold text-white/90">Repository Intelligence</span>
           </div>
-          <span className="text-[10px] italic tracking-wide" style={{ color: "var(--text-tertiary)" }}>
-            Illustrative Preview
+          <span className="text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--text-tertiary)" }}>
+            Demo Dashboard
           </span>
         </PanelHeader>
 
@@ -74,32 +74,32 @@ export default function RepositoryIntelligenceSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-4 p-4 md:p-5 flex flex-col gap-2 border-b lg:border-b-0 border-white/[0.06]"
+            className="lg:col-span-4 p-5 md:p-6 flex flex-col gap-2.5 border-b lg:border-b-0 border-white/[0.06] bg-black/[0.15]"
           >
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-2 px-1" style={{ color: "var(--text-tertiary)" }}>
+            <p className="text-[10px] font-bold tracking-[0.22em] uppercase mb-3 px-1" style={{ color: "var(--text-tertiary)" }}>
               Health Dimensions
             </p>
             {METRICS.map((metric) => (
               <div
                 key={metric.label}
                 className={cn(
-                  "flex items-center justify-between px-3.5 py-3 rounded-xl border transition-all relative overflow-hidden",
+                  "flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all duration-300 relative overflow-hidden",
                   metric.isWarning
-                    ? "border-red-500/30 bg-red-500/[0.08]"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.04]"
+                    ? "border-red-500/20 bg-red-500/[0.06]"
+                    : "border-white/[0.05] bg-white/[0.01] hover:border-white/12 hover:bg-white/[0.03]"
                 )}
               >
                 {metric.isWarning && (
                   <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-500" />
                 )}
                 <span
-                  className={cn("text-sm font-medium", metric.isWarning && "pl-1.5 text-white")}
+                  className={cn("text-xs font-semibold uppercase tracking-wide", metric.isWarning && "pl-1.5 text-white")}
                   style={!metric.isWarning ? { color: "var(--text-secondary)" } : {}}
                 >
                   {metric.label}
                 </span>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-16 h-1 rounded-full bg-white/10 hidden sm:block">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-1 rounded-full bg-white/10 hidden sm:block overflow-hidden">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -107,13 +107,12 @@ export default function RepositoryIntelligenceSection() {
                         background: metric.isWarning
                           ? "rgb(248,113,113)"
                           : "hsl(var(--primary))",
-                        opacity: metric.isWarning ? 1 : 0.7,
                       }}
                     />
                   </div>
                   <span
                     className={cn(
-                      "font-bold font-mono text-sm tabular-nums w-7 text-right",
+                      "font-bold font-mono text-sm tabular-nums w-6 text-right",
                       metric.isWarning ? "text-red-400" : "text-white"
                     )}
                   >
@@ -129,22 +128,22 @@ export default function RepositoryIntelligenceSection() {
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="lg:col-span-8 p-5 md:p-7 flex flex-col gap-6"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-8 p-6 md:p-8 flex flex-col gap-7"
           >
             <div className="flex flex-wrap items-center gap-3">
               <span
-                className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border"
+                className="px-3.5 py-1 rounded-full text-[10px] font-bold tracking-widest border"
                 style={{
-                  background: "rgba(220,38,38,0.12)",
+                  background: "rgba(220,38,38,0.1)",
                   color: "rgb(248,113,113)",
-                  borderColor: "rgba(220,38,38,0.3)",
+                  borderColor: "rgba(220,38,38,0.2)",
                 }}
               >
                 SCORE: 38
               </span>
               <ChevronRight className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
-              <span className="text-sm font-semibold text-white tracking-wide">TESTING ANALYSIS</span>
+              <span className="text-xs font-bold tracking-wider text-white">TESTING ANALYSIS</span>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -152,7 +151,7 @@ export default function RepositoryIntelligenceSection() {
                 className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                <Activity className="w-3.5 h-3.5" />
+                <Activity className="w-3.5 h-3.5 text-primary" />
                 Evidence Detected
               </div>
               <ul className="flex flex-col gap-2.5">
@@ -163,13 +162,13 @@ export default function RepositoryIntelligenceSection() {
                 ].map(({ text, warn }) => (
                   <li
                     key={text}
-                    className="glass-inset flex items-start gap-3 text-sm px-3.5 py-2.5"
+                    className="glass-inset flex items-start gap-3 text-sm px-4 py-3.5 hover:border-white/12 transition-all duration-300"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     <div
                       className={cn(
-                        "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                        warn ? "bg-red-400" : "bg-white/30"
+                        "w-1.5 h-1.5 rounded-full mt-2 shrink-0",
+                        warn ? "bg-red-400" : "bg-white/20"
                       )}
                     />
                     {text}
@@ -180,7 +179,7 @@ export default function RepositoryIntelligenceSection() {
 
             <div className="h-px w-full bg-white/[0.06]" />
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3.5">
               <div
                 className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase"
                 style={{ color: "var(--text-tertiary)" }}
@@ -190,20 +189,20 @@ export default function RepositoryIntelligenceSection() {
               </div>
 
               <div
-                className="flex flex-col md:flex-row gap-4 p-4 rounded-xl border"
-                style={{ background: "rgba(220,38,38,0.06)", borderColor: "rgba(220,38,38,0.2)" }}
+                className="flex flex-col md:flex-row gap-4 p-4.5 rounded-xl border transition-all duration-300 hover:border-red-500/35"
+                style={{ background: "rgba(220,38,38,0.05)", borderColor: "rgba(220,38,38,0.15)" }}
               >
                 <div className="flex flex-col gap-0.5 md:w-28 shrink-0">
                   <span className="text-[10px] font-bold tracking-widest" style={{ color: "rgb(248,113,113)" }}>
                     HIGH
                   </span>
-                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
                     Action Required
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   Authentication routes lack integration tests.{" "}
-                  <span className="cursor-pointer hover:underline" style={{ color: "hsl(var(--primary))" }}>
+                  <span className="cursor-pointer hover:underline font-semibold" style={{ color: "hsl(var(--primary))" }}>
                     Add integration tests to src/auth/routes.ts
                   </span>{" "}
                   to improve score and demonstrate backend reliability.
@@ -211,18 +210,18 @@ export default function RepositoryIntelligenceSection() {
               </div>
 
               <div
-                className="flex flex-col md:flex-row gap-4 p-4 rounded-xl border"
-                style={{ background: "rgba(119,252,117,0.05)", borderColor: "rgba(119,252,117,0.18)" }}
+                className="flex flex-col md:flex-row gap-4 p-4.5 rounded-xl border transition-all duration-300 hover:border-primary/35"
+                style={{ background: "rgba(119,252,117,0.04)", borderColor: "rgba(119,252,117,0.14)" }}
               >
                 <div className="flex flex-col gap-0.5 md:w-28 shrink-0">
                   <span className="text-[10px] font-bold tracking-widest" style={{ color: "hsl(var(--primary))" }}>
                     GOOD
                   </span>
-                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
                     Best Practice
                   </span>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--primary))" }} />
                   <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                     Environment secrets are separated from source configuration securely.

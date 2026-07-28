@@ -17,8 +17,10 @@ import Footer from "./components/Footer";
 export default function App() {
   return (
     <div className="relative min-h-screen font-sora antialiased">
+      {/* Interactive Spline/WebGL — fixed continuous background */}
       <GlobalBackground />
 
+      {/* Content scrolls above; Spline mouse events stay global */}
       <div className="relative z-10">
         <Navbar />
         <main>

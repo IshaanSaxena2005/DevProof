@@ -9,19 +9,19 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function FinalCtaSection() {
   return (
-    <section className="relative w-full py-24 md:py-36 section-divider section-veil">
+    <section className="relative w-full py-28 md:py-40 lg:py-48 section-divider section-veil overflow-hidden">
       <div className="ambient-glow-green w-[900px] h-[500px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-glow-pulse absolute pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto px-6 lg:px-8 z-10">
         <motion.div
-          initial={{ opacity: 0, y: 28 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.75 }}
         >
           <GlassPanel
             hover={false}
-            className="px-8 py-14 md:px-16 md:py-20 text-center relative overflow-hidden"
+            className="px-8 py-16 md:px-16 md:py-24 text-center relative overflow-hidden shadow-2xl"
           >
             <div
               className="absolute inset-0 pointer-events-none"
@@ -33,8 +33,8 @@ export default function FinalCtaSection() {
 
             <div className="relative z-10 flex flex-col items-center">
               <h2
-                className="text-display uppercase mb-5"
-                style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)" }}
+                className="text-display uppercase mb-6 tracking-tight"
+                style={{ fontSize: "clamp(2.5rem, 6.5vw, 4.5rem)", lineHeight: 1.05 }}
               >
                 Your work already
                 <br />
@@ -42,7 +42,7 @@ export default function FinalCtaSection() {
               </h2>
 
               <p
-                className="text-lg md:text-xl font-light mb-10"
+                className="text-lg md:text-xl font-light mb-12"
                 style={{ color: "var(--text-secondary)" }}
               >
                 DevProof turns it into{" "}
@@ -52,14 +52,14 @@ export default function FinalCtaSection() {
                 .
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3.5">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
                 <div className="relative group">
                   <div
                     className="absolute -inset-1 rounded-full blur opacity-35 group-hover:opacity-60 transition-opacity duration-500"
                     style={{ background: "hsl(var(--primary))" }}
                   />
                   <button
-                    className="relative flex items-center justify-center gap-2.5 font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-full transition-all active:scale-[0.97] hover:brightness-110"
+                    className="relative flex items-center justify-center gap-2.5 font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:brightness-110 shrink-0"
                     style={{
                       backgroundColor: "hsl(var(--primary))",
                       color: "hsl(var(--primary-foreground))",
@@ -70,7 +70,7 @@ export default function FinalCtaSection() {
                   </button>
                 </div>
 
-                <button className="glass-chip font-bold text-sm uppercase tracking-widest px-8 py-4 text-white hover:bg-white/12 hover:border-white/25 transition-all active:scale-[0.97]">
+                <button className="glass-chip font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 text-white hover:bg-white/12 hover:border-white/25 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shrink-0">
                   Explore Demo
                 </button>
               </div>
