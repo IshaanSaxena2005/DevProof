@@ -13,7 +13,7 @@ const TITLE_MAP: Record<string, string> = {
   "/dashboard/developer-360": "Developer 360",
   "/dashboard/skills": "Skills",
   "/dashboard/problem-solving": "Problem Solving",
-  "/dashboard/credentials": "Credentials",
+  "/dashboard/credentials": "Learning & Credentials",
   "/dashboard/growth": "Growth",
   "/dashboard/career-readiness": "Career Readiness",
   "/dashboard/ai-insights": "AI Insights",

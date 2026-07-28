@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   { label: "Developer 360", href: "/dashboard/developer-360", icon: User },
   { label: "Skills", href: "/dashboard/skills", icon: Code2 },
   { label: "Problem Solving", href: "/dashboard/problem-solving", icon: Target },
-  { label: "Credentials", href: "/dashboard/credentials", icon: Award },
+  { label: "Learning", href: "/dashboard/credentials", icon: Award },
   { label: "Growth", href: "/dashboard/growth", icon: TrendingUp },
   { label: "Career Readiness", href: "/dashboard/career-readiness", icon: Briefcase },
   { label: "AI Insights", href: "/dashboard/ai-insights", icon: Sparkles },
@@ -30,11 +30,25 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
     <aside className="w-64 h-full flex flex-col bg-black/[0.3] border-r border-white/[0.08] backdrop-blur-xl">
       {/* Brand Header */}
-      <div className="h-16 px-6 border-b border-white/[0.08] flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-md border border-white/10 flex items-center justify-center bg-primary/10">
-          <div className="w-2.5 h-2.5 rounded-sm bg-primary shadow-[0_0_8px_rgba(119,252,117,0.8)]" />
+      <div className="h-16 px-5 border-b border-white/[0.08] flex items-center gap-2.5">
+        <img
+          src="/logo.png"
+          alt="DevProof"
+          className="h-7 w-auto object-contain select-none"
+          onError={(e) => {
+            // Fallback to dot+text if logo.png not yet present
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+            if (fallback) fallback.style.display = "flex";
+          }}
+        />
+        {/* Fallback visible only when logo.png is missing */}
+        <div className="hidden items-center gap-2" id="sidebar-logo-fallback">
+          <div className="w-7 h-7 rounded-md border border-white/10 flex items-center justify-center bg-primary/10">
+            <div className="w-2.5 h-2.5 rounded-sm bg-primary shadow-[0_0_8px_rgba(119,252,117,0.8)]" />
+          </div>
+          <span className="text-white font-bold tracking-tight text-lg">DevProof</span>
         </div>
-        <span className="text-white font-bold tracking-tight text-lg">DevProof</span>
       </div>
 
       {/* Nav Links */}
