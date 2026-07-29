@@ -22,7 +22,9 @@ const TITLE_MAP: Record<string, string> = {
 
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
-  const pageTitle = TITLE_MAP[location.pathname] || "Dashboard";
+  const pageTitle =
+    TITLE_MAP[location.pathname] ??
+    (location.pathname.startsWith("/dashboard/repositories/") ? "Repository Details" : "Dashboard");
 
   return (
     <header className="h-16 px-6 border-b border-white/[0.08] flex items-center justify-between bg-black/[0.15] backdrop-blur-xl">

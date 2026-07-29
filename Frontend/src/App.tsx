@@ -19,6 +19,7 @@ import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import Repositories from "./pages/dashboard/Repositories";
+import RepositoryDetails from "./pages/dashboard/RepositoryDetails";
 import Developer360 from "./pages/dashboard/Developer360";
 import Skills from "./pages/dashboard/Skills";
 import ProblemSolving from "./pages/dashboard/ProblemSolving";
@@ -69,6 +70,7 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard/overview" replace />} />
           <Route path="overview" element={<Overview />} />
           <Route path="repositories" element={<Repositories />} />
+          <Route path="repositories/:repoSlug" element={<RepositoryDetails />} />
           <Route path="developer-360" element={<Developer360 />} />
           <Route path="skills" element={<Skills />} />
           <Route path="problem-solving" element={<ProblemSolving />} />
