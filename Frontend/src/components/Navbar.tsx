@@ -66,13 +66,13 @@ export default function Navbar() {
             {/* Right section (Desktop) */}
             <div className="hidden lg:flex items-center gap-5 shrink-0">
               <Link
-                to="/dashboard"
+                to="/login"
                 className="text-[13px] font-medium text-white/60 hover:text-white transition-colors py-1"
               >
                 Sign In
               </Link>
               <Link
-                to="/dashboard"
+                to="/login"
                 className="flex items-center gap-2 text-[13px] font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(119,252,117,0.25)] hover:shadow-[0_0_24px_rgba(119,252,117,0.45)] hover:brightness-115"
                 style={{
                   backgroundColor: "hsl(var(--primary))",
@@ -121,14 +121,14 @@ export default function Navbar() {
 
             <div className="flex flex-col gap-4">
               <Link
-                to="/dashboard"
+                to="/login"
                 className="text-base font-medium text-white/65 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Sign In
               </Link>
               <Link
-                to="/dashboard"
+                to="/login"
                 className="w-full flex items-center justify-center gap-2.5 text-base font-semibold rounded-full py-4 transition-all duration-300 active:scale-[0.97] shadow-[0_0_20px_rgba(119,252,117,0.2)] text-center"
                 style={{
                   backgroundColor: "hsl(var(--primary))",

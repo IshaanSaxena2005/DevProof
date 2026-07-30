@@ -15,6 +15,11 @@ import PrivacySecuritySection from "./components/PrivacySecuritySection";
 import FinalCtaSection from "./components/FinalCtaSection";
 import Footer from "./components/Footer";
 
+// Auth
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
+
 // Dashboard imports
 import DashboardLayout from "./layouts/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
@@ -61,30 +66,36 @@ function LandingPage() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Landing Page */}
-        <Route path="/" element={<LandingPage />} />
+      <AuthProvider>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
 
-        {/* Dashboard Shell with subpages */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Navigate to="/dashboard/overview" replace />} />
-          <Route path="overview" element={<Overview />} />
-          <Route path="repositories" element={<Repositories />} />
-          <Route path="repositories/:repoSlug" element={<RepositoryDetails />} />
-          <Route path="developer-360" element={<Developer360 />} />
-          <Route path="skills" element={<Skills />} />
-          <Route path="problem-solving" element={<ProblemSolving />} />
-          <Route path="credentials" element={<Credentials />} />
-          <Route path="growth" element={<Growth />} />
-          <Route path="career-readiness" element={<CareerReadiness />} />
-          <Route path="ai-insights" element={<AiInsights />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
-        </Route>
+          {/* Everything below requires a session. ProtectedRoute renders an
+              Outlet, so the dashboard shell nests inside it. */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Navigate to="/dashboard/overview" replace />} />
+              <Route path="overview" element={<Overview />} />
+              <Route path="repositories" element={<Repositories />} />
+              <Route path="repositories/:repoId" element={<RepositoryDetails />} />
+              <Route path="developer-360" element={<Developer360 />} />
+              <Route path="skills" element={<Skills />} />
+              <Route path="problem-solving" element={<ProblemSolving />} />
+              <Route path="credentials" element={<Credentials />} />
+              <Route path="growth" element={<Growth />} />
+              <Route path="career-readiness" element={<CareerReadiness />} />
+              <Route path="ai-insights" element={<AiInsights />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
+            </Route>
+          </Route>
 
-        {/* Fallback to landing page */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback to landing page */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

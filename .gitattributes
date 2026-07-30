@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────
+# Line endings
+#
+# Git for Windows ships with core.autocrlf=true, which rewrites LF -> CRLF on
+# checkout and back on commit. That produces the "LF will be replaced by CRLF"
+# warnings and makes diffs depend on which OS committed them.
+#
+# This file pins the behaviour per-repository, so it no longer matters what any
+# individual contributor has core.autocrlf set to — .gitattributes wins.
+#
+# text=auto  -> Git decides what is text vs binary
+# eol=lf     -> text files are LF in the repo AND in the working tree, so there
+#               is no conversion left to warn about. Also matches Linux CI and
+#               the node:alpine / postgres containers.
+# ─────────────────────────────────────────────────────────────
+* text=auto eol=lf
+
+# Windows-native scripts must keep CRLF or cmd.exe mis-parses them.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Shell scripts must stay LF or they fail with "bad interpreter: \r".
+*.sh   text eol=lf
+
+# ── Binary: never convert, never diff as text ──
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.mp4  binary
+*.webm binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.eot  binary
+*.pdf  binary
+
+# ── Generated: keep out of diffs and review noise ──
+package-lock.json  -diff linguist-generated

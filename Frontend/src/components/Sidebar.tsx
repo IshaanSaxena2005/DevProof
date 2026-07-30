@@ -1,4 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard,
   FolderGit2,
@@ -27,6 +29,21 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await logout();
+      onClose?.();
+      navigate("/", { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
   return (
     <aside className="w-64 h-full flex flex-col bg-black/[0.3] border-r border-white/[0.08] backdrop-blur-xl">
       {/* Brand Header */}
@@ -94,13 +111,27 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           <span>Settings</span>
         </NavLink>
 
-        <a
-          href="/"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all duration-200 cursor-pointer"
+        {/* Signed-in identity, so it's obvious which account is active */}
+        {user && (
+          <div className="px-4 py-2 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">
+              Signed in as
+            </p>
+            <p className="text-xs font-medium text-white/70 truncate" title={user.email}>
+              {user.name || user.email}
+            </p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          <span>Logout</span>
-        </a>
+          <span>{loggingOut ? "Signing out…" : "Logout"}</span>
+        </button>
       </div>
     </aside>
   );

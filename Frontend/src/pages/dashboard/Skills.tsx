@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import GlassCard from "../../components/GlassCard";
+import { SampleDataNotice } from "../../components/StateBlocks";
 
 /* ═══════════════════════════════════════════════════════
    MOCK DATA
@@ -105,12 +106,6 @@ const SUMMARY =
    HELPERS & SHARED COMPONENTS
 ═══════════════════════════════════════════════════════ */
 
-function scoreColor(n: number) {
-  if (n >= 80) return "#77fc75";
-  if (n >= 60) return "#f59e0b";
-  return "#ef4444";
-}
-
 function proficiencyColor(p: Proficiency) {
   const m: Record<Proficiency, string> = {
     Expert: "#77fc75", Advanced: "#60a5fa", Intermediate: "#f59e0b", Beginner: "#94a3b8",
@@ -186,6 +181,8 @@ export default function Skills() {
           Your verified technology skills, proficiency levels, and personalised growth roadmap.
         </p>
       </div>
+
+      <SampleDataNotice what="No skills endpoint exists on the backend yet — the Skill and SkillEvidence models are in the schema but nothing exposes them." />
 
       {/* ═══════════════════════════════════════════════
           1. OVERVIEW STATS

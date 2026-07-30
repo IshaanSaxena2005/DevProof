@@ -60,7 +60,7 @@ export default function FinalCtaSection() {
                     style={{ background: "hsl(var(--primary))" }}
                   />
                   <Link
-                    to="/dashboard"
+                    to="/login"
                     className="relative flex items-center justify-center gap-2.5 font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:brightness-110 shrink-0 text-center"
                     style={{
                       backgroundColor: "hsl(var(--primary))",
@@ -73,7 +73,7 @@ export default function FinalCtaSection() {
                 </div>
 
                 <Link
-                  to="/dashboard"
+                  to="/login"
                   className="glass-chip font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 text-white hover:bg-white/12 hover:border-white/25 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shrink-0 text-center"
                 >
                   Explore Demo

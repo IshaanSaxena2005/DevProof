@@ -1,5 +1,19 @@
 import { useLocation } from "react-router-dom";
 import { Menu, Search, Bell } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+
+/** "Ada Lovelace" -> "AL"; falls back to the email's first two characters. */
+function initialsFor(name: string | null | undefined, email: string | undefined) {
+  const fromName = (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join("");
+  if (fromName) return fromName;
+  return (email ?? "?").slice(0, 2).toUpperCase();
+}
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,6 +36,8 @@ const TITLE_MAP: Record<string, string> = {
 
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const github = user?.githubAccount ?? null;
   const pageTitle =
     TITLE_MAP[location.pathname] ??
     (location.pathname.startsWith("/dashboard/repositories/") ? "Repository Details" : "Dashboard");
@@ -54,14 +70,32 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
           />
         </div>
 
-        {/* GitHub connected badge */}
-        <div className="flex items-center gap-2 border border-primary/20 bg-primary/10 rounded-full px-3 py-1.5 shrink-0">
-          <GithubIcon className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[10px] font-bold text-primary uppercase tracking-widest hidden xs:inline">
-            CONNECTED
-          </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-        </div>
+        {/* GitHub link status — reflects the real linked account, if any */}
+        {github ? (
+          <a
+            href={github.profileUrl ?? `https://github.com/${github.username}`}
+            target="_blank"
+            rel="noreferrer"
+            title={`Linked as @${github.username}`}
+            className="flex items-center gap-2 border border-primary/20 bg-primary/10 rounded-full px-3 py-1.5 shrink-0 transition-all hover:border-primary/40"
+          >
+            <GithubIcon className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-widest hidden sm:inline">
+              {github.username}
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          </a>
+        ) : (
+          <div
+            title="No GitHub account linked yet"
+            className="flex items-center gap-2 border border-white/10 bg-white/[0.03] rounded-full px-3 py-1.5 shrink-0"
+          >
+            <GithubIcon className="w-3.5 h-3.5 text-white/40" />
+            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest hidden sm:inline">
+              Not linked
+            </span>
+          </div>
+        )}
 
         {/* Notifications Icon */}
         <button className="p-2 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white transition-all relative shrink-0">
@@ -69,9 +103,22 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
         </button>
 
-        {/* Profile menu avatar */}
-        <div className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/[0.08] flex items-center justify-center cursor-pointer hover:border-white/30 transition-all shrink-0">
-          <span className="text-xs font-bold text-white select-none">JD</span>
+        {/* Profile avatar — real avatar when we have one, initials otherwise */}
+        <div
+          title={user?.email ?? undefined}
+          className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/[0.08] flex items-center justify-center cursor-pointer hover:border-white/30 transition-all shrink-0"
+        >
+          {user?.avatarUrl ?? github?.avatarUrl ? (
+            <img
+              src={(user?.avatarUrl ?? github?.avatarUrl)!}
+              alt={user?.name ?? user?.email ?? "Profile"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-xs font-bold text-white select-none">
+              {initialsFor(user?.name, user?.email)}
+            </span>
+          )}
         </div>
       </div>
     </header>
