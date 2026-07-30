@@ -1,6 +1,5 @@
 import { motion } from "motion/react";
 import { Briefcase, Target, ArrowRight, Zap } from "lucide-react";
-import { cn } from "../lib/utils";
 import { GlassPanel, PanelHeader, SectionLead, SectionShell, SectionTitle, WindowDots } from "./Primitives";
 
 const DIMENSIONS = [

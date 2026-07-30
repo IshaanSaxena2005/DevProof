@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: devproof_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devproof
+      POSTGRES_PASSWORD: devproof_local_dev
+      POSTGRES_DB: devproof_db
+    # Host 5434 -> container 5432.
+    # 5432 and 5433 are already taken on this machine by unrelated services.
+    ports:
+      - "5434:5432"
+    volumes:
+      - devproof_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devproof -d devproof_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  devproof_pgdata:

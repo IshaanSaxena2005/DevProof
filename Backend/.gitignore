@@ -4,6 +4,10 @@ dist/
 
 # Environment
 .env
+# Catch-all for backups/variants (.env.bak, .env.production, ...)
+# while keeping the committed template.
+.env.*
+!.env.example
 
 # Logs
 *.log

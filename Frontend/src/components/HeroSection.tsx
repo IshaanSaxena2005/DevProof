@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -72,7 +71,7 @@ export default function HeroSection() {
             style={{ animationDelay: "0.65s" }}
           >
             <Link
-              to="/dashboard"
+              to="/login"
               className="flex items-center gap-2.5 text-xs md:text-sm rounded-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_24px_rgba(119,252,117,0.25)] hover:shadow-[0_0_36px_rgba(119,252,117,0.45)] hover:brightness-110 shrink-0"
               style={{
                 backgroundColor: "hsl(var(--primary))",
@@ -85,7 +84,7 @@ export default function HeroSection() {
             </Link>
 
             <Link
-              to="/dashboard"
+              to="/login"
               className="glass-chip text-white text-xs md:text-sm cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:bg-white/[0.12] hover:border-white/30 shrink-0 text-center"
               style={{ padding: "0.95rem 2.25rem" }}
             >

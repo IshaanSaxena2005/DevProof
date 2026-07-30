@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
-import { TrendingUp, Award, Flame, Trophy, Target, AlertCircle, CheckCircle2, Brain } from "lucide-react";
+import { TrendingUp, Flame, Trophy, Target, AlertCircle, CheckCircle2, Brain } from "lucide-react";
+import { SampleDataNotice } from "../../components/StateBlocks";
 
 const mockStats = {
   problemsSolved: 325,
@@ -97,6 +98,8 @@ export default function ProblemSolving() {
           Track coding achievements, contest performance, and skill mastery
         </p>
       </div>
+
+      <SampleDataNotice what="No coding-profile endpoint exists yet, and the LeetCode/GeeksforGeeks integrations are unbuilt. The activity heatmap is randomly generated on each load." />
 
       {/* Problem Solving Overview */}
       <motion.div
