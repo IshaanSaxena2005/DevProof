@@ -3,17 +3,15 @@ import { motion } from "motion/react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, Clock, Globe, Lock, Star, GitFork, HardDrive, GitBranch,
-  Loader2, Play, ExternalLink, ShieldAlert, CheckCircle2, FileCode2,
+  Play, ExternalLink, ShieldAlert, CheckCircle2, FileCode2, Loader2,
   Code2, FileText, FlaskConical, Shield, Wrench, Package, Activity,
 } from "lucide-react";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
-import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api, ApiError } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
-import type {
-  Finding, MetricCategory, RepositoryResponse, SeverityLevel,
-} from "../../lib/types";
+import { SampleDataNotice } from "../../components/StateBlocks";
+
+// TEMP DEVELOPMENT BYPASS: Using mock data instead of API calls
+// Remove this and restore API calls when backend is ready
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -23,7 +21,7 @@ function scoreColor(score: number) {
   return "#ef4444";
 }
 
-const CATEGORY_ICON: Record<MetricCategory, typeof Code2> = {
+const CATEGORY_ICON: Record<string, typeof Code2> = {
   ENGINEERING_HEALTH: Activity,
   CODE_QUALITY: Code2,
   SECURITY: Shield,
@@ -33,7 +31,7 @@ const CATEGORY_ICON: Record<MetricCategory, typeof Code2> = {
   DEPENDENCY_HEALTH: Package,
 };
 
-const SEVERITY_STYLE: Record<SeverityLevel, { color: string; bg: string; border: string }> = {
+const SEVERITY_STYLE: Record<string, { color: string; bg: string; border: string }> = {
   CRITICAL: { color: "#f87171", bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.20)" },
   HIGH:     { color: "#fb923c", bg: "rgba(251,146,60,0.08)",  border: "rgba(251,146,60,0.20)" },
   MEDIUM:   { color: "#fbbf24", bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.20)" },
@@ -42,7 +40,7 @@ const SEVERITY_STYLE: Record<SeverityLevel, { color: string; bg: string; border:
 };
 
 /** Order findings worst-first so the most urgent work is on top. */
-const SEVERITY_RANK: Record<SeverityLevel, number> = {
+const SEVERITY_RANK: Record<string, number> = {
   CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, GOOD: 4,
 };
 
@@ -120,7 +118,7 @@ function StatTile({ icon: Icon, label, value }: { icon: typeof Star; label: stri
   );
 }
 
-function FindingCard({ finding, index }: { finding: Finding; index: number }) {
+function FindingCard({ finding, index }: { finding: any; index: number }) {
   const s = SEVERITY_STYLE[finding.severity];
   return (
     <motion.div
@@ -167,14 +165,79 @@ function FindingCard({ finding, index }: { finding: Finding; index: number }) {
 
 /* ── page ────────────────────────────────────────────── */
 
+// Mock data for development
+const mockRepository = {
+  id: "1",
+  name: "devproof-web",
+  fullName: "devproof/devproof-web",
+  owner: "devproof",
+  description: "Main web application for DevProof platform with React and TypeScript",
+  url: "https://github.com/devproof/devproof-web",
+  language: "TypeScript",
+  isPrivate: false,
+  stars: 234,
+  forks: 45,
+  size: 15420,
+  starsCount: 234,
+  forksCount: 45,
+  sizeKb: 15420,
+  defaultBranch: "main",
+  createdAt: "2024-01-15T10:30:00Z",
+  updatedAt: "2024-07-20T15:45:00Z",
+  analyses: [
+    {
+      id: "1",
+      overallScore: 78,
+      healthStatus: "GOOD",
+      analyzedAt: "2024-07-20T15:45:00Z",
+      createdAt: "2024-07-20T15:45:00Z",
+      metrics: [
+        { id: "1", category: "CODE_QUALITY", score: 82, label: "Code Quality", name: "Code Quality", detail: "82/100" },
+        { id: "2", category: "SECURITY", score: 75, label: "Security", name: "Security", detail: "75/100" },
+        { id: "3", category: "TESTING", score: 68, label: "Testing", name: "Testing", detail: "68/100" },
+        { id: "4", category: "DOCUMENTATION", score: 85, label: "Documentation", name: "Documentation", detail: "85/100" },
+        { id: "5", category: "MAINTAINABILITY", score: 79, label: "Maintainability", name: "Maintainability", detail: "79/100" },
+        { id: "6", category: "DEPENDENCY_HEALTH", score: 72, label: "Dependency Health", name: "Dependency Health", detail: "72/100" },
+      ],
+      findings: [
+        {
+          id: "1",
+          severity: "HIGH",
+          category: "SECURITY",
+          title: "Unvalidated user input",
+          description: "User input from search form is not sanitized before being used in database queries.",
+          filePath: "src/components/Search.tsx",
+          lineNumber: 42,
+          recommendation: "Implement input validation and use parameterized queries."
+        },
+        {
+          id: "2",
+          severity: "MEDIUM",
+          category: "CODE_QUALITY",
+          title: "Complex function logic",
+          description: "The processData function has high cyclomatic complexity and should be refactored.",
+          filePath: "src/utils/dataProcessor.ts",
+          lineNumber: 15,
+          recommendation: "Break down into smaller, single-purpose functions."
+        },
+        {
+          id: "3",
+          severity: "LOW",
+          category: "DOCUMENTATION",
+          title: "Missing JSDoc comments",
+          description: "Several utility functions lack documentation comments.",
+          filePath: "src/utils/helpers.ts",
+          lineNumber: 8,
+          recommendation: "Add JSDoc comments for better code maintainability."
+        }
+      ]
+    }
+  ]
+};
+
 export default function RepositoryDetails() {
   const { repoId } = useParams<{ repoId: string }>();
   const navigate = useNavigate();
-
-  const { data, loading, error, reload } = useResource<RepositoryResponse>(
-    () => api.get<RepositoryResponse>(`/repositories/${repoId}`),
-    [repoId]
-  );
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -182,28 +245,22 @@ export default function RepositoryDetails() {
   async function runAnalysis() {
     setAnalyzing(true);
     setAnalyzeError(null);
-    try {
-      await api.post("/analysis/trigger", { repositoryId: repoId });
-      reload();
-    } catch (err) {
-      setAnalyzeError(
-        err instanceof ApiError ? err.message : "Analysis failed. Please try again."
-      );
-    } finally {
+    // Mock analysis trigger
+    setTimeout(() => {
       setAnalyzing(false);
-    }
+      setAnalyzeError(null); // No error in mock
+    }, 2000);
   }
 
-  if (loading) return <LoadingBlock label="Loading repository…" />;
-  if (error) return <ErrorBlock message={error} onRetry={reload} />;
-  if (!data?.repository) return <ErrorBlock message="Repository not found." />;
+  // Suppress unused variable warning for development
+  void repoId;
 
-  const repo = data.repository;
+  const repo = mockRepository;
   const analyses = repo.analyses ?? [];
   const latest = analyses[0] ?? null;
   const metrics = latest?.metrics ?? [];
   const findings = [...(latest?.findings ?? [])].sort(
-    (a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]
+    (a: any, b: any) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]
   );
 
   return (
@@ -213,6 +270,8 @@ export default function RepositoryDetails() {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="w-full flex flex-col gap-8 pb-8"
     >
+      <SampleDataNotice what="Repository details use sample data for development." />
+
       {/* Breadcrumb */}
       <button
         onClick={() => navigate("/dashboard/repositories")}

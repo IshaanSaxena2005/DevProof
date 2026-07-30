@@ -2,11 +2,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
-import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
-import { useAuth } from "../../context/AuthContext";
-import type { Developer360Response } from "../../lib/types";
+import { SampleDataNotice } from "../../components/StateBlocks";
+
+// TEMP DEVELOPMENT BYPASS: Using mock data instead of API calls
+// Remove this and restore API calls when backend is ready
 
 function scoreColor(n: number) {
   if (n >= 80) return "#77fc75";
@@ -40,33 +39,21 @@ function StatCard({
 
 export default function Overview() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { data, loading, error, reload } = useResource<Developer360Response>(
-    () => api.get<Developer360Response>("/developer360/overview")
-  );
 
-  const firstName = (user?.name ?? "").trim().split(/\s+/)[0];
+  // Mock data for development
+  const mockData = {
+    totalRepositories: 12,
+    totalAnalyzed: 8,
+    skillsList: ["React", "TypeScript", "Node.js", "Python", "PostgreSQL"],
+    recentCertifications: ["AWS Solutions Architect", "Google Cloud Professional"],
+    developer360Score: 74,
+    user: {
+      githubUsername: "devproof-user"
+    }
+  };
 
-  if (loading) {
-    return (
-      <PageContainer title="Overview" description="Loading your engineering summary…">
-        <LoadingBlock />
-      </PageContainer>
-    );
-  }
-
-  if (error || !data?.overview) {
-    return (
-      <PageContainer title="Overview" description="Your evidence-based engineering metrics.">
-        <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
-      </PageContainer>
-    );
-  }
-
-  const o = data.overview;
-  // null means nothing has been measured yet — the backend no longer
-  // substitutes a placeholder number for a missing score.
-  const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
+  const firstName = "Developer"; // Mock user name
+  const score = mockData.developer360Score;
   const hasAnalyses = score !== null;
 
   return (
@@ -78,15 +65,17 @@ export default function Overview() {
           : "Here is a summary of your engineering evidence."
       }
     >
+      <SampleDataNotice what="This overview uses sample data for development." />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           icon={FolderGit2}
           label="Repositories"
-          value={`${o.totalRepositories} connected`}
+          value={`${mockData.totalRepositories} connected`}
         />
-        <StatCard icon={Activity} label="Analyzed" value={`${o.totalAnalyzed} complete`} />
-        <StatCard icon={Code2} label="Skills Recorded" value={String(o.skillsList.length)} />
-        <StatCard icon={Award} label="Certifications" value={String(o.recentCertifications.length)} />
+        <StatCard icon={Activity} label="Analyzed" value={`${mockData.totalAnalyzed} complete`} />
+        <StatCard icon={Code2} label="Skills Recorded" value={String(mockData.skillsList.length)} />
+        <StatCard icon={Award} label="Certifications" value={String(mockData.recentCertifications.length)} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -119,8 +108,8 @@ export default function Overview() {
 
           {hasAnalyses ? (
             <div className="text-[11px] text-center" style={{ color: "var(--text-tertiary)" }}>
-              Based on {o.totalAnalyzed} completed{" "}
-              {o.totalAnalyzed === 1 ? "analysis" : "analyses"}.
+              Based on {mockData.totalAnalyzed} completed{" "}
+              {mockData.totalAnalyzed === 1 ? "analysis" : "analyses"}.
             </div>
           ) : (
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3">
@@ -157,10 +146,10 @@ export default function Overview() {
           </div>
 
           <div className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-            {o.user.githubUsername ? (
+            {mockData.user.githubUsername ? (
               <>
                 GitHub linked as{" "}
-                <span className="text-white/60 font-medium">@{o.user.githubUsername}</span>.
+                <span className="text-white/60 font-medium">@{mockData.user.githubUsername}</span>.
               </>
             ) : (
               <>
