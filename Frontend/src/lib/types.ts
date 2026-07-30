@@ -114,7 +114,8 @@ export interface EvidenceTierCounts {
 
 export interface CategoryBreakdown {
   category: SkillCategory;
-  score: number;
+  /** null when the user has no recorded skills in this category — not a measured 0. */
+  score: number | null;
   skillCount: number;
 }
 
@@ -134,7 +135,8 @@ export interface Developer360Overview {
     avatarUrl: string | null;
     githubUsername: string | null;
   };
-  developer360Score: number;
+  /** null when no repository analysis has completed yet — not a measured score. */
+  developer360Score: number | null;
   totalRepositories: number;
   totalAnalyzed: number;
   evidenceTiers: EvidenceTierCounts;

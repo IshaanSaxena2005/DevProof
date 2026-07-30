@@ -38,13 +38,17 @@ export class Developer360Service {
     const repos = user.repositories || [];
     const completedAnalyses = repos.flatMap((r) => r.analyses).filter((a) => a && a.status === 'COMPLETED');
 
-    // Aggregate average score across analyzed repositories
+    // Average score across analyzed repositories, or null when there is
+    // nothing to average. This used to fall back to a hardcoded 72.5, which
+    // reached the UI indistinguishable from a real measurement — directly
+    // against this product's evidence-based premise. Absence of evidence must
+    // read as absence, not as an invented number.
     const averageRepoScore =
       completedAnalyses.length > 0
         ? Math.round(
             (completedAnalyses.reduce((acc, a) => acc + a.overallScore, 0) / completedAnalyses.length) * 10
           ) / 10
-        : 72.5;
+        : null;
 
     // Calculate skill counts by evidence tier
     const skills = user.skills || [];
@@ -67,10 +71,12 @@ export class Developer360Service {
 
     const categoryBreakdown = categories.map((cat) => {
       const catSkills = skills.filter((s) => s.category === cat);
+      // null (not 70) when the user has no recorded skills in this category —
+      // see averageRepoScore above for why a placeholder number is unsafe here.
       const score =
         catSkills.length > 0
           ? Math.round(catSkills.reduce((acc, s) => acc + s.confidence, 0) / catSkills.length)
-          : 70;
+          : null;
       return {
         category: cat,
         score,

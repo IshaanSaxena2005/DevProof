@@ -64,8 +64,10 @@ export default function Overview() {
   }
 
   const o = data.overview;
-  const score = Math.round(o.developer360Score);
-  const hasAnalyses = o.totalAnalyzed > 0;
+  // null means nothing has been measured yet — the backend no longer
+  // substitutes a placeholder number for a missing score.
+  const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
+  const hasAnalyses = score !== null;
 
   return (
     <PageContainer
@@ -102,13 +104,15 @@ export default function Overview() {
 
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
-              <span className="text-5xl font-extrabold text-white">{score}</span>
-              <span className="text-sm" style={{ color: "var(--text-tertiary)" }}>/100</span>
+              <span className="text-5xl font-extrabold text-white">{score ?? "—"}</span>
+              {score !== null && (
+                <span className="text-sm" style={{ color: "var(--text-tertiary)" }}>/100</span>
+              )}
               <div
                 className="text-xs uppercase tracking-widest font-semibold mt-2"
-                style={{ color: scoreColor(score) }}
+                style={{ color: score !== null ? scoreColor(score) : "var(--text-tertiary)" }}
               >
-                {hasAnalyses ? "Measured" : "Placeholder"}
+                {hasAnalyses ? "Measured" : "No data yet"}
               </div>
             </div>
           </div>
@@ -122,7 +126,7 @@ export default function Overview() {
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3">
               <AlertCircle className="w-3.5 h-3.5 text-amber-300 shrink-0 mt-0.5" />
               <p className="text-[11px] leading-relaxed text-amber-100/70">
-                No completed analyses yet — this is a backend placeholder, not a measurement.
+                No completed analyses yet, so there is nothing to measure here.
               </p>
             </div>
           )}

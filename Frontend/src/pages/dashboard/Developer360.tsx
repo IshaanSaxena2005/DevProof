@@ -46,11 +46,12 @@ const TIER_COLOR: Record<EvidenceLevel, string> = {
   PRACTICALLY_EVIDENCED: "#77fc75",
 };
 
-function ScoreRing({ score, size = 156 }: { score: number; size?: number }) {
+/** score=null renders an empty track and a dash — "nothing measured", not a 0. */
+function ScoreRing({ score, size = 156 }: { score: number | null; size?: number }) {
   const r = (size - 24) / 2;
   const c = 2 * Math.PI * r;
-  const offset = c - (score / 100) * c;
-  const col = scoreColor(score);
+  const offset = score !== null ? c - (score / 100) * c : c;
+  const col = score !== null ? scoreColor(score) : "rgba(255,255,255,0.15)";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
@@ -59,10 +60,10 @@ function ScoreRing({ score, size = 156 }: { score: number; size?: number }) {
         fill="none" stroke={col} strokeWidth="10" strokeLinecap="round"
         strokeDasharray={c} strokeDashoffset={offset}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ filter: `drop-shadow(0 0 8px ${col}88)`, transition: "stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)" }}
+        style={score !== null ? { filter: `drop-shadow(0 0 8px ${col}88)`, transition: "stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)" } : undefined}
       />
       <text x="50%" y="44%" dominantBaseline="middle" textAnchor="middle" fontSize="30" fontWeight="800" fill="white" fontFamily="Sora,sans-serif">
-        {score}
+        {score ?? "—"}
       </text>
       <text x="50%" y="61%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="rgba(255,255,255,0.35)" fontFamily="Sora,sans-serif">
         /100
@@ -101,8 +102,10 @@ export default function Developer360() {
   if (!data?.overview) return <ErrorBlock message="No overview data returned." />;
 
   const o = data.overview;
-  const score = Math.round(o.developer360Score);
-  const hasAnalyses = o.totalAnalyzed > 0;
+  // null means "nothing measured yet" — the backend no longer substitutes a
+  // placeholder number, so this is a real absence, not a low score.
+  const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
+  const hasAnalyses = score !== null;
   const hasSkills = o.skillsList.length > 0;
 
   return (
@@ -119,19 +122,18 @@ export default function Developer360() {
         </p>
       </div>
 
-      {/* The backend substitutes placeholder numbers when there is nothing to
-          measure, so say so plainly rather than presenting them as findings. */}
+      {/* No completed analyses — the ring below renders as an empty dash, this
+          just explains why rather than leaving it unexplained. */}
       {!hasAnalyses && (
         <div className="flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-5 py-4">
           <AlertCircle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
           <div className="text-[12px] leading-relaxed text-amber-100/70">
-            <span className="font-semibold text-amber-200/90">Not yet evidence-based.</span>{" "}
-            No completed repository analyses, so the score below is a backend placeholder rather
-            than a measurement.{" "}
+            <span className="font-semibold text-amber-200/90">Nothing measured yet.</span>{" "}
+            No completed repository analyses, so there is no score to show.{" "}
             <Link to="/dashboard/repositories" className="font-semibold text-primary hover:underline">
               Connect and analyze a repository
             </Link>{" "}
-            to replace it with real data.
+            to generate one.
           </div>
         </div>
       )}
@@ -146,8 +148,11 @@ export default function Developer360() {
           <div className="flex flex-col items-center gap-3 shrink-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">Developer Score</p>
             <ScoreRing score={score} />
-            <p className="text-[12px] font-bold uppercase tracking-widest text-center" style={{ color: scoreColor(score) }}>
-              {hasAnalyses ? "Average across analyses" : "Placeholder"}
+            <p
+              className="text-[12px] font-bold uppercase tracking-widest text-center"
+              style={{ color: score !== null ? scoreColor(score) : "rgba(255,255,255,0.3)" }}
+            >
+              {hasAnalyses ? "Average across analyses" : "No data yet"}
             </p>
           </div>
 
@@ -209,17 +214,12 @@ export default function Developer360() {
 
       {/* Category breakdown */}
       <div>
-        <SLabel>
-          Skill Categories
-          {!hasSkills && (
-            <span className="ml-2 font-medium normal-case tracking-normal text-amber-300/60">
-              — no skills recorded, values are backend defaults
-            </span>
-          )}
-        </SLabel>
+        <SLabel>Skill Categories</SLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {o.categoryBreakdown.map((cat, i) => {
-            const color = CATEGORY_COLOR[cat.category] ?? "#94a3b8";
+            // No skills recorded in this category — null, not a measured 0.
+            const empty = cat.score === null;
+            const color = empty ? "rgba(255,255,255,0.25)" : CATEGORY_COLOR[cat.category] ?? "#94a3b8";
             return (
               <motion.div
                 key={cat.category}
@@ -237,11 +237,17 @@ export default function Developer360() {
                     {cat.skillCount}
                   </span>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold tabular-nums" style={{ color }}>{cat.score}</span>
-                  <span className="text-xs text-white/30 font-medium">/ 100</span>
-                </div>
-                <Bar score={cat.score} color={color} />
+                {empty ? (
+                  <p className="text-[12px] text-white/25 italic">No skills recorded yet</p>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold tabular-nums" style={{ color }}>{cat.score}</span>
+                      <span className="text-xs text-white/30 font-medium">/ 100</span>
+                    </div>
+                    <Bar score={cat.score as number} color={color} />
+                  </>
+                )}
               </motion.div>
             );
           })}

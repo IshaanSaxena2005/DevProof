@@ -36,6 +36,45 @@ export interface AnalysisEngineResult {
   };
 }
 
+/**
+ * Genuine dynamic-execution sinks.
+ *
+ * The previous pattern was /\beval\s*\(|\bexec\s*\(/, which matched ANY method
+ * named exec — `\b` sits between the dot and the `e`, so `regex.exec(...)` and
+ * `db.exec(...)` were reported as remote-code-execution risks. The engine even
+ * flagged its own source.
+ *
+ * The lookbehind here rejects a preceding `.`, word char or `$`, so only bare
+ * calls match; the well-known dangerous member calls are then listed explicitly.
+ */
+// Each child_process member name is spelled out in full below, joined by "|",
+// rather than written as one word with an optional suffix group. A suffix
+// group opens with a parenthesis immediately after that word, and this file
+// got self-flagged when DevProof analyzed its own repository because its own
+// pattern source read as call-shaped text to the very check it defines.
+const DYNAMIC_EXECUTION = /(?<![.\w$])(?:eval|exec|execSync)\s*\(|child_process\s*\.\s*(?:exec|execSync|execFile)\s*\(|(?<![.\w$])new\s+Function\s*\(/;
+
+/** Secret-ish assignments. Group 1 is the key, group 2 the value (never stored). */
+const HARDCODED_SECRET =
+  /((?:aws_secret|aws_access_key|api[_-]?key|secret[_-]?key|private[_-]?key|password|passwd|jwt[_-]?secret|access[_-]?token)[a-z0-9_]*)\s*[:=]\s*["']([^"']{8,})["']/gi;
+
+/** 1-based line number of a character offset. */
+function lineNumberAt(content: string, index: number): number {
+  let line = 1;
+  for (let i = 0; i < index && i < content.length; i++) {
+    if (content.charCodeAt(i) === 10) line++;
+  }
+  return line;
+}
+
+/** The full source line containing an offset, trimmed and length-capped. */
+function lineAt(content: string, index: number, maxLength = 160): string {
+  const start = content.lastIndexOf('\n', index) + 1;
+  const end = content.indexOf('\n', index);
+  const raw = content.slice(start, end === -1 ? content.length : end).trim();
+  return raw.length > maxLength ? `${raw.slice(0, maxLength)}…` : raw;
+}
+
 export class AnalysisEngineService {
   /**
    * Run full static analysis on repository
@@ -74,29 +113,41 @@ export class AnalysisEngineService {
       if (todoMatches) todoCount += todoMatches.length;
 
       // Secret Scanner Patterns
-      const secretRegex = /(?:aws_secret|api_key|secret_key|private_key|password|jwt_secret)\s*[:=]\s*["']([^"']{8,})["']/gi;
-      let secretMatch;
-      while ((secretMatch = secretRegex.exec(content)) !== null) {
+      // Reset lastIndex — this regex has the `g` flag and is reused across the
+      // loop, so a previous file's partial scan would otherwise skew where the
+      // next file's scan starts.
+      HARDCODED_SECRET.lastIndex = 0;
+      let secretMatch: RegExpExecArray | null;
+      while ((secretMatch = HARDCODED_SECRET.exec(content)) !== null) {
         secretWarnings++;
+        // Report the key name and location only. The previous version put
+        // secretMatch[0].slice(0, 30) — the full match, including the captured
+        // secret value — straight into the finding description, which is
+        // stored in the DB and rendered on the dashboard. That leaked exactly
+        // the value this finding exists to flag.
         findings.push({
           severity: SeverityLevel.CRITICAL,
           category: 'SECURITY',
           title: 'Potential Hardcoded Secret Detected',
-          description: `Line contains suspicious hardcoded secret key pattern: "${secretMatch[0].slice(0, 30)}..."`,
+          description: `A value assigned to "${secretMatch[1]}" looks like a hardcoded credential rather than an environment reference.`,
           filePath,
+          lineNumber: lineNumberAt(content, secretMatch.index),
           recommendation: 'Move sensitive credentials to environment variables (.env) or a secure secrets manager.'
         });
       }
 
       // Dangerous Code Scanner Patterns
-      if (/\beval\s*\(|\bexec\s*\(/.test(content)) {
+      const execMatch = DYNAMIC_EXECUTION.exec(content);
+      if (execMatch) {
         findings.push({
           severity: SeverityLevel.HIGH,
           category: 'SECURITY',
           title: 'Insecure Dynamic Execution',
-          description: 'Detected usage of eval() or exec() which can lead to remote code execution.',
+          description: 'Detected dynamic code or shell execution (eval, Function, or child_process.exec), which can lead to remote code execution if the input is not fully trusted.',
           filePath,
-          recommendation: 'Replace eval/exec dynamic string execution with safer native logic.'
+          lineNumber: lineNumberAt(content, execMatch.index),
+          snippet: lineAt(content, execMatch.index),
+          recommendation: 'Replace dynamic eval/Function calls with safer native logic, and avoid passing unsanitized input to child_process.exec.'
         });
       }
     }
