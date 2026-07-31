@@ -49,11 +49,11 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Brand Header */}
       <div className="h-16 px-5 border-b border-white/[0.08] flex items-center gap-2.5">
         <img
-          src="/logo 2.png"
+          src="/logo.png"
           alt="DevProof"
           className="h-7 w-auto object-contain select-none"
           onError={(e) => {
-            // Fallback to dot+text if logo 2.png not yet present
+            // Fallback to dot+text if logo.png not yet present
             (e.currentTarget as HTMLImageElement).style.display = "none";
             const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
             if (fallback) fallback.style.display = "flex";
