@@ -41,10 +41,14 @@ export default function Navbar() {
             {/* Logo */}
             <a
               href="/"
-              className="flex items-center gap-2.5 text-white text-lg font-bold tracking-tight select-none group shrink-0"
+              className="flex items-center gap-3.5 text-white select-none group shrink-0"
             >
-              <img src="/logo.png" alt="DevProof" className="w-8 h-8 rounded-lg transition-all group-hover:shadow-[0_0_12px_rgba(119,252,117,0.35)]" />
-              <span className="text-white tracking-tight group-hover:text-primary transition-colors">DevProof</span>
+              <img
+                src="/logo.png"
+                alt="DevProof"
+                className="w-16 h-16 rounded-lg object-cover transition-all group-hover:shadow-[0_0_24px_rgba(119,252,117,0.55)]"
+              />
+              <span className="text-3xl font-black tracking-tight group-hover:text-primary transition-colors">DevProof</span>
             </a>
 
             {/* Center nav links (Desktop) */}
