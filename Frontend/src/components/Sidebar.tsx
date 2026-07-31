@@ -47,24 +47,29 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
     <aside className="w-64 h-full flex flex-col bg-black/[0.3] border-r border-white/[0.08] backdrop-blur-xl">
       {/* Brand Header */}
-      <div className="h-16 px-5 border-b border-white/[0.08] flex items-center gap-2.5">
-        <img
-          src="/logo.png"
-          alt="DevProof"
-          className="h-7 w-auto object-contain select-none"
-          onError={(e) => {
-            // Fallback to dot+text if logo.png not yet present
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-            if (fallback) fallback.style.display = "flex";
-          }}
-        />
-        {/* Fallback visible only when logo.png is missing */}
-        <div className="hidden items-center gap-2" id="sidebar-logo-fallback">
-          <div className="w-7 h-7 rounded-md border border-white/10 flex items-center justify-center bg-primary/10">
-            <div className="w-2.5 h-2.5 rounded-sm bg-primary shadow-[0_0_8px_rgba(119,252,117,0.8)]" />
+      <div className="h-20 px-6 border-b border-white/[0.08] flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-lg" />
+            <img
+              src="/logo.png"
+              alt="DevProof"
+              className="relative h-12 w-auto object-contain select-none"
+              onError={(e) => {
+                // Fallback to dot+text if logo.png not yet present
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "flex";
+              }}
+            />
           </div>
-          <span className="text-white font-bold tracking-tight text-lg">DevProof</span>
+          {/* Fallback visible only when logo.png is missing */}
+          <div className="hidden items-center gap-3" id="sidebar-logo-fallback">
+            <div className="w-12 h-12 rounded-xl border border-white/10 flex items-center justify-center bg-primary/10 backdrop-blur-xl">
+              <div className="w-4 h-4 rounded-sm bg-primary shadow-[0_0_12px_rgba(119,252,117,0.8)]" />
+            </div>
+            <span className="text-white font-bold tracking-tight text-xl">DevProof</span>
+          </div>
         </div>
       </div>
 
