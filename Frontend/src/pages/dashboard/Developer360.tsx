@@ -2,10 +2,10 @@ import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { AlertCircle, FolderGit2 } from "lucide-react";
 import GlassCard from "../../components/GlassCard";
-import { SampleDataNotice } from "../../components/StateBlocks";
-
-// TEMP DEVELOPMENT BYPASS: Using mock data instead of API calls
-// Remove this and restore API calls when backend is ready
+import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
+import { api } from "../../lib/api";
+import { useResource } from "../../lib/useResource";
+import type { Developer360Response, EvidenceLevel, SkillCategory } from "../../lib/types";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -15,7 +15,7 @@ function scoreColor(n: number) {
   return "#ef4444";
 }
 
-const CATEGORY_COLOR: Record<string, string> = {
+const CATEGORY_COLOR: Record<SkillCategory, string> = {
   FRONTEND: "#77fc75",
   BACKEND: "#60a5fa",
   DATABASE: "#a78bfa",
@@ -32,14 +32,14 @@ function humanize(value: string) {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
-const TIER_ORDER: string[] = [
+const TIER_ORDER: EvidenceLevel[] = [
   "CLAIMED",
   "LEARNED",
   "CREDENTIAL_VERIFIED",
   "PRACTICALLY_EVIDENCED",
 ];
 
-const TIER_COLOR: Record<string, string> = {
+const TIER_COLOR: Record<EvidenceLevel, string> = {
   CLAIMED: "#94a3b8",
   LEARNED: "#60a5fa",
   CREDENTIAL_VERIFIED: "#a78bfa",
@@ -92,42 +92,19 @@ function SLabel({ children, className = "" }: { children: React.ReactNode; class
 
 /* ── page ────────────────────────────────────────────── */
 
-// Mock data for development
-const mockData = {
-  developer360Score: 76,
-  totalRepositories: 12,
-  totalAnalyzed: 8,
-  skillsList: [
-    { id: "1", name: "React", category: "FRONTEND", currentLevel: "PRACTICALLY_EVIDENCED" },
-    { id: "2", name: "TypeScript", category: "FRONTEND", currentLevel: "PRACTICALLY_EVIDENCED" },
-    { id: "3", name: "Node.js", category: "BACKEND", currentLevel: "CREDENTIAL_VERIFIED" },
-    { id: "4", name: "Python", category: "GENERAL", currentLevel: "LEARNED" },
-    { id: "5", name: "PostgreSQL", category: "DATABASE", currentLevel: "CREDENTIAL_VERIFIED" },
-  ],
-  recentCertifications: ["AWS Solutions Architect", "Google Cloud Professional"],
-  evidenceTiers: {
-    CLAIMED: 3,
-    LEARNED: 5,
-    CREDENTIAL_VERIFIED: 8,
-    PRACTICALLY_EVIDENCED: 12,
-  },
-  categoryBreakdown: [
-    { category: "FRONTEND", score: 92, skillCount: 7 },
-    { category: "BACKEND", score: 74, skillCount: 5 },
-    { category: "DATABASE", score: 68, skillCount: 3 },
-    { category: "TESTING", score: 45, skillCount: 2 },
-    { category: "DEVOPS", score: 58, skillCount: 3 },
-  ],
-  user: {
-    name: "Developer User",
-    email: "developer@example.com",
-    githubUsername: "devproof-user"
-  }
-};
-
 export default function Developer360() {
-  const o = mockData;
-  const score = o.developer360Score;
+  const { data, loading, error, reload } = useResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview")
+  );
+
+  if (loading) return <LoadingBlock label="Compiling your developer profile…" />;
+  if (error) return <ErrorBlock message={error} onRetry={reload} />;
+  if (!data?.overview) return <ErrorBlock message="No overview data returned." />;
+
+  const o = data.overview;
+  // null means "nothing measured yet" — the backend no longer substitutes a
+  // placeholder number, so this is a real absence, not a low score.
+  const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
   const hasAnalyses = score !== null;
   const hasSkills = o.skillsList.length > 0;
 
@@ -144,8 +121,6 @@ export default function Developer360() {
           Your engineering profile, compiled from analyzed repositories and recorded skill evidence.
         </p>
       </div>
-
-      <SampleDataNotice what="Developer 360 profile uses sample data for development." />
 
       {/* No completed analyses — the ring below renders as an empty dash, this
           just explains why rather than leaving it unexplained. */}
@@ -213,7 +188,7 @@ export default function Developer360() {
         <SLabel>Evidence Ladder</SLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {TIER_ORDER.map((tier, i) => {
-            const count = o.evidenceTiers[tier as keyof typeof o.evidenceTiers] ?? 0;
+            const count = o.evidenceTiers[tier] ?? 0;
             const color = TIER_COLOR[tier];
             return (
               <motion.div
@@ -242,6 +217,7 @@ export default function Developer360() {
         <SLabel>Skill Categories</SLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {o.categoryBreakdown.map((cat, i) => {
+            // No skills recorded in this category — null, not a measured 0.
             const empty = cat.score === null;
             const color = empty ? "rgba(255,255,255,0.25)" : CATEGORY_COLOR[cat.category] ?? "#94a3b8";
             return (

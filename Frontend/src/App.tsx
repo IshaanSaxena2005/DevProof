@@ -17,8 +17,7 @@ import Footer from "./components/Footer";
 
 // Auth
 import { AuthProvider } from "./context/AuthContext";
-// TEMP DEVELOPMENT BYPASS: ProtectedRoute temporarily disabled
-// import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 
 // Dashboard imports
@@ -73,26 +72,24 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
 
-          {/* TEMP DEVELOPMENT BYPASS
-              Enable authentication guard before production by wrapping dashboard routes with:
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<DashboardLayout />}>...</Route>
-              </Route>
-          */}
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<Navigate to="/dashboard/overview" replace />} />
-            <Route path="overview" element={<Overview />} />
-            <Route path="repositories" element={<Repositories />} />
-            <Route path="repositories/:repoId" element={<RepositoryDetails />} />
-            <Route path="developer-360" element={<Developer360 />} />
-            <Route path="skills" element={<Skills />} />
-            <Route path="problem-solving" element={<ProblemSolving />} />
-            <Route path="credentials" element={<Credentials />} />
-            <Route path="growth" element={<Growth />} />
-            <Route path="career-readiness" element={<CareerReadiness />} />
-            <Route path="ai-insights" element={<AiInsights />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
+          {/* Everything below requires a session. ProtectedRoute renders an
+              Outlet, so the dashboard shell nests inside it. */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Navigate to="/dashboard/overview" replace />} />
+              <Route path="overview" element={<Overview />} />
+              <Route path="repositories" element={<Repositories />} />
+              <Route path="repositories/:repoId" element={<RepositoryDetails />} />
+              <Route path="developer-360" element={<Developer360 />} />
+              <Route path="skills" element={<Skills />} />
+              <Route path="problem-solving" element={<ProblemSolving />} />
+              <Route path="credentials" element={<Credentials />} />
+              <Route path="growth" element={<Growth />} />
+              <Route path="career-readiness" element={<CareerReadiness />} />
+              <Route path="ai-insights" element={<AiInsights />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
+            </Route>
           </Route>
 
           {/* Fallback to landing page */}
