@@ -4,6 +4,7 @@ import authRoutes from './auth.routes';
 import repositoryRoutes from './repository.routes';
 import analysisRoutes from './analysis.routes';
 import developer360Routes from './developer360.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use('/auth', authRoutes);
 router.use('/repositories', repositoryRoutes);
 router.use('/analysis', analysisRoutes);
 router.use('/developer360', developer360Routes);
+router.use('/ai', aiRoutes);
 
 export default router;
