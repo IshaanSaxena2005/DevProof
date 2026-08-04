@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { BASE_URL } from "../lib/api";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -18,6 +20,7 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const { user, isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -67,23 +70,42 @@ export default function Navbar() {
 
             {/* Right section (Desktop) */}
             <div className="hidden lg:flex items-center gap-5 shrink-0">
-              <Link
-                to="/login"
-                className="text-[13px] font-medium text-white/60 hover:text-white transition-colors py-1"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/login"
-                className="flex items-center gap-2 text-[13px] font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(119,252,117,0.25)] hover:shadow-[0_0_24px_rgba(119,252,117,0.45)] hover:brightness-115"
-                style={{
-                  backgroundColor: "hsl(var(--primary))",
-                  color: "hsl(var(--primary-foreground))",
-                }}
-              >
-                <GithubIcon className="w-4 h-4" />
-                Connect GitHub
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/dashboard/overview"
+                  className="text-[13px] font-medium text-white/60 hover:text-white transition-colors py-1"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-[13px] font-medium text-white/60 hover:text-white transition-colors py-1"
+                >
+                  Sign In
+                </Link>
+              )}
+              {isAuthenticated && user?.githubAccount ? (
+                <Link
+                  to="/dashboard/repositories"
+                  className="flex items-center gap-2 text-[13px] font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20"
+                >
+                  <GithubIcon className="w-4 h-4 text-primary" />
+                  @{user.githubAccount.username}
+                </Link>
+              ) : (
+                <a
+                  href={`${BASE_URL}/auth/github`}
+                  className="flex items-center gap-2 text-[13px] font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(119,252,117,0.25)] hover:shadow-[0_0_24px_rgba(119,252,117,0.45)] hover:brightness-115"
+                  style={{
+                    backgroundColor: "hsl(var(--primary))",
+                    color: "hsl(var(--primary-foreground))",
+                  }}
+                >
+                  <GithubIcon className="w-4 h-4" />
+                  Connect GitHub
+                </a>
+              )}
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -122,25 +144,46 @@ export default function Navbar() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <Link
-                to="/login"
-                className="text-base font-medium text-white/65 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/login"
-                className="w-full flex items-center justify-center gap-2.5 text-base font-semibold rounded-full py-4 transition-all duration-300 active:scale-[0.97] shadow-[0_0_20px_rgba(119,252,117,0.2)] text-center"
-                style={{
-                  backgroundColor: "hsl(var(--primary))",
-                  color: "hsl(var(--primary-foreground))",
-                }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <GithubIcon className="w-5 h-5" />
-                Connect GitHub
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/dashboard/overview"
+                  className="text-base font-medium text-white/65 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-base font-medium text-white/65 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+              )}
+              {isAuthenticated && user?.githubAccount ? (
+                <Link
+                  to="/dashboard/repositories"
+                  className="w-full flex items-center justify-center gap-2.5 text-base font-semibold rounded-full py-4 transition-all duration-300 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary text-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <GithubIcon className="w-5 h-5 text-primary" />
+                  @{user.githubAccount.username}
+                </Link>
+              ) : (
+                <a
+                  href={`${BASE_URL}/auth/github`}
+                  className="w-full flex items-center justify-center gap-2.5 text-base font-semibold rounded-full py-4 transition-all duration-300 active:scale-[0.97] shadow-[0_0_20px_rgba(119,252,117,0.2)] text-center animate-pulse"
+                  style={{
+                    backgroundColor: "hsl(var(--primary))",
+                    color: "hsl(var(--primary-foreground))",
+                  }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <GithubIcon className="w-5 h-5" />
+                  Connect GitHub
+                </a>
+              )}
             </div>
           </motion.div>
         )}

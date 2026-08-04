@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Loader2, AlertCircle } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { ApiError, BASE_URL } from "../lib/api";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -17,6 +17,7 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -41,17 +42,54 @@ export default function Login() {
     setMode(next);
     setFormError(null);
     setFieldErrors({});
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setName("");
+  }
+
+  // Pure clientside validations
+  function validateForm(): boolean {
+    const errors: Record<string, string> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+      errors.email = "Email is required";
+    } else if (!emailRegex.test(email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (isRegister && password.length < 8) {
+      errors.password = "Password must be at least 8 characters long";
+    }
+
+    if (isRegister) {
+      if (!name.trim()) {
+        errors.name = "Name is required";
+      }
+      if (!confirmPassword) {
+        errors.confirmPassword = "Please confirm your password";
+      } else if (password !== confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setSubmitting(true);
     setFormError(null);
-    setFieldErrors({});
 
     try {
       if (isRegister) {
-        await register(email, password, name.trim() || undefined);
+        await register(email, password, name.trim());
       } else {
         await login(email, password);
       }
@@ -67,7 +105,7 @@ export default function Login() {
         setFieldErrors(mapped);
         if (Object.keys(mapped).length === 0) setFormError(error.message);
       } else {
-        setFormError("Something went wrong. Please try again.");
+        setFormError("Something went wrong. Please check your credentials and try again.");
       }
     } finally {
       setSubmitting(false);
@@ -121,8 +159,8 @@ export default function Login() {
           {/* GitHub OAuth — full page navigation, not fetch, so the backend can
               redirect to GitHub and set the auth cookie on its way back. */}
           <a
-            href={`${BASE_URL}/auth/github`}
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-semibold text-white/90 transition-all hover:bg-white/[0.08] hover:border-white/20"
+            href={submitting ? undefined : `${BASE_URL}/auth/github`}
+            className={`w-full flex items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-semibold text-white/90 transition-all hover:bg-white/[0.08] hover:border-white/20 ${submitting ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
           >
             <GithubIcon className="w-4 h-4" />
             Continue with GitHub
@@ -140,11 +178,12 @@ export default function Login() {
             {isRegister && (
               <div>
                 <label htmlFor="name" className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                  Name <span className="font-medium normal-case tracking-normal text-white/25">(optional)</span>
+                  Name
                 </label>
                 <input
                   id="name"
                   type="text"
+                  disabled={submitting}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ada Lovelace"
@@ -163,6 +202,7 @@ export default function Login() {
                 id="email"
                 type="email"
                 required
+                disabled={submitting}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -180,6 +220,7 @@ export default function Login() {
                 id="password"
                 type="password"
                 required
+                disabled={submitting}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={isRegister ? "At least 8 characters" : "••••••••"}
@@ -188,6 +229,26 @@ export default function Login() {
               />
               {fieldErrors.password && <FieldMessage>{fieldErrors.password}</FieldMessage>}
             </div>
+
+            {isRegister && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  disabled={submitting}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className={inputClass("confirmPassword")}
+                />
+                {fieldErrors.confirmPassword && <FieldMessage>{fieldErrors.confirmPassword}</FieldMessage>}
+              </div>
+            )}
 
             {formError && (
               <div className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/[0.07] px-4 py-3">

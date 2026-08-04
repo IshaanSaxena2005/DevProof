@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api } from "../lib/api";
-import type { AuthResponse, MeResponse, User } from "../lib/types";
+import { authService } from "../services/auth";
+import type { User } from "../lib/types";
 
 interface AuthContextValue {
   user: User | null;
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const refresh = useCallback(async () => {
     try {
-      const data = await api.get<MeResponse>("/auth/me");
+      const data = await authService.getCurrentUser();
       setUser(data.user);
     } catch {
       // 401 (no session) and network failure both mean "treat as signed out".
@@ -55,22 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await api.post<AuthResponse>("/auth/login", { email, password });
+    const data = await authService.login(email, password);
     setUser(data.user);
   }, []);
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
-    const data = await api.post<AuthResponse>("/auth/register", {
-      email,
-      password,
-      ...(name ? { name } : {}),
-    });
+    const data = await authService.register(email, password, name);
     setUser(data.user);
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await api.post("/auth/logout");
+      await authService.logout();
     } finally {
       // Clear locally even if the request failed — the user asked to leave.
       setUser(null);
