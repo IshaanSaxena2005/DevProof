@@ -1,7 +1,9 @@
+import { useState } from "react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
-import { Settings as SettingsIcon, Shield, User as UserIcon } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { Settings as SettingsIcon, Shield, User as UserIcon, Loader2 } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import { githubService } from "../../services/github";
 import { BASE_URL } from "../../lib/api";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -14,8 +16,21 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
+  const [loading, setLoading] = useState(false);
   const github = user?.githubAccount ?? null;
+
+  const handleDisconnect = async () => {
+    try {
+      setLoading(true);
+      await githubService.disconnectGithub();
+      await refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <PageContainer
@@ -49,19 +64,31 @@ export default function Settings() {
           </div>
 
           {github ? (
-            <div className="space-y-1">
-              <Row label="GitHub">
-                <a
-                  href={github.profileUrl ?? `https://github.com/${github.username}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary hover:underline"
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Row label="GitHub">
+                  <a
+                    href={github.profileUrl ?? `https://github.com/${github.username}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    @{github.username}
+                  </a>
+                </Row>
+                <Row label="Public repositories">{String(github.totalRepos)}</Row>
+                <Row label="Followers">{String(github.totalFollowers)}</Row>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDisconnect}
+                  disabled={loading}
+                  className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-55"
                 >
-                  @{github.username}
-                </a>
-              </Row>
-              <Row label="Public repositories">{String(github.totalRepos)}</Row>
-              <Row label="Followers">{String(github.totalFollowers)}</Row>
+                  {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Disconnect GitHub
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-start gap-4">

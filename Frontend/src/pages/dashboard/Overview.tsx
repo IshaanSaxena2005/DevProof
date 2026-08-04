@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle } from "lucide-react";
+import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle, RefreshCw } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
+import { githubService } from "../../services/github";
 import type { Developer360Response } from "../../lib/types";
 
 function scoreColor(n: number) {
@@ -40,12 +42,26 @@ function StatCard({
 
 export default function Overview() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refresh: refreshAuth } = useAuth();
+  const [syncing, setSyncing] = useState(false);
   const { data, loading, error, reload } = useResource<Developer360Response>(
     () => api.get<Developer360Response>("/developer360/overview")
   );
 
   const firstName = (user?.name ?? "").trim().split(/\s+/)[0];
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      await githubService.syncGithub();
+      await refreshAuth();
+      await reload();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -156,19 +172,31 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+          <div className="flex items-center justify-between gap-3 text-[11px]" style={{ color: "var(--text-tertiary)" }}>
             {o.user.githubUsername ? (
               <>
-                GitHub linked as{" "}
-                <span className="text-white/60 font-medium">@{o.user.githubUsername}</span>.
+                <span className="truncate">
+                  GitHub linked as{" "}
+                  <span className="text-white/60 font-medium">@{o.user.githubUsername}</span>
+                </span>
+                <button
+                  onClick={handleSync}
+                  disabled={syncing}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
+                  Sync
+                </button>
               </>
             ) : (
               <>
-                No GitHub account linked —{" "}
-                <Link to="/dashboard/settings" className="text-primary hover:underline font-medium">
-                  connect one
-                </Link>{" "}
-                to analyze private repositories.
+                <span>
+                  No GitHub account linked —{" "}
+                  <Link to="/dashboard/settings" className="text-primary hover:underline font-medium">
+                    connect one
+                  </Link>{" "}
+                  to analyze private repositories.
+                </span>
               </>
             )}
           </div>

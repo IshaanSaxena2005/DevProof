@@ -4,6 +4,7 @@ import { successResponse } from '../utils/apiResponse';
 import { env } from '../config/env';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { AppError } from '../utils/appError';
+import { prisma } from '../config/database';
 
 const COOKIE_NAME = 'token';
 
@@ -183,6 +184,69 @@ export class AuthController {
       // httpOnly cookie set above, and sameSite:lax survives a top-level
       // redirect. A token in the URL leaks into history, logs, and Referer.
       return res.redirect(`${env.FRONTEND_URL}/dashboard?auth=success`);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Disconnect linked GitHub account
+   */
+  static disconnectGitHub = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      if (!user.githubAccount) {
+        throw AppError.badRequest('No GitHub account linked to disconnect.');
+      }
+
+      await prisma.gitHubAccount.delete({
+        where: { userId: user.id }
+      });
+
+      return successResponse(res, 200, 'GitHub account disconnected successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Synchronize linked GitHub account stats (repos, stars, followers)
+   */
+  static syncGitHub = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      if (!user.githubAccount) {
+        throw AppError.badRequest('No GitHub account linked to sync.');
+      }
+
+      const accessToken = user.githubAccount.accessToken;
+
+      // Fetch fresh profile details from GitHub
+      const userResponse = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'User-Agent': 'DevProof-Backend'
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw AppError.badRequest('Failed to fetch fresh profile from GitHub API');
+      }
+
+      const githubUser = await userResponse.json() as any;
+
+      await prisma.gitHubAccount.update({
+        where: { userId: user.id },
+        data: {
+          username: githubUser.login,
+          profileUrl: githubUser.html_url,
+          avatarUrl: githubUser.avatar_url,
+          totalRepos: githubUser.public_repos,
+          totalFollowers: githubUser.followers
+        }
+      });
+
+      return successResponse(res, 200, 'GitHub account synchronized successfully');
     } catch (error) {
       next(error);
     }

@@ -9,8 +9,9 @@ import {
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api, ApiError } from "../../lib/api";
+import { ApiError } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
+import { githubService } from "../../services/github";
 import type {
   Finding, MetricCategory, RepositoryResponse, SeverityLevel,
 } from "../../lib/types";
@@ -18,7 +19,7 @@ import type {
 /* ── helpers ─────────────────────────────────────────── */
 
 function scoreColor(score: number) {
-  if (score >= 80) return "#77fc75";
+  if (score >= 80) return "#16ff00";
   if (score >= 60) return "#f59e0b";
   return "#ef4444";
 }
@@ -38,7 +39,7 @@ const SEVERITY_STYLE: Record<SeverityLevel, { color: string; bg: string; border:
   HIGH:     { color: "#fb923c", bg: "rgba(251,146,60,0.08)",  border: "rgba(251,146,60,0.20)" },
   MEDIUM:   { color: "#fbbf24", bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.20)" },
   LOW:      { color: "#93c5fd", bg: "rgba(96,165,250,0.08)",  border: "rgba(96,165,250,0.20)" },
-  GOOD:     { color: "#77fc75", bg: "rgba(119,252,117,0.07)", border: "rgba(119,252,117,0.20)" },
+  GOOD:     { color: "#16ff00", bg: "rgba(22,255,0,0.07)", border: "rgba(22,255,0,0.20)" },
 };
 
 /** Order findings worst-first so the most urgent work is on top. */
@@ -172,7 +173,7 @@ export default function RepositoryDetails() {
   const navigate = useNavigate();
 
   const { data, loading, error, reload } = useResource<RepositoryResponse>(
-    () => api.get<RepositoryResponse>(`/repositories/${repoId}`),
+    () => githubService.getRepository(repoId!),
     [repoId]
   );
 
@@ -183,7 +184,7 @@ export default function RepositoryDetails() {
     setAnalyzing(true);
     setAnalyzeError(null);
     try {
-      await api.post("/analysis/trigger", { repositoryId: repoId });
+      await githubService.triggerAnalysis(repoId!);
       reload();
     } catch (err) {
       setAnalyzeError(
