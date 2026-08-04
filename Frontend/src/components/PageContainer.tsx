@@ -12,17 +12,17 @@ export default function PageContainer({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className="w-full flex flex-col gap-6"
     >
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">
+        <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">
           {title}
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
           {description}
         </p>
       </div>

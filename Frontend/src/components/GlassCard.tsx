@@ -1,5 +1,6 @@
 import { cn } from "../lib/utils";
 import type { ReactNode } from "react";
+import { motion } from "motion/react";
 
 export default function GlassCard({
   children,
@@ -12,13 +13,21 @@ export default function GlassCard({
   hover?: boolean;
   onClick?: () => void;
 }) {
+  const CardWrapper = onClick || hover ? motion.div : "div";
+
   return (
-    <div
+    // @ts-ignore
+    <CardWrapper
       onClick={onClick}
+      {...(hover || onClick
+        ? {
+            whileHover: { y: -3, transition: { type: "spring", stiffness: 280, damping: 22 } },
+            whileTap: onClick ? { scale: 0.98, transition: { type: "spring", stiffness: 280, damping: 22 } } : {},
+          }
+        : {})}
       className={cn(
         hover ? "glass-panel cursor-pointer" : "glass-panel-static",
-        onClick && "active:scale-[0.98]",
-        "relative overflow-hidden transition-all duration-300",
+        "relative overflow-hidden",
         className
       )}
     >
@@ -28,6 +37,6 @@ export default function GlassCard({
         aria-hidden="true"
       />
       {children}
-    </div>
+    </CardWrapper>
   );
 }

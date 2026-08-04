@@ -76,7 +76,7 @@ export default function DashboardLayout() {
         <Header onMenuClick={() => setMobileSidebarOpen(true)} />
 
         {/* Scrollable sub-views container */}
-        <main className="flex-1 overflow-y-auto px-6 py-8 relative z-10">
+        <main className="flex-1 overflow-y-auto main-scroll px-6 py-8 relative z-10">
           <div className="max-w-6xl mx-auto w-full">
             <Outlet />
           </div>

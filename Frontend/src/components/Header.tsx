@@ -64,10 +64,10 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
         <div className="relative hidden md:block">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
           <input
-            type="text"
-            placeholder="Search dashboard..."
-            className="w-52 lg:w-64 pl-10 pr-4 py-1.5 rounded-full text-xs font-medium border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all"
-          />
+             type="text"
+             placeholder="Search dashboard..."
+             className="w-52 lg:w-64 pl-10 pr-4 py-1.5 rounded-full text-xs font-medium border border-white/10 bg-white/[0.03] text-white placeholder-white/30 transition-all focus:border-primary/40 focus:bg-white/[0.05]"
+           />
         </div>
 
         {/* GitHub link status — reflects the real linked account, if any */}
