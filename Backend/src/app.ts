@@ -35,6 +35,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Request Parsing
+app.use('/api/v1/webhooks/github', express.raw({ type: ['application/json', 'application/vnd.github+json'], limit: '2mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());

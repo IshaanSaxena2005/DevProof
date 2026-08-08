@@ -3,12 +3,14 @@ node_modules/
 dist/
 
 # Environment
-# .env.* covers .env.example too — the template is intentionally hidden from
-# GitHub because it previously shipped the same literal JWT_SECRET value the
-# app was actually using. Keep it local-only; do not add a !.env.example
-# exception here.
+# .env.example was briefly untracked here after it shipped the same literal
+# JWT_SECRET value the app was actually using. That value has since been
+# replaced with an obvious non-functional placeholder (see the file itself),
+# so it's safe to track again — without it, nobody cloning this repo has any
+# record of which env vars to set.
 .env
 .env.*
+!.env.example
 
 # Logs
 *.log

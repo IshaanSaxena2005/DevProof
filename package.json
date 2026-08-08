@@ -1,0 +1,12 @@
+{
+  "name": "devproof",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix Backend run build",
+    "test": "npm --prefix Backend test",
+    "dev:backend": "npm --prefix Backend run dev",
+    "start": "npm --prefix Backend start",
+    "build:frontend": "npm --prefix Frontend run build",
+    "dev:frontend": "npm --prefix Frontend run dev"
+  }
+}

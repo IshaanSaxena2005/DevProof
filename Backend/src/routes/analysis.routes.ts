@@ -7,7 +7,7 @@ const router = Router();
 router.use(protect);
 
 router.post('/trigger', AnalysisController.triggerAnalysis);
-router.get('/:id', AnalysisController.getAnalysisById);
 router.get('/repo/:repositoryId', AnalysisController.getLatestRepoAnalysis);
+router.get('/:id', AnalysisController.getAnalysisById);
 
 export default router;
