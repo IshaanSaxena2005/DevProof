@@ -95,8 +95,25 @@ export class GitHubService {
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
 
     try {
+      // Resolve the branch first. The tree endpoint expects a tree SHA, not a
+      // branch name, so using the branch directly would silently break analysis.
+      const branchResponse = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(branch)}`,
+        { headers }
+      );
+
+      if (!branchResponse.ok) {
+        return [];
+      }
+
+      const branchData = await branchResponse.json() as any;
+      const treeSha = branchData?.commit?.commit?.tree?.sha;
+      if (!treeSha) {
+        return [];
+      }
+
       const response = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
+        `https://api.github.com/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`,
         { headers }
       );
 

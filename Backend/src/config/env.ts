@@ -13,8 +13,11 @@ const envSchema = z.object({
   GITHUB_CLIENT_ID: z.string().optional().default(''),
   GITHUB_CLIENT_SECRET: z.string().optional().default(''),
   GITHUB_CALLBACK_URL: z.string().optional().default('http://localhost:5000/api/v1/auth/github/callback'),
+  GITHUB_APP_ID: z.string().optional().default(''),
+  GITHUB_PRIVATE_KEY: z.string().optional().default(''),
+  GITHUB_WEBHOOK_SECRET: z.string().optional().default(''),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
-  // Optional like the GitHub OAuth vars above — the server must still boot
+  // Optional like the GitHub OAuth vars above - the server must still boot
   // without it. AiService checks for it at call time and fails with a clear
   // 503 rather than the app refusing to start.
   GROQ_API_KEY: z.string().optional().default(''),

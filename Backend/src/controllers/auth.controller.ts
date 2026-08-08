@@ -158,6 +158,11 @@ export class AuthController {
         })
       });
 
+      if (!tokenResponse.ok) {
+        const body = await tokenResponse.text();
+        throw AppError.badRequest(`GitHub OAuth token exchange failed with status ${tokenResponse.status}`, body);
+      }
+
       const tokenData = await tokenResponse.json() as any;
 
       if (!tokenData.access_token) {
@@ -174,9 +179,14 @@ export class AuthController {
         }
       });
 
+      if (!userResponse.ok) {
+        const body = await userResponse.text();
+        throw AppError.badRequest(`GitHub user lookup failed with status ${userResponse.status}`, body);
+      }
+
       const githubUser = await userResponse.json() as any;
 
-      const { user, token } = await AuthService.handleGitHubOAuth(githubUser, accessToken);
+      const { token } = await AuthService.handleGitHubOAuth(githubUser, accessToken);
       AuthController.setTokenCookie(res, token);
 
       // Redirect back to frontend.

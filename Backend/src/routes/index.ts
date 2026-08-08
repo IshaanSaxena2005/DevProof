@@ -5,6 +5,7 @@ import repositoryRoutes from './repository.routes';
 import analysisRoutes from './analysis.routes';
 import developer360Routes from './developer360.routes';
 import aiRoutes from './ai.routes';
+import githubWebhookRoutes from './githubWebhook.routes';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/repositories', repositoryRoutes);
 router.use('/analysis', analysisRoutes);
 router.use('/developer360', developer360Routes);
 router.use('/ai', aiRoutes);
+router.use('/webhooks', githubWebhookRoutes);
 
 export default router;
