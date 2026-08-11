@@ -1,6 +1,11 @@
 FROM node:20-alpine
 WORKDIR /app
 
+# Prisma's query/schema engines link against OpenSSL, which alpine's base
+# image doesn't ship — without this they fail at runtime with an opaque
+# "Could not parse schema engine response" error.
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
 RUN npm ci
 
