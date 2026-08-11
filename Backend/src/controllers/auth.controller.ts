@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction, CookieOptions } from 'express';
+import crypto from 'crypto';
 import { AuthService } from '../services/auth.service';
 import { successResponse } from '../utils/apiResponse';
 import { env } from '../config/env';
@@ -10,6 +11,8 @@ const COOKIE_NAME = 'token';
 
 /** Fallback cookie lifetime used only if the token carries no `exp` claim. */
 const FALLBACK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const GITHUB_OAUTH_STATE_COOKIE = 'github_oauth_state';
+const GITHUB_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
 /**
  * Shared between setting and clearing the cookie. `clearCookie` only removes a
@@ -22,6 +25,54 @@ const COOKIE_OPTIONS: CookieOptions = {
   sameSite: 'lax',
   path: '/'
 };
+
+const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/api/v1/auth',
+  maxAge: GITHUB_OAUTH_STATE_TTL_MS
+};
+
+type SerializableGitHubAccount = {
+  id: string;
+  username: string;
+  profileUrl: string | null;
+  avatarUrl: string | null;
+  totalRepos: number;
+  totalStars: number;
+  totalFollowers: number;
+  accessToken?: string;
+};
+
+type SerializableUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+  role: string;
+  createdAt?: Date;
+  githubAccount?: SerializableGitHubAccount | null;
+};
+
+function sanitizeGitHubAccount(account: SerializableGitHubAccount | null | undefined) {
+  if (!account) return null;
+
+  const { accessToken: _accessToken, ...publicAccount } = account;
+  return publicAccount;
+}
+
+function sanitizeUser(user: SerializableUser, includeCreatedAt = false) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
+    githubAccount: sanitizeGitHubAccount(user.githubAccount),
+    ...(includeCreatedAt ? { createdAt: user.createdAt } : {})
+  };
+}
 
 export class AuthController {
   /**
@@ -49,12 +100,7 @@ export class AuthController {
       AuthController.setTokenCookie(res, token);
 
       return successResponse(res, 201, 'User registered successfully', {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role
-        },
+        user: sanitizeUser(user, false),
         token
       });
     } catch (error) {
@@ -74,14 +120,7 @@ export class AuthController {
       AuthController.setTokenCookie(res, token);
 
       return successResponse(res, 200, 'Login successful', {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-          role: user.role,
-          githubAccount: user.githubAccount
-        },
+        user: sanitizeUser(user, false),
         token
       });
     } catch (error) {
@@ -100,15 +139,7 @@ export class AuthController {
       }
 
       return successResponse(res, 200, 'Current user retrieved successfully', {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-          role: user.role,
-          githubAccount: user.githubAccount,
-          createdAt: user.createdAt
-        }
+        user: sanitizeUser(user, true)
       });
     } catch (error) {
       next(error);
@@ -124,8 +155,11 @@ export class AuthController {
         throw AppError.badRequest('GitHub OAuth Client ID is not configured on backend.');
       }
 
+      const state = crypto.randomBytes(24).toString('hex');
+      res.cookie(GITHUB_OAUTH_STATE_COOKIE, state, OAUTH_STATE_COOKIE_OPTIONS);
+
       const redirectUri = encodeURIComponent(env.GITHUB_CALLBACK_URL);
-      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email,repo`;
+      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email,repo&state=${state}`;
 
       return res.redirect(githubAuthUrl);
     } catch (error) {
@@ -139,9 +173,25 @@ export class AuthController {
   static githubCallback = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { code } = req.query;
+      const state = req.query.state;
+      const stateCookie = req.cookies?.[GITHUB_OAUTH_STATE_COOKIE];
+
+      res.clearCookie(GITHUB_OAUTH_STATE_COOKIE, OAUTH_STATE_COOKIE_OPTIONS);
 
       if (!code || typeof code !== 'string') {
         throw AppError.badRequest('Missing authorization code from GitHub');
+      }
+
+      if (!state || typeof state !== 'string') {
+        throw AppError.badRequest('Missing OAuth state from GitHub callback');
+      }
+
+      if (!stateCookie || typeof stateCookie !== 'string' || stateCookie.length !== state.length) {
+        throw AppError.unauthorized('GitHub OAuth state mismatch. Please try connecting again.');
+      }
+
+      if (!crypto.timingSafeEqual(Buffer.from(stateCookie), Buffer.from(state))) {
+        throw AppError.unauthorized('GitHub OAuth state mismatch. Please try connecting again.');
       }
 
       // Exchange code for access token

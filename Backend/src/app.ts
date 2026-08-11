@@ -48,6 +48,10 @@ if (env.NODE_ENV === 'development') {
 }
 
 // Health Check Shortcut Root Endpoint
+app.get('/', (req: Request, res: Response) => {
+  res.redirect('/api/v1/health');
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.redirect('/api/v1/health');
 });
