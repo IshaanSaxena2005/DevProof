@@ -4,11 +4,9 @@ import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import ProductProofStrip from "./components/ProductProofStrip";
 import CoreValueSection from "./components/CoreValueSection";
-import EvidenceSystemSection from "./components/EvidenceSystemSection";
 import RepositoryIntelligenceSection from "./components/RepositoryIntelligenceSection";
 import Developer360Section from "./components/Developer360Section";
-import GrowthAnalyticsSection from "./components/GrowthAnalyticsSection";
-import CareerIntelligenceSection from "./components/CareerIntelligenceSection";
+import GrowthCareerSection from "./components/GrowthCareerSection";
 import AiSection from "./components/AiSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 import PrivacySecuritySection from "./components/PrivacySecuritySection";
@@ -47,11 +45,9 @@ function LandingPage() {
           <HeroSection />
           <ProductProofStrip />
           <CoreValueSection />
-          <EvidenceSystemSection />
           <RepositoryIntelligenceSection />
           <Developer360Section />
-          <GrowthAnalyticsSection />
-          <CareerIntelligenceSection />
+          <GrowthCareerSection />
           <AiSection />
           <HowItWorksSection />
           <PrivacySecuritySection />

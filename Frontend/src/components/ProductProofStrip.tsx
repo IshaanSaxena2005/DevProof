@@ -1,6 +1,5 @@
 import { motion } from "motion/react";
-import { Code2, GitCommit, Target, Award, Briefcase, FolderGit2, ArrowDown } from "lucide-react";
-import { GlassPanel, SectionShell, SectionTitle } from "./Primitives";
+import { Code2, GitCommit, Target, Award, Briefcase, FolderGit2 } from "lucide-react";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -9,104 +8,45 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const SIGNALS = [
-  { icon: GithubIcon, label: "GitHub" },
-  { icon: Code2, label: "Code" },
-  { icon: GitCommit, label: "Commits" },
+  { icon: GithubIcon, label: "GitHub Repositories" },
+  { icon: Code2, label: "Code Integrity" },
+  { icon: GitCommit, label: "Commits & Velocity" },
   { icon: Target, label: "Problem Solving" },
-  { icon: Award, label: "Credentials" },
-  { icon: FolderGit2, label: "Projects" },
-  { icon: Briefcase, label: "Experience" },
+  { icon: Award, label: "Credentials & Badges" },
+  { icon: FolderGit2, label: "Projects & Impact" },
+  { icon: Briefcase, label: "Practical Experience" },
 ];
 
 export default function ProductProofStrip() {
   return (
-    <SectionShell
-      id="how-it-works"
-      decor={
-        <div className="ambient-glow-green w-[700px] h-[400px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-glow-pulse" />
-      }
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.7 }}
-        className="text-center mb-10"
-      >
-        <SectionTitle align="center">
-          Your development activity
-          <br />
-          <span className="font-light" style={{ color: "var(--text-secondary)" }}>
-            is more than a contribution graph.
-          </span>
-        </SectionTitle>
-      </motion.div>
-
-      <GlassPanel hover={false} className="relative p-6 md:p-8 overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 pointer-events-none opacity-45"
-          style={{
-            background:
-              "radial-gradient(ellipse at 50% 0%, rgba(119,252,117,0.08), transparent 60%)",
-          }}
-        />
-
-        {/* Signal chips */}
-        <div className="relative flex flex-wrap justify-center gap-3 md:gap-4 mb-8">
-          {SIGNALS.map((signal, idx) => {
-            const Icon = signal.icon;
-            return (
-              <motion.div
-                key={signal.label}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.5, delay: idx * 0.05 }}
-                whileHover={{ y: -3, scale: 1.02 }}
-                className="glass-inset flex items-center gap-3 px-4.5 py-3 group cursor-default hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_8px_24px_-10px_rgba(0,0,0,0.5)] transition-all duration-300"
-              >
-                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/50 group-hover:text-primary group-hover:border-primary/40 group-hover:bg-primary/5 transition-all duration-300">
-                  <Icon className="w-4.5 h-4.5" />
-                </div>
-                <span className="text-xs font-semibold text-white/65 group-hover:text-white tracking-wide whitespace-nowrap transition-colors">
-                  {signal.label}
-                </span>
-              </motion.div>
-            );
-          })}
+    <div className="relative w-full py-6 border-b border-white/[0.06] bg-black/40 backdrop-blur-md z-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-4 gap-x-6 md:gap-x-8">
+          <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/50 text-center lg:text-left shrink-0">
+            EVIDENCE INTEGRATION:
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3.5">
+            {SIGNALS.map((signal, idx) => {
+              const Icon = signal.icon;
+              return (
+                <motion.div
+                  key={signal.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: idx * 0.04 }}
+                  className="flex items-center gap-2 group cursor-default"
+                >
+                  <Icon className="w-4.5 h-4.5 text-primary/70 group-hover:text-primary transition-colors" />
+                  <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
+                    {signal.label}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
-
-        {/* Flow into hub */}
-        <div className="relative flex flex-col items-center gap-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="flex flex-col items-center text-white/30"
-          >
-            <div className="w-px h-8 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
-            <ArrowDown className="w-4 h-4 text-primary/80 -mt-1 animate-bounce" style={{ animationDuration: "2s" }} />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col items-center gap-3"
-          >
-            <div
-              className="px-9 py-4 rounded-full border border-white/[0.12] flex items-center gap-3 shadow-[0_0_40px_rgba(119,252,117,0.12)] hover:border-white/20 transition-all duration-300"
-              style={{ background: "rgba(8,9,11,0.55)", backdropFilter: "blur(20px)" }}
-            >
-              <div className="w-2.5 h-2.5 bg-primary rounded-sm shadow-[0_0_12px_rgba(119,252,117,1)]" />
-              <span className="text-sm font-bold tracking-[0.22em] text-white">DEVPROOF</span>
-            </div>
-            <p className="text-xs font-bold tracking-[0.24em] uppercase" style={{ color: "hsl(var(--primary))" }}>
-              Developer Intelligence
-            </p>
-          </motion.div>
-        </div>
-      </GlassPanel>
-    </SectionShell>
+      </div>
+    </div>
   );
 }

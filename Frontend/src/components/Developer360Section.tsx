@@ -13,7 +13,7 @@ const DIMENSIONS = [
 
 export default function Developer360Section() {
   return (
-    <SectionShell>
+    <SectionShell id="developer360">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
         <motion.div
           initial={{ opacity: 0, x: -28 }}
