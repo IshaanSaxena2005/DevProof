@@ -34,6 +34,9 @@ const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
   maxAge: GITHUB_OAUTH_STATE_TTL_MS
 };
 
+const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
+const GITHUB_USER_URL = 'https://api.github.com/user';
+
 type SerializableGitHubAccount = {
   id: string;
   username: string;
@@ -194,18 +197,24 @@ export class AuthController {
         throw AppError.unauthorized('GitHub OAuth state mismatch. Please try connecting again.');
       }
 
-      // Exchange code for access token
-      const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      // Exchange code for access token using the documented form-encoded body.
+      const tokenResponse = await fetch(GITHUB_TOKEN_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+          'User-Agent': 'DevProof-Backend'
         },
-        body: JSON.stringify({
+        body: new URLSearchParams({
           client_id: env.GITHUB_CLIENT_ID,
           client_secret: env.GITHUB_CLIENT_SECRET,
-          code
+          code,
+          redirect_uri: env.GITHUB_CALLBACK_URL
         })
+      }).catch((error: unknown) => {
+        throw AppError.serviceUnavailable(
+          `Unable to reach GitHub while exchanging the OAuth code. Check network access and proxy settings. ${(error as Error).message}`
+        );
       });
 
       if (!tokenResponse.ok) {
@@ -222,11 +231,15 @@ export class AuthController {
       const accessToken = tokenData.access_token;
 
       // Fetch user profile from GitHub
-      const userResponse = await fetch('https://api.github.com/user', {
+      const userResponse = await fetch(GITHUB_USER_URL, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'User-Agent': 'DevProof-Backend'
         }
+      }).catch((error: unknown) => {
+        throw AppError.serviceUnavailable(
+          `Unable to reach GitHub while loading the authenticated profile. Check network access and proxy settings. ${(error as Error).message}`
+        );
       });
 
       if (!userResponse.ok) {
@@ -282,11 +295,15 @@ export class AuthController {
       const accessToken = user.githubAccount.accessToken;
 
       // Fetch fresh profile details from GitHub
-      const userResponse = await fetch('https://api.github.com/user', {
+      const userResponse = await fetch(GITHUB_USER_URL, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'User-Agent': 'DevProof-Backend'
         }
+      }).catch((error: unknown) => {
+        throw AppError.serviceUnavailable(
+          `Unable to reach GitHub while refreshing the linked profile. Check network access and proxy settings. ${(error as Error).message}`
+        );
       });
 
       if (!userResponse.ok) {

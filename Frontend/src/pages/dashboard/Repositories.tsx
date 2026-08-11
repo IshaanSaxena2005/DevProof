@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { FolderGit2, Plus, ArrowRight, Loader2, Trash2, X, Search as SearchIcon } from "lucide-react";
+import { FolderGit2, Plus, ArrowRight, Loader2, Trash2, X, Search as SearchIcon, Lock, Star } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock } from "../../components/StateBlocks";
 import { ApiError } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
+import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
-import type { RepositoriesResponse, Repository } from "../../lib/types";
+import type { GitHubRepoOption, RepositoriesResponse, Repository } from "../../lib/types";
 
 function scoreColor(score: number) {
   if (score >= 80) return "#16ff00";
@@ -23,6 +24,9 @@ function latestAnalysis(repo: Repository) {
 
 export default function Repositories() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasGitHub = Boolean(user?.githubAccount);
+
   const { data, loading, error, reload } = useResource<RepositoriesResponse>(
     () => githubService.getRepositories()
   );
@@ -32,6 +36,35 @@ export default function Repositories() {
   const [connecting, setConnecting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+
+  const [ghRepos, setGhRepos] = useState<GitHubRepoOption[] | null>(null);
+  const [ghLoading, setGhLoading] = useState(false);
+  const [ghError, setGhError] = useState<string | null>(null);
+  const [connectingFullName, setConnectingFullName] = useState<string | null>(null);
+
+  // Load the user's own GitHub repos once the form is opened, so they can be
+  // picked directly instead of pasting a URL.
+  useEffect(() => {
+    if (!showForm || !hasGitHub || ghRepos !== null) return;
+    let active = true;
+    setGhLoading(true);
+    setGhError(null);
+    githubService
+      .listGitHubRepos()
+      .then((res) => {
+        if (active) setGhRepos(res.repositories);
+      })
+      .catch((err) => {
+        if (active) setGhError(err instanceof ApiError ? err.message : "Could not load your GitHub repositories.");
+      })
+      .finally(() => {
+        if (active) setGhLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showForm, hasGitHub, ghRepos]);
 
   // Search & Filter state
   const [search, setSearch] = useState("");
@@ -54,6 +87,20 @@ export default function Repositories() {
       setFormError(err instanceof ApiError ? err.message : "Could not connect that repository.");
     } finally {
       setConnecting(false);
+    }
+  }
+
+  async function handlePickRepo(repo: GitHubRepoOption) {
+    setConnectingFullName(repo.fullName);
+    setFormError(null);
+    try {
+      await githubService.connectRepository(repo.fullName);
+      setShowForm(false);
+      reload();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : `Could not connect ${repo.fullName}.`);
+    } finally {
+      setConnectingFullName(null);
     }
   }
 
@@ -162,34 +209,120 @@ export default function Repositories() {
         {showForm && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
             <GlassCard hover={false} className="p-6">
-              <form onSubmit={handleConnect} className="flex flex-col gap-3">
-                <label htmlFor="repoUrl" className="text-[11px] font-bold uppercase tracking-widest text-white/40">
-                  GitHub repository URL
-                </label>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    id="repoUrl"
-                    value={repoUrl}
-                    onChange={(e) => setRepoUrl(e.target.value)}
-                    required
-                    placeholder="https://github.com/owner/repo  ·  or  owner/repo"
-                    className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all"
-                  />
-                  <button
-                    type="submit"
-                    disabled={connecting || !repoUrl.trim()}
-                    className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                    style={{ backgroundColor: "#16ff00", color: "#000" }}
-                  >
-                    {connecting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {connecting ? "Connecting…" : "Connect"}
-                  </button>
+              {hasGitHub && !showManualEntry ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                      <FolderGit2 className="w-3.5 h-3.5" /> Your GitHub repositories
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualEntry(true)}
+                      className="text-[11px] text-white/40 hover:text-white/70 transition-colors cursor-pointer underline underline-offset-2"
+                    >
+                      Paste a URL instead
+                    </button>
+                  </div>
+
+                  {ghLoading ? (
+                    <div className="flex items-center gap-2 text-xs text-white/40 py-4">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading your repositories…
+                    </div>
+                  ) : ghError ? (
+                    <p className="text-[13px] text-red-400/90">{ghError}</p>
+                  ) : (
+                    (() => {
+                      const connectedNames = new Set(repositories.map((r) => r.fullName));
+                      const available = (ghRepos ?? []).filter((r) => !connectedNames.has(r.fullName));
+                      if (available.length === 0) {
+                        return (
+                          <p className="text-xs text-white/35 py-2">
+                            {ghRepos && ghRepos.length > 0
+                              ? "All of your GitHub repositories are already connected."
+                              : "No repositories found on your GitHub account."}
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="max-h-80 overflow-y-auto flex flex-col gap-1.5 pr-1">
+                          {available.map((repo) => (
+                            <div
+                              key={repo.fullName}
+                              className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2.5"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-sm font-semibold text-white truncate" title={repo.fullName}>
+                                    {repo.fullName}
+                                  </span>
+                                  {repo.isPrivate && <Lock className="w-3 h-3 text-white/30 shrink-0" />}
+                                </div>
+                                <div className="flex items-center gap-3 text-[11px] text-white/35 mt-0.5">
+                                  {repo.language && <span>{repo.language}</span>}
+                                  <span className="flex items-center gap-1">
+                                    <Star className="w-3 h-3" /> {repo.starsCount}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handlePickRepo(repo)}
+                                disabled={connectingFullName === repo.fullName}
+                                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                                style={{ backgroundColor: "#16ff00", color: "#000" }}
+                              >
+                                {connectingFullName === repo.fullName && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                Connect
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  )}
+                  {formError && <p className="text-[13px] text-red-400/90">{formError}</p>}
                 </div>
-                <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-                  Public repositories work without linking GitHub. Private ones need a linked account.
-                </p>
-                {formError && <p className="text-[13px] text-red-400/90">{formError}</p>}
-              </form>
+              ) : (
+                <form onSubmit={handleConnect} className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="repoUrl" className="text-[11px] font-bold uppercase tracking-widest text-white/40">
+                      GitHub repository URL
+                    </label>
+                    {hasGitHub && (
+                      <button
+                        type="button"
+                        onClick={() => setShowManualEntry(false)}
+                        className="text-[11px] text-white/40 hover:text-white/70 transition-colors cursor-pointer underline underline-offset-2"
+                      >
+                        Pick from your repositories
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      id="repoUrl"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      required
+                      placeholder="https://github.com/owner/repo  ·  or  owner/repo"
+                      className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={connecting || !repoUrl.trim()}
+                      className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                      style={{ backgroundColor: "#16ff00", color: "#000" }}
+                    >
+                      {connecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {connecting ? "Connecting…" : "Connect"}
+                    </button>
+                  </div>
+                  <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+                    Public repositories work without linking GitHub. Private ones need a linked account.
+                  </p>
+                  {formError && <p className="text-[13px] text-red-400/90">{formError}</p>}
+                </form>
+              )}
             </GlassCard>
           </motion.div>
         )}

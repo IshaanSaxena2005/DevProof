@@ -85,6 +85,48 @@ export class GitHubService {
   }
 
   /**
+   * List repositories the authenticated GitHub user owns or collaborates on.
+   */
+  static async fetchUserRepos(accessToken: string): Promise<GitHubRepoDetails[]> {
+    const headers: Record<string, string> = {
+      'User-Agent': 'DevProof-Analysis-Engine',
+      Accept: 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${accessToken}`
+    };
+
+    try {
+      const response = await fetch(
+        'https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator,organization_member',
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw AppError.badRequest(`GitHub API returned status ${response.status}`);
+      }
+
+      const data = await response.json() as any[];
+
+      return data.map((repo) => ({
+        owner: repo.owner?.login ?? '',
+        name: repo.name,
+        fullName: repo.full_name,
+        url: repo.html_url,
+        description: repo.description || null,
+        defaultBranch: repo.default_branch || 'main',
+        isPrivate: Boolean(repo.private),
+        language: repo.language || null,
+        starsCount: repo.stargazers_count || 0,
+        forksCount: repo.forks_count || 0,
+        sizeKb: repo.size || 0,
+        topics: repo.topics || []
+      }));
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw AppError.internal(`Failed to fetch GitHub repositories: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Fetch repository file tree
    */
   static async fetchRepoTree(owner: string, repo: string, branch = 'main', accessToken?: string) {

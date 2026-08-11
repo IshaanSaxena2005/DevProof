@@ -162,6 +162,22 @@ export interface RepositoriesResponse {
   repositories: Repository[];
 }
 
+export interface GitHubRepoOption {
+  owner: string;
+  name: string;
+  fullName: string;
+  url: string;
+  description: string | null;
+  isPrivate: boolean;
+  language: string | null;
+  starsCount: number;
+  forksCount: number;
+}
+
+export interface GitHubReposResponse {
+  repositories: GitHubRepoOption[];
+}
+
 export interface RepositoryResponse {
   repository: Repository;
 }

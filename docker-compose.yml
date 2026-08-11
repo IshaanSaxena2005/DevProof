@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: devproof_full_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devproof
+      POSTGRES_PASSWORD: devproof_local_dev
+      POSTGRES_DB: devproof_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - devproof_full_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devproof -d devproof_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./Backend
+    container_name: devproof_full_backend
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      # Overrides the host-facing DATABASE_URL in .env: inside the compose
+      # network Postgres is reachable by service name, not localhost:5434.
+      DATABASE_URL: postgresql://devproof:devproof_local_dev@postgres:5432/devproof_db?schema=public
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        # Browser-facing URL, so it stays localhost even though the frontend
+        # container itself talks to nothing but the static files it serves.
+        VITE_API_URL: http://localhost:5000/api/v1
+    container_name: devproof_full_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  devproof_full_pgdata:
