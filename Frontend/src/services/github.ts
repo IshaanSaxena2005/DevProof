@@ -1,9 +1,13 @@
 import { api } from "../lib/api";
-import type { RepositoriesResponse, RepositoryResponse } from "../lib/types";
+import type { GitHubReposResponse, RepositoriesResponse, RepositoryResponse } from "../lib/types";
 
 export const githubService = {
   async getRepositories(): Promise<RepositoriesResponse> {
     return api.get<RepositoriesResponse>("/repositories");
+  },
+
+  async listGitHubRepos(): Promise<GitHubReposResponse> {
+    return api.get<GitHubReposResponse>("/repositories/github");
   },
 
   async getRepository(repoId: string): Promise<RepositoryResponse> {

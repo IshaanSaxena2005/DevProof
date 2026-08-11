@@ -8,6 +8,7 @@ router.use(protect);
 
 router.post('/connect', RepositoryController.connectRepository);
 router.get('/', RepositoryController.getUserRepositories);
+router.get('/github', RepositoryController.listGitHubRepos);
 router.get('/:id', RepositoryController.getRepositoryById);
 router.delete('/:id', RepositoryController.deleteRepository);
 

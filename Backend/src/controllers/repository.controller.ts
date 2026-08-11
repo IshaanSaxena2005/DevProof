@@ -73,6 +73,26 @@ export class RepositoryController {
   };
 
   /**
+   * List the authenticated user's GitHub repositories (not yet necessarily connected)
+   */
+  static listGitHubRepos = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      const accessToken = user.githubAccount?.accessToken;
+
+      if (!accessToken) {
+        throw AppError.badRequest('Link a GitHub account before browsing your repositories.');
+      }
+
+      const repos = await GitHubService.fetchUserRepos(accessToken);
+
+      return successResponse(res, 200, 'GitHub repositories retrieved successfully', { repositories: repos });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * List all connected user repositories
    */
   static getUserRepositories = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
