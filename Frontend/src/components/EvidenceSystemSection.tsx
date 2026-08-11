@@ -20,7 +20,7 @@ function StatusItem({
   isPositive?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-white/[0.05] last:border-0">
+    <div className="flex items-center justify-between py-2 border-b border-white/[0.05] last:border-0">
       <span className="text-sm" style={{ color: "var(--text-tertiary)" }}>
         {label}
       </span>
@@ -42,7 +42,7 @@ export default function EvidenceSystemSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-16"
+        className="text-center mb-10"
       >
         <SectionTitle align="center">
           A skill on your profile
@@ -55,8 +55,8 @@ export default function EvidenceSystemSection() {
       </motion.div>
 
       {/* Evidence timeline */}
-      <GlassPanel hover={false} className="p-8 md:p-10 mb-8 overflow-hidden shadow-xl">
-        <div className="relative flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-4">
+      <GlassPanel hover={false} className="p-5 md:p-6 mb-6 overflow-hidden shadow-xl">
+        <div className="relative flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-3">
           {/* Desktop timeline horizontal line */}
           <div className="absolute top-[22px] left-[8%] right-[8%] h-[2px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent hidden md:block z-0" />
 
@@ -102,7 +102,7 @@ export default function EvidenceSystemSection() {
       </GlassPanel>
 
       {/* Skill evidence cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Card 1 */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -119,14 +119,14 @@ export default function EvidenceSystemSection() {
                 <span className="text-[10px] font-bold tracking-widest text-primary">LIVE</span>
               </div>
             </PanelHeader>
-            <div className="p-6 flex flex-col flex-1 justify-between">
+            <div className="p-4.5 md:p-5 flex flex-col flex-1 justify-between">
               <div className="flex flex-col">
                 <StatusItem label="Claimed" value={<Check className="w-4 h-4 text-primary" />} isPositive />
                 <StatusItem label="Learned" value={<Check className="w-4 h-4 text-primary" />} isPositive />
                 <StatusItem label="Credential Evidence" value={<Check className="w-4 h-4 text-primary" />} isPositive />
                 <StatusItem label="Project Evidence" value={<Check className="w-4 h-4 text-primary" />} isPositive />
               </div>
-              <div className="mt-6 pt-5 border-t border-white/[0.06] flex items-center justify-between">
+              <div className="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
                 <span className="text-sm font-semibold text-white/90">Practical Evidence</span>
                 <span
                   className="px-3.5 py-1 rounded-full text-[10px] font-bold tracking-widest border shadow-[0_0_12px_rgba(119,252,117,0.1)]"
@@ -161,14 +161,14 @@ export default function EvidenceSystemSection() {
                 </span>
               </div>
             </PanelHeader>
-            <div className="p-6 flex flex-col flex-1 justify-between">
+            <div className="p-4.5 md:p-5 flex flex-col flex-1 justify-between">
               <div className="flex flex-col">
                 <StatusItem label="Claimed" value={<Check className="w-4 h-4 text-primary" />} isPositive />
                 <StatusItem label="Learned" value={<Check className="w-4 h-4 text-primary" />} isPositive />
                 <StatusItem label="Project Evidence" value={<span style={{ color: "rgb(234,179,8)" }} className="font-semibold text-xs">Limited</span>} />
                 <StatusItem label="Recent Usage" value={<span style={{ color: "rgb(248,113,113)" }} className="font-semibold text-xs">None</span>} />
               </div>
-              <div className="mt-6 pt-5 border-t border-white/[0.06] flex items-center justify-between">
+              <div className="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
                 <span className="text-sm font-semibold text-white/90">Practical Evidence</span>
                 <span
                   className="px-3.5 py-1 rounded-full text-[10px] font-bold tracking-widest border flex items-center gap-1.5"

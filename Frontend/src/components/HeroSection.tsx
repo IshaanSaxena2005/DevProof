@@ -8,7 +8,7 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-[90vh] lg:min-h-screen flex items-center">
+    <section className="relative min-h-[70vh] lg:min-h-[80vh] flex items-center">
       {/* Premium dark vignette & side overlays for optimal contrast */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -18,17 +18,17 @@ export default function HeroSection() {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-24 md:py-32 pt-36 lg:pt-40">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20 pt-28 lg:pt-32">
         <div className="max-w-3xl">
           <p
-            className="opacity-0 animate-fade-up font-bold tracking-[0.24em] mb-5 text-[10px] md:text-xs uppercase"
+            className="opacity-0 animate-fade-up font-bold tracking-[0.24em] mb-3 text-[10px] md:text-xs uppercase"
             style={{ color: "var(--text-tertiary)", animationDelay: "0.08s" }}
           >
             DEVELOPER INTELLIGENCE • BACKED BY EVIDENCE
           </p>
 
           <h1
-            className="opacity-0 animate-fade-up text-display uppercase mb-6"
+            className="opacity-0 animate-fade-up text-display uppercase mb-4"
             style={{
               fontSize: "clamp(2.75rem, 8vw, 6rem)",
               lineHeight: 0.98,
@@ -41,7 +41,7 @@ export default function HeroSection() {
           </h1>
 
           <p
-            className="opacity-0 animate-fade-up font-medium mb-5 max-w-2xl"
+            className="opacity-0 animate-fade-up font-medium mb-3 max-w-2xl"
             style={{
               fontSize: "clamp(1.15rem, 2.5vw, 1.6rem)",
               color: "var(--text-primary)",
@@ -53,7 +53,7 @@ export default function HeroSection() {
           </p>
 
           <p
-            className="opacity-0 animate-fade-up text-body mb-9 md:mb-11 max-w-xl"
+            className="opacity-0 animate-fade-up text-body mb-6 md:mb-8 max-w-xl"
             style={{
               fontSize: "clamp(0.875rem, 1.4vw, 1.025rem)",
               color: "var(--text-secondary)",
@@ -93,7 +93,7 @@ export default function HeroSection() {
           </div>
 
           <p
-            className="opacity-0 animate-fade-up font-light mt-10 text-[11px] md:text-xs flex items-center gap-3"
+            className="opacity-0 animate-fade-up font-light mt-6 text-[11px] md:text-xs flex items-center gap-3"
             style={{ color: "var(--text-tertiary)", animationDelay: "0.8s" }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse inline-block shadow-[0_0_8px_rgba(119,252,117,0.8)]" />

@@ -19,7 +19,7 @@ export function SectionShell({
     <section
       id={id}
       className={cn(
-        "relative w-full py-28 md:py-40 lg:py-48 section-divider overflow-x-clip",
+        "relative w-full py-14 md:py-20 lg:py-24 section-divider overflow-x-clip",
         veil === "default" && "section-veil",
         veil === "strong" && "section-veil-strong",
         className
@@ -60,7 +60,7 @@ export function SectionEyebrow({ children, className }: { children: ReactNode; c
   return (
     <p
       className={cn(
-        "text-[10px] md:text-xs font-bold tracking-[0.24em] uppercase mb-5",
+        "text-[10px] md:text-xs font-bold tracking-[0.24em] uppercase mb-3",
         className
       )}
       style={{ color: "hsl(var(--primary))" }}
@@ -86,7 +86,7 @@ export function SectionTitle({
         align === "center" && "text-center",
         className
       )}
-      style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)", lineHeight: 1.1 }}
+      style={{ fontSize: "clamp(1.85rem, 3.8vw, 2.75rem)", lineHeight: 1.1 }}
     >
       {children}
     </h2>

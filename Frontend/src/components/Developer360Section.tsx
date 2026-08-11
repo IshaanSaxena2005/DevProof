@@ -14,13 +14,13 @@ const DIMENSIONS = [
 export default function Developer360Section() {
   return (
     <SectionShell>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
         <motion.div
           initial={{ opacity: 0, x: -28 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="lg:col-span-5 flex flex-col gap-6"
+          className="lg:col-span-5 flex flex-col gap-4"
         >
           <SectionTitle>
             One Developer.
@@ -60,7 +60,7 @@ export default function Developer360Section() {
               </span>
             </PanelHeader>
 
-            <div className="p-6 md:p-8 flex flex-col gap-5 relative z-10">
+            <div className="p-5 md:p-6 flex flex-col gap-4 relative z-10">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: "var(--text-tertiary)" }}>
                   Skill Dimension
@@ -71,7 +71,7 @@ export default function Developer360Section() {
               </div>
 
               {DIMENSIONS.map((dim, idx) => (
-                <div key={dim.name} className="flex flex-col gap-2">
+                <div key={dim.name} className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-white/90">{dim.name}</span>
                     <span

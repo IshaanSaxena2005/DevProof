@@ -31,7 +31,7 @@ export default function ProductProofStrip() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-16"
+        className="text-center mb-10"
       >
         <SectionTitle align="center">
           Your development activity
@@ -42,7 +42,7 @@ export default function ProductProofStrip() {
         </SectionTitle>
       </motion.div>
 
-      <GlassPanel hover={false} className="relative p-8 md:p-12 overflow-hidden shadow-2xl">
+      <GlassPanel hover={false} className="relative p-6 md:p-8 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 pointer-events-none opacity-45"
           style={{
             background:
@@ -51,7 +51,7 @@ export default function ProductProofStrip() {
         />
 
         {/* Signal chips */}
-        <div className="relative flex flex-wrap justify-center gap-3.5 md:gap-4.5 mb-12">
+        <div className="relative flex flex-wrap justify-center gap-3 md:gap-4 mb-8">
           {SIGNALS.map((signal, idx) => {
             const Icon = signal.icon;
             return (
@@ -83,7 +83,7 @@ export default function ProductProofStrip() {
             viewport={{ once: true }}
             className="flex flex-col items-center text-white/30"
           >
-            <div className="w-px h-12 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
+            <div className="w-px h-8 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
             <ArrowDown className="w-4 h-4 text-primary/80 -mt-1 animate-bounce" style={{ animationDuration: "2s" }} />
           </motion.div>
 

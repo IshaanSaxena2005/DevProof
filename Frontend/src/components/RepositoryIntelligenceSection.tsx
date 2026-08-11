@@ -20,7 +20,7 @@ export default function RepositoryIntelligenceSection() {
         <div className="ambient-glow-green w-[600px] h-[400px] top-1/2 right-0 -translate-y-1/2 translate-x-1/4 animate-glow-pulse" />
       }
     >
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 md:mb-16">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-10">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -41,7 +41,7 @@ export default function RepositoryIntelligenceSection() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="glass-chip flex items-center gap-3.5 px-6 py-3 shrink-0"
+          className="glass-chip flex items-center gap-2 px-4.5 py-2 shrink-0"
         >
           <FolderGit2 className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-white">SpendWise Pro</span>
@@ -74,7 +74,7 @@ export default function RepositoryIntelligenceSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-4 p-5 md:p-6 flex flex-col gap-2.5 border-b lg:border-b-0 border-white/[0.06] bg-black/[0.15]"
+            className="lg:col-span-4 p-4 md:p-5 flex flex-col gap-2 border-b lg:border-b-0 border-white/[0.06] bg-black/[0.15]"
           >
             <p className="text-[10px] font-bold tracking-[0.22em] uppercase mb-3 px-1" style={{ color: "var(--text-tertiary)" }}>
               Health Dimensions
@@ -83,7 +83,7 @@ export default function RepositoryIntelligenceSection() {
               <div
                 key={metric.label}
                 className={cn(
-                  "flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all duration-300 relative overflow-hidden",
+                  "flex items-center justify-between px-3.5 py-2.5 rounded-xl border transition-all duration-300 relative overflow-hidden",
                   metric.isWarning
                     ? "border-red-500/20 bg-red-500/[0.06]"
                     : "border-white/[0.05] bg-white/[0.01] hover:border-white/12 hover:bg-white/[0.03]"
@@ -129,7 +129,7 @@ export default function RepositoryIntelligenceSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-8 p-6 md:p-8 flex flex-col gap-7"
+            className="lg:col-span-8 p-5 md:p-6 flex flex-col gap-5"
           >
             <div className="flex flex-wrap items-center gap-3">
               <span
@@ -146,7 +146,7 @@ export default function RepositoryIntelligenceSection() {
               <span className="text-xs font-bold tracking-wider text-white">TESTING ANALYSIS</span>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <div
                 className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase"
                 style={{ color: "var(--text-tertiary)" }}
@@ -154,7 +154,7 @@ export default function RepositoryIntelligenceSection() {
                 <Activity className="w-3.5 h-3.5 text-primary" />
                 Evidence Detected
               </div>
-              <ul className="flex flex-col gap-2.5">
+              <ul className="flex flex-col gap-2">
                 {[
                   { text: "11 test files detected across the repository", warn: false },
                   { text: "Critical authentication paths lack integration coverage", warn: true },
@@ -162,7 +162,7 @@ export default function RepositoryIntelligenceSection() {
                 ].map(({ text, warn }) => (
                   <li
                     key={text}
-                    className="glass-inset flex items-start gap-3 text-sm px-4 py-3.5 hover:border-white/12 transition-all duration-300"
+                    className="glass-inset flex items-start gap-3 text-sm px-3 py-2.5 hover:border-white/12 transition-all duration-300"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     <div
@@ -179,7 +179,7 @@ export default function RepositoryIntelligenceSection() {
 
             <div className="h-px w-full bg-white/[0.06]" />
 
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-2">
               <div
                 className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase"
                 style={{ color: "var(--text-tertiary)" }}
@@ -189,7 +189,7 @@ export default function RepositoryIntelligenceSection() {
               </div>
 
               <div
-                className="flex flex-col md:flex-row gap-4 p-4.5 rounded-xl border transition-all duration-300 hover:border-red-500/35"
+                className="flex flex-col md:flex-row gap-3 p-3.5 rounded-xl border transition-all duration-300 hover:border-red-500/35"
                 style={{ background: "rgba(220,38,38,0.05)", borderColor: "rgba(220,38,38,0.15)" }}
               >
                 <div className="flex flex-col gap-0.5 md:w-28 shrink-0">
@@ -210,7 +210,7 @@ export default function RepositoryIntelligenceSection() {
               </div>
 
               <div
-                className="flex flex-col md:flex-row gap-4 p-4.5 rounded-xl border transition-all duration-300 hover:border-primary/35"
+                className="flex flex-col md:flex-row gap-3 p-3.5 rounded-xl border transition-all duration-300 hover:border-primary/35"
                 style={{ background: "rgba(119,252,117,0.04)", borderColor: "rgba(119,252,117,0.14)" }}
               >
                 <div className="flex flex-col gap-0.5 md:w-28 shrink-0">

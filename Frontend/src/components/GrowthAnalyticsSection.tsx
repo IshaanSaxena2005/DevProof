@@ -31,7 +31,7 @@ export default function GrowthAnalyticsSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-16"
+        className="text-center mb-10"
       >
         <SectionTitle align="center">
           See how your engineering
@@ -65,8 +65,8 @@ export default function GrowthAnalyticsSection() {
               </span>
             </PanelHeader>
 
-            <div className="p-8 md:p-10">
-              <div className="h-60 flex items-end justify-between gap-4 md:gap-8">
+            <div className="p-5 md:p-6">
+              <div className="h-48 flex items-end justify-between gap-4 md:gap-8">
                 {CHART_DATA.map((data, idx) => {
                   const heightPercent = (data.score / maxScore) * 100;
                   const isLatest = idx === CHART_DATA.length - 1;
@@ -116,17 +116,17 @@ export default function GrowthAnalyticsSection() {
         </motion.div>
 
         {/* Insight + trend widgets */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="lg:col-span-4 flex flex-col gap-4">
           <motion.div
             initial={{ opacity: 0, x: 16 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <GlassPanel hover={true} className="p-6 md:p-7 relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
+            <GlassPanel hover={true} className="p-4 md:p-5 relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
               <div className="absolute top-0 left-0 w-1 h-full" style={{ background: "hsl(var(--primary))" }} />
               <div
-                className="text-[10px] font-bold tracking-[0.24em] mb-4 uppercase"
+                className="text-[10px] font-bold tracking-[0.24em] mb-2.5 uppercase"
                 style={{ color: "hsl(var(--primary))" }}
               >
                 AI Insight
@@ -142,7 +142,7 @@ export default function GrowthAnalyticsSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col gap-3 flex-1 justify-between"
+            className="flex flex-col gap-2.5 flex-1 justify-between"
           >
             <p
               className="text-[10px] font-bold tracking-[0.2em] uppercase px-1"
@@ -153,7 +153,7 @@ export default function GrowthAnalyticsSection() {
             {TRENDS.map((trend) => (
               <div
                 key={trend.label}
-                className="glass-inset flex items-center justify-between px-5 py-4 hover:border-white/15 transition-all duration-300"
+                className="glass-inset flex items-center justify-between px-4.5 py-3 hover:border-white/15 transition-all duration-300"
               >
                 <span className="text-sm font-medium text-white/95">{trend.label}</span>
                 <div

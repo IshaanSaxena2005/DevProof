@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer className="relative w-full border-t border-white/[0.06] py-16 md:py-20 section-veil-strong">
+    <footer className="relative w-full border-t border-white/[0.06] py-10 md:py-12 section-veil-strong">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-10">
           <div className="md:col-span-2 flex flex-col gap-5">
             <div className="flex items-center gap-2.5 text-white text-lg font-bold tracking-tight select-none">
               <div
@@ -33,7 +33,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-4">
               <h4 className="text-xs font-bold uppercase tracking-widest text-white/90">Resources</h4>
               <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>

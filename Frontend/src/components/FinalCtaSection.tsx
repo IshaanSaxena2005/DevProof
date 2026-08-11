@@ -10,7 +10,7 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function FinalCtaSection() {
   return (
-    <section className="relative w-full py-28 md:py-40 lg:py-48 section-divider section-veil overflow-hidden">
+    <section className="relative w-full py-14 md:py-20 lg:py-24 section-divider section-veil overflow-hidden">
       <div className="ambient-glow-green w-[900px] h-[500px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-glow-pulse absolute pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto px-6 lg:px-8 z-10">
@@ -22,7 +22,7 @@ export default function FinalCtaSection() {
         >
           <GlassPanel
             hover={false}
-            className="px-8 py-16 md:px-16 md:py-24 text-center relative overflow-hidden shadow-2xl"
+            className="px-6 py-12 md:px-12 md:py-16 text-center relative overflow-hidden shadow-2xl"
           >
             <div
               className="absolute inset-0 pointer-events-none"
@@ -34,8 +34,8 @@ export default function FinalCtaSection() {
 
             <div className="relative z-10 flex flex-col items-center">
               <h2
-                className="text-display uppercase mb-6 tracking-tight"
-                style={{ fontSize: "clamp(2.5rem, 6.5vw, 4.5rem)", lineHeight: 1.05 }}
+                className="text-display uppercase mb-4 tracking-tight"
+                style={{ fontSize: "clamp(2.2rem, 5.5vw, 3.75rem)", lineHeight: 1.05 }}
               >
                 Your work already
                 <br />
@@ -43,7 +43,7 @@ export default function FinalCtaSection() {
               </h2>
 
               <p
-                className="text-lg md:text-xl font-light mb-12"
+                className="text-lg md:text-xl font-light mb-8"
                 style={{ color: "var(--text-secondary)" }}
               >
                 DevProof turns it into{" "}

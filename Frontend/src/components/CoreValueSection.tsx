@@ -52,7 +52,7 @@ export default function CoreValueSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="mb-14 md:mb-20"
+        className="mb-8 md:mb-12"
       >
         <SectionTitle>
           From Activity
@@ -70,8 +70,8 @@ export default function CoreValueSection() {
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.6, delay: idx * 0.1 }}
           >
-            <GlassPanel className="h-full p-8 flex flex-col group transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl">
-              <div className="flex items-center justify-between mb-8">
+            <GlassPanel className="h-full p-5 md:p-6 flex flex-col group transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
                 <span
                   className="text-[10px] font-bold tracking-[0.3em] uppercase"
                   style={{ color: "hsl(var(--primary))" }}
@@ -81,16 +81,16 @@ export default function CoreValueSection() {
                 <span className="w-10 h-[1px] bg-gradient-to-r from-primary/40 to-transparent group-hover:w-16 transition-all duration-500" />
               </div>
 
-              <h3 className="text-xl md:text-[1.4rem] font-semibold text-white tracking-tight mb-8 leading-snug">
+              <h3 className="text-xl md:text-[1.4rem] font-semibold text-white tracking-tight mb-4 leading-snug">
                 {card.title}
               </h3>
 
-              <ul className="flex flex-col gap-4 mt-auto">
+              <ul className="flex flex-col gap-2.5 mt-auto">
                 {card.items.map((item) => (
                   <li
-                    key={item}
-                    className="flex items-start gap-3.5 text-[13px] transition-colors duration-300 group-hover:text-white/90"
-                    style={{ color: "var(--text-secondary)" }}
+                     key={item}
+                     className="flex items-start gap-3.5 text-[13px] transition-colors duration-300 group-hover:text-white/90"
+                     style={{ color: "var(--text-secondary)" }}
                   >
                     <CheckCircle2
                       className="w-4 h-4 shrink-0 mt-0.5 opacity-70 group-hover:opacity-100 transition-opacity duration-300"

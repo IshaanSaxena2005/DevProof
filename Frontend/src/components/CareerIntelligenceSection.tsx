@@ -27,14 +27,14 @@ export default function CareerIntelligenceSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-16"
+        className="text-center mb-10"
       >
         <SectionTitle align="center">
           Don't follow a
           <br className="hidden md:block" />
           <span style={{ color: "hsl(var(--primary))" }}> Generic Roadmap.</span>
         </SectionTitle>
-        <SectionLead align="center" className="mt-5">
+        <SectionLead align="center" className="mt-4">
           Recommendations come from what you have actually built — not from a generic checklist.
         </SectionLead>
       </motion.div>
@@ -54,8 +54,8 @@ export default function CareerIntelligenceSection() {
               <span className="text-sm font-bold text-white/90 ml-2">Career Readiness</span>
             </PanelHeader>
 
-            <div className="p-6 md:p-7 flex flex-col gap-6">
-              <div className="flex items-center gap-4.5 pb-6 border-b border-white/[0.06]">
+            <div className="p-5 md:p-6 flex flex-col gap-4">
+              <div className="flex items-center gap-4 pb-4 border-b border-white/[0.06]">
                 <div
                   className="w-12 h-12 rounded-xl border border-white/10 flex items-center justify-center shrink-0"
                   style={{ background: "rgba(119,252,117,0.08)" }}
@@ -99,7 +99,7 @@ export default function CareerIntelligenceSection() {
                 />
               </div>
 
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2">
                 <div
                   className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-1"
                   style={{ color: "var(--text-tertiary)" }}
@@ -152,10 +152,10 @@ export default function CareerIntelligenceSection() {
               <span className="text-sm font-bold text-white/90 ml-2">Recommended Action</span>
             </PanelHeader>
 
-            <div className="p-8 md:p-10 flex flex-col gap-8 relative z-10 h-full justify-center">
+            <div className="p-5 md:p-6 flex flex-col gap-4 relative z-10 h-full justify-center">
               <div>
                 <div
-                  className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase mb-4"
+                  className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] mb-2.5"
                   style={{ color: "rgb(248,113,113)" }}
                 >
                   <Zap className="w-4 h-4 animate-pulse" />
@@ -171,19 +171,19 @@ export default function CareerIntelligenceSection() {
 
               <div>
                 <div
-                  className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-4"
+                  className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-2.5"
                   style={{ color: "hsl(var(--primary))" }}
                 >
                   Recommended Next Action
                 </div>
 
-                <div className="glass-inset p-6 relative group cursor-default hover:border-primary/30 hover:bg-white/[0.05] transition-all duration-300">
+                <div className="glass-inset p-4.5 relative group cursor-default hover:border-primary/30 hover:bg-white/[0.05] transition-all duration-300">
                   <div
                     className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
                     style={{ background: "hsl(var(--primary))" }}
                   />
                   <p
-                    className="text-base leading-relaxed pr-8 pl-2"
+                    className="text-base leading-relaxed pr-6 pl-1.5"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Add authentication integration tests and transaction-service unit tests to{" "}

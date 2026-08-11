@@ -21,7 +21,7 @@ export default function AiSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-16"
+        className="text-center mb-10"
       >
         <SectionTitle align="center">
           AI that explains.
@@ -47,12 +47,12 @@ export default function AiSection() {
               <WindowDots />
               <span className="text-sm font-bold text-white/90 ml-2">Evidence Pipeline</span>
             </PanelHeader>
-            <div className="p-6 md:p-7 flex flex-col gap-1.5">
+            <div className="p-5 md:p-6 flex flex-col gap-1">
               {ARCHITECTURE.map((step, idx) => {
                 const isLast = idx === ARCHITECTURE.length - 1;
                 return (
                   <div key={step}>
-                    <div className="flex items-center gap-4 py-3.5 px-3 rounded-xl hover:bg-white/[0.03] transition-all duration-300 group">
+                    <div className="flex items-center gap-4 py-2.5 px-2.5 rounded-xl hover:bg-white/[0.03] transition-all duration-300 group">
                       <div
                         className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs border shrink-0 transition-all duration-300"
                         style={
@@ -126,11 +126,11 @@ export default function AiSection() {
               </div>
             </PanelHeader>
 
-            <div className="p-6 flex flex-col gap-6 flex-1 bg-black/[0.1]">
+            <div className="p-5 flex flex-col gap-4 flex-1 bg-black/[0.1]">
               {/* User message */}
               <div className="flex gap-3.5 items-start justify-end">
                 <div
-                  className="rounded-2xl rounded-tr-sm px-4.5 py-3.5 max-w-[80%] text-sm text-white/95 border border-white/[0.08] shadow-md"
+                  className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[80%] text-sm text-white/95 border border-white/[0.08] shadow-md"
                   style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)" }}
                 >
                   Why is my testing score low?
@@ -156,7 +156,7 @@ export default function AiSection() {
                 </div>
                 <div className="flex flex-col gap-3.5 max-w-[85%]">
                   <div
-                    className="rounded-2xl rounded-tl-sm px-4.5 py-4 text-sm leading-relaxed border shadow-md"
+                    className="rounded-2xl rounded-tl-sm px-3.5 py-3 text-sm leading-relaxed border shadow-md"
                     style={{
                       background: "rgba(255,255,255,0.03)",
                       borderColor: "rgba(255,255,255,0.06)",
@@ -183,7 +183,7 @@ export default function AiSection() {
             </div>
 
             {/* Fake input bar */}
-            <div className="px-6 pb-6 bg-black/[0.1]">
+            <div className="px-5 pb-5 bg-black/[0.1]">
               <div className="glass-inset flex items-center gap-3 px-4.5 py-3 hover:border-white/15 transition-all duration-300">
                 <span className="text-sm flex-1 font-medium" style={{ color: "var(--text-tertiary)" }}>
                   Ask about your evidence…

@@ -37,7 +37,7 @@ export default function HowItWorksSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-16"
+        className="text-center mb-10"
       >
         <SectionTitle align="center">
           From Repository
@@ -48,7 +48,7 @@ export default function HowItWorksSection() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 relative">
         {/* Desktop connector line */}
-        <div className="hidden lg:block absolute top-[3.75rem] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent z-0" />
+        <div className="hidden lg:block absolute top-[3rem] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent z-0" />
 
         {STEPS.map((step, idx) => {
           const Icon = step.icon;
@@ -61,7 +61,7 @@ export default function HowItWorksSection() {
               transition={{ duration: 0.55, delay: idx * 0.08 }}
               className="relative z-10"
             >
-              <GlassPanel className="h-full p-7 flex flex-col gap-6 group hover:-translate-y-1.5 transition-all duration-500 hover:shadow-2xl">
+              <GlassPanel className="h-full p-5 flex flex-col gap-3.5 group hover:-translate-y-1.5 transition-all duration-500 hover:shadow-2xl">
                 <div className="flex items-center justify-between">
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-[0_0_20px_rgba(119,252,117,0.15)] group-hover:bg-primary/5"
