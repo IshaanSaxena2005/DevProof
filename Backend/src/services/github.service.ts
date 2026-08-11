@@ -103,13 +103,21 @@ export class GitHubService {
       );
 
       if (!branchResponse.ok) {
-        return [];
+        if (branchResponse.status === 404) {
+          throw AppError.notFound(`Branch "${branch}" was not found for ${owner}/${repo}.`);
+        }
+
+        if (branchResponse.status === 403) {
+          throw AppError.forbidden(`GitHub denied access to ${owner}/${repo}. Check repository permissions or token scopes.`);
+        }
+
+        throw AppError.badRequest(`GitHub branch lookup failed with status ${branchResponse.status}`);
       }
 
       const branchData = await branchResponse.json() as any;
       const treeSha = branchData?.commit?.commit?.tree?.sha;
       if (!treeSha) {
-        return [];
+        throw AppError.internal(`GitHub branch ${branch} for ${owner}/${repo} did not return a tree SHA.`);
       }
 
       const response = await fetch(
@@ -118,13 +126,22 @@ export class GitHubService {
       );
 
       if (!response.ok) {
-        return [];
+        if (response.status === 404) {
+          throw AppError.notFound(`Repository tree for ${owner}/${repo} on branch "${branch}" was not found.`);
+        }
+
+        if (response.status === 403) {
+          throw AppError.forbidden(`GitHub denied access to the file tree for ${owner}/${repo}. Check repository permissions or token scopes.`);
+        }
+
+        throw AppError.badRequest(`GitHub tree lookup failed with status ${response.status}`);
       }
 
       const data = await response.json() as any;
       return (data.tree || []) as Array<{ path: string; mode: string; type: string; sha: string; size?: number }>;
     } catch (error) {
-      return [];
+      if (error instanceof AppError) throw error;
+      throw AppError.internal(`Failed to fetch repository tree for ${owner}/${repo}: ${(error as Error).message}`);
     }
   }
 
@@ -133,17 +150,51 @@ export class GitHubService {
    */
   static async fetchRawFileContent(owner: string, repo: string, filePath: string, branch = 'main', accessToken?: string): Promise<string | null> {
     const headers: Record<string, string> = {
-      'User-Agent': 'DevProof-Analysis-Engine'
+      'User-Agent': 'DevProof-Analysis-Engine',
+      Accept: 'application/vnd.github+json'
     };
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
 
     try {
-      const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
-      const response = await fetch(rawUrl, { headers });
-      if (!response.ok) return null;
-      return await response.text();
-    } catch (error) {
+      const encodedPath = filePath
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`,
+        { headers }
+      );
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (response.status === 403) {
+        throw AppError.forbidden(`GitHub denied access to ${owner}/${repo}/${filePath}. Check repository permissions or token scopes.`);
+      }
+
+      if (!response.ok) {
+        throw AppError.badRequest(`GitHub file content lookup failed for ${owner}/${repo}/${filePath} with status ${response.status}`);
+      }
+
+      const data = await response.json() as any;
+      if (!data || Array.isArray(data) || data.type !== 'file') {
+        return null;
+      }
+
+      if (data.encoding === 'base64' && typeof data.content === 'string') {
+        return Buffer.from(data.content.replace(/\s/g, ''), 'base64').toString('utf8');
+      }
+
+      if (typeof data.content === 'string') {
+        return data.content;
+      }
+
       return null;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw AppError.internal(`Failed to fetch repository content for ${owner}/${repo}/${filePath}: ${(error as Error).message}`);
     }
   }
 }
