@@ -144,52 +144,98 @@ export class AuthService {
   }
 
   /**
-   * Synchronize or create user from GitHub OAuth profile
+   * Synchronize or create user from GitHub OAuth profile.
+   *
+   * @param existingUserId  When the caller already has a valid session (e.g. a
+   *   credential-registered user clicking "Link GitHub"), pass their userId so
+   *   we associate the GitHub account with *that* user rather than
+   *   find-or-create by GitHub email.  Leave undefined for the unauthenticated
+   *   sign-in-with-GitHub flow.
    */
-  static async handleGitHubOAuth(githubUser: {
-    id: number | string;
-    login: string;
-    email: string | null;
-    name: string | null;
-    avatar_url: string;
-    html_url: string;
-    public_repos: number;
-    followers: number;
-  }, accessToken: string) {
+  static async handleGitHubOAuth(
+    githubUser: {
+      id: number | string;
+      login: string;
+      email: string | null;
+      name: string | null;
+      avatar_url: string;
+      html_url: string;
+      public_repos: number;
+      followers: number;
+    },
+    accessToken: string,
+    existingUserId?: string
+  ) {
     const email = githubUser.email || `${githubUser.login.toLowerCase()}@users.noreply.github.com`;
     const githubIdStr = String(githubUser.id);
 
-    // Find existing github account
-    let githubAcc = await prisma.gitHubAccount.findUnique({
+    /** Common field values used in both create and update. */
+    const githubFields = {
+      accessToken,
+      username: githubUser.login,
+      profileUrl: githubUser.html_url,
+      avatarUrl: githubUser.avatar_url,
+      totalRepos: githubUser.public_repos,
+      totalFollowers: githubUser.followers
+    };
+
+    // ── Case 1: GitHub account already linked to *some* DevProof user ──────
+    const existingGithubAcc = await prisma.gitHubAccount.findUnique({
       where: { githubId: githubIdStr },
       include: { user: true }
     });
 
-    let user: User;
+    if (existingGithubAcc) {
+      if (existingUserId && existingGithubAcc.userId !== existingUserId) {
+        // This GitHub account belongs to a *different* DevProof user.
+        throw AppError.conflict(
+          'This GitHub account is already linked to a different DevProof account. ' +
+          'Please disconnect it from the other account first.'
+        );
+      }
 
-    if (githubAcc) {
-      // Update access token & stats
-      githubAcc = await prisma.gitHubAccount.update({
+      // Refresh the stored stats & token.
+      const updated = await prisma.gitHubAccount.update({
         where: { githubId: githubIdStr },
-        data: {
-          accessToken,
-          username: githubUser.login,
-          profileUrl: githubUser.html_url,
-          avatarUrl: githubUser.avatar_url,
-          totalRepos: githubUser.public_repos,
-          totalFollowers: githubUser.followers
-        },
+        data: githubFields,
         include: { user: true }
       });
-      user = githubAcc.user;
-    } else {
-      // Check if user with matching email exists
-      let existingUser = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() }
-      });
 
-      if (!existingUser) {
-        existingUser = await prisma.user.create({
+      const token = this.generateToken(updated.user);
+      return { user: updated.user, token };
+    }
+
+    // ── Case 2: GitHub account is new — decide which DevProof user to use ──
+    let user: User;
+
+    if (existingUserId) {
+      // The caller is already authenticated: link to their existing account.
+      const existing = await prisma.user.findUnique({ where: { id: existingUserId } });
+      if (!existing) {
+        throw AppError.unauthorized('Your session is no longer valid. Please log in again.');
+      }
+
+      // If this user already has a *different* GitHub account linked, replace it
+      // (the old githubId is no longer owned by the app user).
+      const currentLink = await prisma.gitHubAccount.findUnique({ where: { userId: existingUserId } });
+      if (currentLink) {
+        await prisma.gitHubAccount.update({
+          where: { userId: existingUserId },
+          data: { githubId: githubIdStr, ...githubFields }
+        });
+      } else {
+        await prisma.gitHubAccount.create({
+          data: { userId: existingUserId, githubId: githubIdStr, ...githubFields }
+        });
+      }
+
+      user = existing;
+    } else {
+      // Unauthenticated flow: find-or-create by email.
+      let found = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+
+      if (!found) {
+        found = await prisma.user.create({
           data: {
             email: email.toLowerCase(),
             name: githubUser.name || githubUser.login,
@@ -199,20 +245,10 @@ export class AuthService {
         });
       }
 
-      user = existingUser;
+      user = found;
 
-      // Create linked GitHub account
       await prisma.gitHubAccount.create({
-        data: {
-          userId: user.id,
-          githubId: githubIdStr,
-          username: githubUser.login,
-          accessToken,
-          profileUrl: githubUser.html_url,
-          avatarUrl: githubUser.avatar_url,
-          totalRepos: githubUser.public_repos,
-          totalFollowers: githubUser.followers
-        }
+        data: { userId: user.id, githubId: githubIdStr, ...githubFields }
       });
     }
 

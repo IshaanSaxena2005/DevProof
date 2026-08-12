@@ -102,9 +102,10 @@ export class AuthController {
       const { user, token } = await AuthService.register({ email, password, name });
       AuthController.setTokenCookie(res, token);
 
+      // The token is intentionally omitted from the JSON body — it is already
+      // in the httpOnly cookie above and must not be accessible to JavaScript.
       return successResponse(res, 201, 'User registered successfully', {
-        user: sanitizeUser(user, false),
-        token
+        user: sanitizeUser(user, false)
       });
     } catch (error) {
       next(error);
@@ -122,9 +123,10 @@ export class AuthController {
       const { user, token } = await AuthService.login({ email, password });
       AuthController.setTokenCookie(res, token);
 
+      // The token is intentionally omitted from the JSON body — it is already
+      // in the httpOnly cookie above and must not be accessible to JavaScript.
       return successResponse(res, 200, 'Login successful', {
-        user: sanitizeUser(user, false),
-        token
+        user: sanitizeUser(user, false)
       });
     } catch (error) {
       next(error);
@@ -154,8 +156,11 @@ export class AuthController {
    */
   static githubOAuth = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!env.GITHUB_CLIENT_ID) {
-        throw AppError.badRequest('GitHub OAuth Client ID is not configured on backend.');
+      if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+        throw AppError.badRequest(
+          'GitHub OAuth is not configured on this server. ' +
+          'GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be set in the backend environment.'
+        );
       }
 
       const state = crypto.randomBytes(24).toString('hex');
@@ -195,6 +200,21 @@ export class AuthController {
 
       if (!crypto.timingSafeEqual(Buffer.from(stateCookie), Buffer.from(state))) {
         throw AppError.unauthorized('GitHub OAuth state mismatch. Please try connecting again.');
+      }
+
+      // ── Determine if the user is already signed in ─────────────────────────
+      // A credential-registered user clicking "Link GitHub" will have a valid
+      // session cookie.  We pass their userId to handleGitHubOAuth so the new
+      // GitHub account is linked to them rather than find-or-created by email.
+      let existingUserId: string | undefined;
+      const existingToken = req.cookies?.token as string | undefined;
+      if (existingToken) {
+        try {
+          const decoded = AuthService.verifyToken(existingToken);
+          existingUserId = decoded.userId;
+        } catch {
+          // Token invalid or expired — treat as unauthenticated.
+        }
       }
 
       // Exchange code for access token using the documented form-encoded body.
@@ -249,7 +269,7 @@ export class AuthController {
 
       const githubUser = await userResponse.json() as any;
 
-      const { token } = await AuthService.handleGitHubOAuth(githubUser, accessToken);
+      const { token } = await AuthService.handleGitHubOAuth(githubUser, accessToken, existingUserId);
       AuthController.setTokenCookie(res, token);
 
       // Redirect back to frontend.
@@ -258,7 +278,10 @@ export class AuthController {
       // redirect. A token in the URL leaks into history, logs, and Referer.
       return res.redirect(`${env.FRONTEND_URL}/dashboard?auth=success`);
     } catch (error) {
-      next(error);
+      // For OAuth errors, redirect to the login page with a descriptive error
+      // instead of returning a JSON error response (this is a browser redirect flow).
+      const message = error instanceof Error ? encodeURIComponent(error.message) : 'oauth_error';
+      return res.redirect(`${env.FRONTEND_URL}/login?error=${message}`);
     }
   };
 

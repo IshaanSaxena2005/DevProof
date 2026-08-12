@@ -151,7 +151,8 @@ export interface Developer360Overview {
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  /** Not present in responses \u2014 the JWT lives only in the httpOnly cookie. */
+  token?: never;
 }
 
 export interface MeResponse {

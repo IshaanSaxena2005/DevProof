@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { ApiError, BASE_URL } from "../lib/api";
 
@@ -13,11 +13,19 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 type Mode = "login" | "register";
 
+/** Reads a single query-string value from the current URL. */
+function useQueryParam(name: string): string | null {
+  const { search } = useLocation();
+  return new URLSearchParams(search).get(name);
+}
+
 export default function Login() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -30,6 +38,14 @@ export default function Login() {
   // Where the guard bounced us from, so login returns the user there.
   const redirectTo =
     (location.state as { from?: string } | null)?.from ?? "/dashboard/overview";
+
+  // Pick up any error message forwarded by the GitHub OAuth callback redirect.
+  const oauthError = useQueryParam("error");
+  useEffect(() => {
+    if (oauthError) {
+      setFormError(decodeURIComponent(oauthError));
+    }
+  }, [oauthError]);
 
   const isRegister = mode === "register";
 
@@ -44,7 +60,9 @@ export default function Login() {
     setFieldErrors({});
     setEmail("");
     setPassword("");
+    setShowPassword(false);
     setConfirmPassword("");
+    setShowConfirmPassword(false);
     setName("");
   }
 
@@ -112,16 +130,19 @@ export default function Login() {
     }
   }
 
+  const inputBase =
+    "w-full rounded-xl border bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition-all duration-200 focus:bg-white/[0.05]";
+
   const inputClass = (field: string) =>
-    `w-full rounded-xl border bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition-all focus:bg-white/[0.05] ${
+    `${inputBase} ${
       fieldErrors[field]
-        ? "border-red-500/50 focus:border-red-500/70"
-        : "border-white/10 focus:border-primary/40"
+        ? "border-red-500/50 focus:border-red-500/70 focus:ring-1 focus:ring-red-500/20"
+        : "border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
     }`;
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-6 py-16 font-sora">
-      {/* Ambient background wash — cheap, no WebGL on the auth screen. */}
+      {/* Ambient background wash */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -160,7 +181,7 @@ export default function Login() {
               redirect to GitHub and set the auth cookie on its way back. */}
           <a
             href={submitting ? undefined : `${BASE_URL}/auth/github`}
-            className={`w-full flex items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-semibold text-white/90 transition-all hover:bg-white/[0.08] hover:border-white/20 ${submitting ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+            className={`w-full flex items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-semibold text-white/90 transition-all hover:bg-white/[0.08] hover:border-white/20 ${submitting ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
           >
             <GithubIcon className="w-4 h-4" />
             Continue with GitHub
@@ -216,17 +237,30 @@ export default function Login() {
               <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                disabled={submitting}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={isRegister ? "At least 8 characters" : "••••••••"}
-                autoComplete={isRegister ? "new-password" : "current-password"}
-                className={inputClass("password")}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  disabled={submitting}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isRegister ? "At least 8 characters" : "••••••••"}
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                  className={`${inputClass("password")} pr-11`}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/70 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword
+                    ? <EyeOff className="w-4 h-4" />
+                    : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {fieldErrors.password && <FieldMessage>{fieldErrors.password}</FieldMessage>}
             </div>
 
@@ -235,17 +269,30 @@ export default function Login() {
                 <label htmlFor="confirmPassword" className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
                   Confirm Password
                 </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  disabled={submitting}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  className={inputClass("confirmPassword")}
-                />
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    disabled={submitting}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    className={`${inputClass("confirmPassword")} pr-11`}
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/70 transition-colors"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword
+                      ? <EyeOff className="w-4 h-4" />
+                      : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {fieldErrors.confirmPassword && <FieldMessage>{fieldErrors.confirmPassword}</FieldMessage>}
               </div>
             )}

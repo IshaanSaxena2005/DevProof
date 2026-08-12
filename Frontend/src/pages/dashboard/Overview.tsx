@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle, RefreshCw } from "lucide-react";
+import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api } from "../../lib/api";
+import { api, ApiError } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
@@ -43,23 +43,28 @@ function StatCard({
 export default function Overview() {
   const navigate = useNavigate();
   const { user, refresh: refreshAuth } = useAuth();
-  const [syncing, setSyncing] = useState(false);
   const { data, loading, error, reload } = useResource<Developer360Response>(
     () => api.get<Developer360Response>("/developer360/overview")
   );
 
   const firstName = (user?.name ?? "").trim().split(/\s+/)[0];
 
+  type SyncState = { kind: "idle" } | { kind: "loading" } | { kind: "ok" } | { kind: "err"; message: string };
+  const [syncState, setSyncState] = useState<SyncState>({ kind: "idle" });
+
   const handleSync = async () => {
+    setSyncState({ kind: "loading" });
     try {
-      setSyncing(true);
       await githubService.syncGithub();
       await refreshAuth();
       await reload();
+      setSyncState({ kind: "ok" });
+      // Auto-clear success indicator after 3 s
+      setTimeout(() => setSyncState({ kind: "idle" }), 3000);
     } catch (err) {
-      console.error(err);
-    } finally {
-      setSyncing(false);
+      const msg =
+        err instanceof ApiError ? err.message : "Sync failed. Please try again.";
+      setSyncState({ kind: "err", message: msg });
     }
   };
 
@@ -179,14 +184,26 @@ export default function Overview() {
                   GitHub linked as{" "}
                   <span className="text-white/60 font-medium">@{o.user.githubUsername}</span>
                 </span>
-                <button
-                  onClick={handleSync}
-                  disabled={syncing}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
-                  Sync
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  {syncState.kind === "ok" && (
+                    <span className="flex items-center gap-1 text-primary text-[10px] font-semibold">
+                      <CheckCircle2 className="w-3 h-3" /> Synced
+                    </span>
+                  )}
+                  {syncState.kind === "err" && (
+                    <span className="flex items-center gap-1 text-red-400 text-[10px] font-semibold">
+                      <AlertCircle className="w-3 h-3" /> {syncState.message}
+                    </span>
+                  )}
+                  <button
+                    onClick={handleSync}
+                    disabled={syncState.kind === "loading"}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${syncState.kind === "loading" ? "animate-spin" : ""}`} />
+                    Sync
+                  </button>
+                </div>
               </>
             ) : (
               <>
