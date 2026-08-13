@@ -5,6 +5,7 @@ import {
   ArrowLeft, Clock, Globe, Lock, Star, GitFork, HardDrive, GitBranch,
   Loader2, Play, ExternalLink, ShieldAlert, CheckCircle2, FileCode2,
   Code2, FileText, FlaskConical, Shield, Wrench, Package, Activity,
+  Eye, CircleDot, Archive,
 } from "lucide-react";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
@@ -240,6 +241,21 @@ export default function RepositoryDetails() {
                 {repo.isPrivate ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
                 {repo.isPrivate ? "Private" : "Public"}
               </span>
+              {repo.isFork && (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border border-white/15 text-white/45">
+                  <GitFork className="w-3 h-3" /> Fork
+                </span>
+              )}
+              {repo.isArchived && (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border border-amber-400/25 bg-amber-400/[0.08] text-amber-300">
+                  <Archive className="w-3 h-3" /> Archived
+                </span>
+              )}
+              {!latest && (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border border-white/15 text-white/45">
+                  <Clock className="w-3 h-3" /> Analysis pending
+                </span>
+              )}
               <a
                 href={repo.url}
                 target="_blank"
@@ -258,6 +274,10 @@ export default function RepositoryDetails() {
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-white/35">
               <span><span className="text-white/50">Owner:</span> {repo.owner}</span>
               <span><span className="text-white/50">Language:</span> {repo.language ?? "—"}</span>
+              <span className="flex items-center gap-1">
+                <GitBranch className="w-3.5 h-3.5" />
+                Last pushed {formatDate(repo.pushedAt)}
+              </span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
                 Last analyzed {formatDate(latest?.analyzedAt ?? null)}
@@ -351,9 +371,11 @@ export default function RepositoryDetails() {
       {/* Repo stats */}
       <div>
         <SectionLabel>Repository Statistics</SectionLabel>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatTile icon={Star} label="Stars" value={String(repo.starsCount)} />
           <StatTile icon={GitFork} label="Forks" value={String(repo.forksCount)} />
+          <StatTile icon={Eye} label="Watchers" value={String(repo.watchersCount)} />
+          <StatTile icon={CircleDot} label="Open Issues" value={String(repo.openIssuesCount)} />
           <StatTile icon={HardDrive} label="Size" value={formatSize(repo.sizeKb)} />
           <StatTile icon={GitBranch} label="Branch" value={repo.defaultBranch} />
         </div>

@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
-import { AlertCircle, FolderGit2 } from "lucide-react";
+import { AlertCircle, FolderGit2, Star, GitFork, Users, Activity, Code2 } from "lucide-react";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api } from "../../lib/api";
@@ -14,6 +14,15 @@ function scoreColor(n: number) {
   if (n >= 60) return "#f59e0b";
   return "#ef4444";
 }
+
+/** ISO -> short date for GitHub activity rows, em-dash when absent. */
+function formatWhen(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+/** Distinct-enough colors for stacked language bars; cycles for long lists. */
+const LANG_PALETTE = ["#77fc75", "#60a5fa", "#a78bfa", "#f59e0b", "#34d399", "#fb923c", "#f472b6", "#94a3b8"];
 
 const CATEGORY_COLOR: Record<SkillCategory, string> = {
   FRONTEND: "#77fc75",
@@ -252,6 +261,136 @@ export default function Developer360() {
             );
           })}
         </div>
+      </div>
+
+      {/* GitHub evidence — directly observed GitHub metadata, not inferred skill */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <SLabel className="mb-0">GitHub Evidence</SLabel>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-white/25">
+            Source: GitHub
+          </span>
+        </div>
+
+        {o.github.connected ? (
+          <div className="flex flex-col gap-4">
+            {/* Account stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { icon: FolderGit2, label: "Public repos", value: o.github.publicRepos ?? 0 },
+                { icon: Users, label: "Followers", value: o.github.followers ?? 0 },
+                { icon: Users, label: "Following", value: o.github.following ?? 0 },
+                { icon: Star, label: "Total stars", value: o.github.totalStars },
+                { icon: GitFork, label: "Total forks", value: o.github.totalForks },
+                { icon: FolderGit2, label: "Tracked", value: o.github.repositoriesTracked },
+              ].map((s) => (
+                <div key={s.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 text-white/35">
+                    <s.icon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest">{s.label}</span>
+                  </div>
+                  <p className="text-lg font-bold text-white tabular-nums">{s.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Language distribution */}
+              <GlassCard hover={false} className="p-6">
+                <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Code2 className="w-3.5 h-3.5 text-primary" /> Language Distribution
+                </h3>
+                {o.github.languageDistribution.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {o.github.languageDistribution.map((l, i) => {
+                      const color = LANG_PALETTE[i % LANG_PALETTE.length];
+                      return (
+                        <div key={l.language} className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between text-[12px]">
+                            <span className="text-white/70">{l.language}</span>
+                            <span className="text-white/35 tabular-nums">{l.percentage}% · {l.count}</span>
+                          </div>
+                          <Bar score={l.percentage} color={color} />
+                        </div>
+                      );
+                    })}
+                    <p className="text-[10px] text-white/25 mt-1 leading-relaxed">
+                      Share of your authored repositories by primary language — a repository count,
+                      not a byte-level breakdown.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-white/30">No language data yet.</p>
+                )}
+              </GlassCard>
+
+              {/* Recent activity */}
+              <GlassCard hover={false} className="p-6">
+                <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-primary" /> Recent GitHub Activity
+                </h3>
+                {o.github.recentActivity.length > 0 ? (
+                  <div className="flex flex-col divide-y divide-white/[0.05]">
+                    {o.github.recentActivity.map((r) => (
+                      <a
+                        key={r.fullName}
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between gap-3 py-2.5 group first:pt-0 last:pb-0"
+                      >
+                        <span className="min-w-0">
+                          <span className="text-[13px] text-white/70 group-hover:text-white truncate block transition-colors" title={r.fullName}>
+                            {r.name}
+                          </span>
+                          {r.language && <span className="text-[10px] text-white/30">{r.language}</span>}
+                        </span>
+                        <span className="text-[11px] text-white/30 shrink-0">{formatWhen(r.pushedAt)}</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-white/30">No recent pushes recorded.</p>
+                )}
+              </GlassCard>
+            </div>
+
+            {/* Primary technologies */}
+            {o.github.primaryTechnologies.length > 0 && (
+              <GlassCard hover={false} className="p-6">
+                <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider mb-4">
+                  Primary Technologies
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {o.github.primaryTechnologies.map((t) => (
+                    <span
+                      key={t}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </GlassCard>
+            )}
+          </div>
+        ) : (
+          <GlassCard hover={false} className="flex flex-col items-center gap-3 p-8 text-center">
+            <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40">
+              <FolderGit2 className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-semibold text-white">
+              Connect GitHub to unlock repository intelligence.
+            </p>
+            <Link
+              to="/dashboard/settings"
+              className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5"
+              style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+            >
+              Link GitHub
+            </Link>
+          </GlassCard>
+        )}
       </div>
 
       {/* Skills */}

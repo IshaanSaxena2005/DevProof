@@ -7,6 +7,7 @@ const router = Router();
 router.use(protect);
 
 router.post('/connect', RepositoryController.connectRepository);
+router.post('/sync', RepositoryController.syncRepositories);
 router.get('/', RepositoryController.getUserRepositories);
 router.get('/github', RepositoryController.listGitHubRepos);
 router.get('/:id', RepositoryController.getRepositoryById);

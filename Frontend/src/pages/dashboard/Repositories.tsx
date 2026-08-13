@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { FolderGit2, Plus, ArrowRight, Loader2, Trash2, X, Search as SearchIcon, Lock, Star } from "lucide-react";
+import { FolderGit2, Plus, ArrowRight, Loader2, Trash2, X, Search as SearchIcon, Lock, Star, GitFork, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
@@ -22,9 +22,20 @@ function latestAnalysis(repo: Repository) {
   return repo.analyses?.[0] ?? null;
 }
 
+/** ISO -> short date for the "updated" line on each repo card. */
+function formatWhen(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+type SyncState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "ok"; count: number; truncated: boolean }
+  | { kind: "err"; message: string };
+
 export default function Repositories() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refresh: refreshAuth } = useAuth();
   const hasGitHub = Boolean(user?.githubAccount);
 
   const { data, loading, error, reload } = useResource<RepositoriesResponse>(
@@ -42,6 +53,29 @@ export default function Repositories() {
   const [ghLoading, setGhLoading] = useState(false);
   const [ghError, setGhError] = useState<string | null>(null);
   const [connectingFullName, setConnectingFullName] = useState<string | null>(null);
+
+  const [syncState, setSyncState] = useState<SyncState>({ kind: "idle" });
+
+  // Sync the whole GitHub account, then refresh the connected list and the
+  // cached auth user (its account stats feed other screens). No browser reload.
+  async function handleSync() {
+    if (syncState.kind === "loading") return; // guard against duplicate requests
+    setSyncState({ kind: "loading" });
+    try {
+      const summary = await githubService.syncRepositories();
+      // Force the "pick from your GitHub repos" list to refetch next time it opens.
+      setGhRepos(null);
+      await refreshAuth();
+      reload();
+      setSyncState({ kind: "ok", count: summary.repositoriesSynced, truncated: summary.truncated });
+      setTimeout(() => setSyncState((s) => (s.kind === "ok" ? { kind: "idle" } : s)), 4000);
+    } catch (err) {
+      setSyncState({
+        kind: "err",
+        message: err instanceof ApiError ? err.message : "Sync failed. Please try again.",
+      });
+    }
+  }
 
   // Load the user's own GitHub repos once the form is opened, so they can be
   // picked directly instead of pasting a URL.
@@ -204,6 +238,41 @@ export default function Repositories() {
             </button>
           </div>
         </div>
+
+        {/* Sync bar — only when a GitHub account is linked */}
+        {hasGitHub && (
+          <div className="flex flex-wrap items-center justify-between gap-3 -mt-2">
+            <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+              {syncState.kind === "ok" ? (
+                <span className="flex items-center gap-1.5 text-primary">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Synced {syncState.count} {syncState.count === 1 ? "repository" : "repositories"} from GitHub
+                  {syncState.truncated ? " (first 1,000)" : ""}.
+                </span>
+              ) : syncState.kind === "err" ? (
+                <span className="flex items-center gap-1.5 text-red-400">
+                  <AlertCircle className="w-3.5 h-3.5" /> {syncState.message}
+                </span>
+              ) : (
+                <>Pull your latest repositories and stats straight from GitHub.</>
+              )}
+            </p>
+            <button
+              onClick={handleSync}
+              disabled={syncState.kind === "loading"}
+              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-primary/20 bg-primary/[0.07] hover:bg-primary/[0.14] text-primary transition-all cursor-pointer disabled:opacity-55 disabled:cursor-not-allowed shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncState.kind === "loading" ? "animate-spin" : ""}`} />
+              {syncState.kind === "loading"
+                ? "Syncing…"
+                : syncState.kind === "ok"
+                ? "Synced ✓"
+                : syncState.kind === "err"
+                ? "Retry Sync"
+                : "Sync GitHub"}
+            </button>
+          </div>
+        )}
 
         {/* Connect form */}
         {showForm && (
@@ -399,6 +468,16 @@ export default function Repositories() {
                       <p className="text-xs line-clamp-2" style={{ color: "var(--text-tertiary)" }}>
                         {repo.description ?? "No description provided."}
                       </p>
+
+                      <div className="flex items-center gap-4 mt-3 text-[11px] text-white/35">
+                        <span className="flex items-center gap-1">
+                          <Star className="w-3 h-3" /> {repo.starsCount}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <GitFork className="w-3 h-3" /> {repo.forksCount}
+                        </span>
+                        <span className="ml-auto">Updated {formatWhen(repo.updatedAt)}</span>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/[0.05]">

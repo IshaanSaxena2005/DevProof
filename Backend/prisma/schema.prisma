@@ -88,18 +88,22 @@ model User {
 }
 
 model GitHubAccount {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  githubId       String   @unique
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  githubId       String    @unique
   username       String
   accessToken    String
   profileUrl     String?
   avatarUrl      String?
-  totalRepos     Int      @default(0)
-  totalStars     Int      @default(0)
-  totalFollowers Int      @default(0)
-  linkedAt       DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  totalRepos     Int       @default(0)
+  totalStars     Int       @default(0)
+  totalFollowers Int       @default(0)
+  totalFollowing Int       @default(0)
+  linkedAt       DateTime  @default(now())
+  // Set by a repository sync run; null until the first sync completes. Lets the
+  // dashboard distinguish "linked but never synced" from "synced, has no repos".
+  lastSyncedAt   DateTime?
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -107,27 +111,46 @@ model GitHubAccount {
 }
 
 model Repository {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   githubAccountId String?
   userId          String
+  // GitHub's own numeric repository id, stored as text. Nullable because rows
+  // predating GitHub sync (connected by URL before Phase 5) have no value yet.
+  githubRepoId    String?
   name            String
   fullName        String
   owner           String
   url             String
   description     String?
-  isPrivate       Boolean  @default(false)
-  defaultBranch   String   @default("main")
+  isPrivate       Boolean   @default(false)
+  isFork          Boolean   @default(false)
+  isArchived      Boolean   @default(false)
+  defaultBranch   String    @default("main")
   language        String?
-  starsCount      Int      @default(0)
-  forksCount      Int      @default(0)
-  sizeKb          Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Free-form list from the GitHub list payload (repo topics). Stored as JSON so
+  // no extra per-repo API call is needed.
+  topics          Json?
+  starsCount      Int       @default(0)
+  forksCount      Int       @default(0)
+  watchersCount   Int       @default(0)
+  openIssuesCount Int       @default(0)
+  sizeKb          Int       @default(0)
+  // GitHub's own timestamps, distinct from the DevProof row timestamps below.
+  githubCreatedAt DateTime?
+  githubUpdatedAt DateTime?
+  pushedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   analyses        RepositoryAnalysis[]
   analysisHistory AnalysisHistory[]
 
+  // A repository (identified by full name) is tracked at most once per user, and
+  // never leaks across users — see Phase 5 ownership requirement.
+  @@unique([userId, fullName])
+  @@index([userId])
+  @@index([githubRepoId])
   @@map("repositories")
 }
 

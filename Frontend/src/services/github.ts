@@ -1,5 +1,10 @@
 import { api } from "../lib/api";
-import type { GitHubReposResponse, RepositoriesResponse, RepositoryResponse } from "../lib/types";
+import type {
+  GitHubReposResponse,
+  RepositoriesResponse,
+  RepositoryResponse,
+  RepositorySyncSummary,
+} from "../lib/types";
 
 export const githubService = {
   async getRepositories(): Promise<RepositoriesResponse> {
@@ -26,8 +31,18 @@ export const githubService = {
     await api.post("/analysis/trigger", { repositoryId: repoId });
   },
 
-  async syncGithub(): Promise<void> {
-    await api.post("/auth/github/sync");
+  /**
+   * Sync the linked GitHub profile *and* repositories into DevProof, returning a
+   * normalized summary. Prefer this over syncGithub() on repository-centric
+   * screens — both hit the same engine, but this route reads as "sync repos".
+   */
+  async syncRepositories(): Promise<RepositorySyncSummary> {
+    return api.post<RepositorySyncSummary>("/repositories/sync");
+  },
+
+  /** Sync via the auth route; identical engine and result to syncRepositories(). */
+  async syncGithub(): Promise<RepositorySyncSummary> {
+    return api.post<RepositorySyncSummary>("/auth/github/sync");
   },
 
   async disconnectGithub(): Promise<void> {

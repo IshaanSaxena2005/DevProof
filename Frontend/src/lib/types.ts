@@ -94,11 +94,23 @@ export interface Repository {
   url: string;
   description: string | null;
   isPrivate: boolean;
+  /** GitHub's own numeric repo id (as a string); null for URL-connected repos never synced. */
+  githubRepoId: string | null;
+  isFork: boolean;
+  isArchived: boolean;
   defaultBranch: string;
   language: string | null;
+  /** GitHub repo topics, when stored. */
+  topics: string[] | null;
   starsCount: number;
   forksCount: number;
+  watchersCount: number;
+  openIssuesCount: number;
   sizeKb: number;
+  /** GitHub-reported timestamps; null when GitHub omitted them or the repo predates sync. */
+  githubCreatedAt: string | null;
+  githubUpdatedAt: string | null;
+  pushedAt: string | null;
   createdAt: string;
   updatedAt: string;
   /** List endpoint includes only the latest; detail endpoint includes all. */
@@ -127,6 +139,50 @@ export interface Skill {
   currentLevel: EvidenceLevel;
 }
 
+/** A repository's most recent push, as surfaced in the GitHub evidence block. */
+export interface GitHubActivityItem {
+  name: string;
+  fullName: string;
+  url: string;
+  language: string | null;
+  isFork: boolean;
+  isArchived: boolean;
+  starsCount: number;
+  forksCount: number;
+  pushedAt: string | null;
+}
+
+/** One primary-language bucket: repo count and share of authored repositories. */
+export interface LanguageShare {
+  language: string;
+  count: number;
+  /** Share of authored repositories (%), NOT a byte-level breakdown. */
+  percentage: number;
+}
+
+/**
+ * GitHub-sourced engineering evidence, derived entirely from synced data.
+ * `connected: false` means no GitHub account is linked — every stat is
+ * null/empty and the UI shows the "connect GitHub" empty state.
+ */
+export interface GitHubEvidence {
+  source: "GitHub";
+  connected: boolean;
+  lastSyncedAt: string | null;
+  username: string | null;
+  profileUrl: string | null;
+  avatarUrl: string | null;
+  publicRepos: number | null;
+  followers: number | null;
+  following: number | null;
+  totalStars: number;
+  totalForks: number;
+  repositoriesTracked: number;
+  languageDistribution: LanguageShare[];
+  primaryTechnologies: string[];
+  recentActivity: GitHubActivityItem[];
+}
+
 export interface Developer360Overview {
   user: {
     id: string;
@@ -145,6 +201,8 @@ export interface Developer360Overview {
   recentCertifications: unknown[];
   codingProfiles: unknown[];
   targetRoles: unknown[];
+  /** GitHub-derived evidence; always present (connected flag distinguishes states). */
+  github: GitHubEvidence;
 }
 
 /* ── Response envelopes (the `data` field of each endpoint) ── */
@@ -177,6 +235,35 @@ export interface GitHubRepoOption {
 
 export interface GitHubReposResponse {
   repositories: GitHubRepoOption[];
+}
+
+/** Richer GitHub account snapshot returned by the sync endpoints (never the token). */
+export interface GitHubAccountSummary {
+  id: string;
+  username: string;
+  profileUrl: string | null;
+  avatarUrl: string | null;
+  totalRepos: number;
+  totalStars: number;
+  totalFollowers: number;
+  totalFollowing: number;
+  lastSyncedAt: string | null;
+}
+
+/** Normalized result of a GitHub sync (POST /repositories/sync, /auth/github/sync). */
+export interface RepositorySyncSummary {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    avatarUrl: string | null;
+    githubUsername: string;
+  };
+  githubAccount: GitHubAccountSummary;
+  repositoriesSynced: number;
+  /** True when GitHub had more pages than the sync walked (very large accounts). */
+  truncated: boolean;
+  lastSyncedAt: string;
 }
 
 export interface RepositoryResponse {

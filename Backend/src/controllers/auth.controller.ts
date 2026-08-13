@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, CookieOptions } from 'express';
 import crypto from 'crypto';
 import { AuthService } from '../services/auth.service';
+import { GitHubSyncService } from '../services/githubSync.service';
 import { successResponse } from '../utils/apiResponse';
 import { env } from '../config/env';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -306,7 +307,9 @@ export class AuthController {
   };
 
   /**
-   * Synchronize linked GitHub account stats (repos, stars, followers)
+   * Synchronize the linked GitHub account: refreshes profile stats (repos,
+   * stars, followers, following) *and* upserts the user's repositories. Shares
+   * the same engine as POST /repositories/sync so both stay consistent.
    */
   static syncGitHub = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -315,38 +318,9 @@ export class AuthController {
         throw AppError.badRequest('No GitHub account linked to sync.');
       }
 
-      const accessToken = user.githubAccount.accessToken;
+      const summary = await GitHubSyncService.syncUser(user.id);
 
-      // Fetch fresh profile details from GitHub
-      const userResponse = await fetch(GITHUB_USER_URL, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'User-Agent': 'DevProof-Backend'
-        }
-      }).catch((error: unknown) => {
-        throw AppError.serviceUnavailable(
-          `Unable to reach GitHub while refreshing the linked profile. Check network access and proxy settings. ${(error as Error).message}`
-        );
-      });
-
-      if (!userResponse.ok) {
-        throw AppError.badRequest('Failed to fetch fresh profile from GitHub API');
-      }
-
-      const githubUser = await userResponse.json() as any;
-
-      await prisma.gitHubAccount.update({
-        where: { userId: user.id },
-        data: {
-          username: githubUser.login,
-          profileUrl: githubUser.html_url,
-          avatarUrl: githubUser.avatar_url,
-          totalRepos: githubUser.public_repos,
-          totalFollowers: githubUser.followers
-        }
-      });
-
-      return successResponse(res, 200, 'GitHub account synchronized successfully');
+      return successResponse(res, 200, 'GitHub account synchronized successfully', summary);
     } catch (error) {
       next(error);
     }

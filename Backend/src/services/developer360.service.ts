@@ -100,7 +100,146 @@ export class Developer360Service {
       skillsList: skills,
       recentCertifications: user.certifications,
       codingProfiles: user.codingProfiles,
-      targetRoles: user.targetRoles
+      targetRoles: user.targetRoles,
+      // GitHub-sourced engineering evidence, derived entirely from data already
+      // synced into our DB (see GitHubSyncService). No extra GitHub API calls,
+      // no fabricated values — absent data reads as null/empty, never a guess.
+      github: Developer360Service.buildGitHubEvidence(user.githubAccount, repos)
+    };
+  }
+
+  /**
+   * Assemble the GitHub evidence block from stored account + repository rows.
+   *
+   * Everything here is directly observed GitHub metadata (source = "GitHub"),
+   * not inferred skill. Language distribution is a *repository count per primary
+   * language* over the user's authored repos — we deliberately do NOT call the
+   * per-repo `/languages` endpoint (that would be one extra request per repo),
+   * so this is not a byte-level breakdown and is not presented as one.
+   */
+  private static buildGitHubEvidence(
+    account: {
+      username: string;
+      profileUrl: string | null;
+      avatarUrl: string | null;
+      totalRepos: number;
+      totalStars: number;
+      totalFollowers: number;
+      totalFollowing: number;
+      lastSyncedAt: Date | null;
+    } | null,
+    repos: Array<{
+      name: string;
+      fullName: string;
+      owner: string;
+      url: string;
+      language: string | null;
+      isFork: boolean;
+      isArchived: boolean;
+      starsCount: number;
+      forksCount: number;
+      pushedAt: Date | null;
+    }>
+  ) {
+    // Not linked → an explicit "not connected" shape the UI turns into the
+    // "Connect GitHub to unlock repository intelligence" empty state.
+    if (!account) {
+      return {
+        source: 'GitHub' as const,
+        connected: false,
+        lastSyncedAt: null,
+        username: null,
+        profileUrl: null,
+        avatarUrl: null,
+        publicRepos: null,
+        followers: null,
+        following: null,
+        totalStars: 0,
+        totalForks: 0,
+        repositoriesTracked: 0,
+        languageDistribution: [] as Array<{ language: string; count: number; percentage: number }>,
+        primaryTechnologies: [] as string[],
+        recentActivity: [] as Array<{
+          name: string;
+          fullName: string;
+          url: string;
+          language: string | null;
+          isFork: boolean;
+          isArchived: boolean;
+          starsCount: number;
+          forksCount: number;
+          pushedAt: Date | null;
+        }>
+      };
+    }
+
+    const username = account.username ? account.username.toLowerCase() : null;
+
+    // The user's own original work: repositories they own that are not forks of
+    // someone else's project. Forks are excluded because a fork's primary
+    // language reflects the upstream project, not what this developer chose to
+    // build — counting them would overstate the evidence.
+    const authoredRepos = repos.filter((r) => {
+      if (r.isFork) return false;
+      if (username && r.owner) return r.owner.toLowerCase() === username;
+      return true;
+    });
+
+    const languageCounts = new Map<string, number>();
+    for (const r of authoredRepos) {
+      if (!r.language) continue;
+      languageCounts.set(r.language, (languageCounts.get(r.language) ?? 0) + 1);
+    }
+    const languageTotal = Array.from(languageCounts.values()).reduce((a, b) => a + b, 0);
+    const languageDistribution = Array.from(languageCounts.entries())
+      .map(([language, count]) => ({
+        language,
+        count,
+        // Share of authored repositories (one decimal), not share of bytes.
+        percentage: languageTotal > 0 ? Math.round((count / languageTotal) * 1000) / 10 : 0
+      }))
+      .sort((a, b) => b.count - a.count || a.language.localeCompare(b.language));
+
+    const primaryTechnologies = languageDistribution.slice(0, 5).map((l) => l.language);
+
+    // Forks-of-this-repo count is a legitimate impact signal for owned work.
+    const totalForks = authoredRepos.reduce((sum, r) => sum + (r.forksCount || 0), 0);
+
+    // Most recently pushed repositories — real activity, across all tracked
+    // repos (a push to a fork is still the user's activity), newest first.
+    const recentActivity = repos
+      .filter((r) => r.pushedAt)
+      .sort((a, b) => b.pushedAt!.getTime() - a.pushedAt!.getTime())
+      .slice(0, 5)
+      .map((r) => ({
+        name: r.name,
+        fullName: r.fullName,
+        url: r.url,
+        language: r.language,
+        isFork: r.isFork,
+        isArchived: r.isArchived,
+        starsCount: r.starsCount,
+        forksCount: r.forksCount,
+        pushedAt: r.pushedAt
+      }));
+
+    return {
+      source: 'GitHub' as const,
+      connected: true,
+      lastSyncedAt: account.lastSyncedAt,
+      username: account.username,
+      profileUrl: account.profileUrl,
+      avatarUrl: account.avatarUrl,
+      // Profile stats as captured at last sync (from GitHubSyncService).
+      publicRepos: account.totalRepos,
+      followers: account.totalFollowers,
+      following: account.totalFollowing,
+      totalStars: account.totalStars,
+      totalForks,
+      repositoriesTracked: repos.length,
+      languageDistribution,
+      primaryTechnologies,
+      recentActivity
     };
   }
 }

@@ -1,11 +1,37 @@
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { GitHubService } from '../services/github.service';
+import { GitHubSyncService } from '../services/githubSync.service';
 import { prisma } from '../config/database';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/appError';
 
+/** ISO string -> Date, or null. Guards against malformed timestamps. */
+function toDate(iso: string | null): Date | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export class RepositoryController {
+  /**
+   * Sync the authenticated user's GitHub profile and repositories into DevProof.
+   * Returns a normalized summary; the GitHub access token is never included.
+   */
+  static syncRepositories = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      if (!user.githubAccount) {
+        throw AppError.badRequest('No GitHub account is linked. Connect GitHub before syncing.');
+      }
+
+      const summary = await GitHubSyncService.syncUser(user.id);
+
+      return successResponse(res, 200, 'GitHub repositories synchronized successfully', summary);
+    } catch (error) {
+      next(error);
+    }
+  };
   /**
    * Connect and track a new public/authenticated repository
    */
@@ -36,13 +62,22 @@ export class RepositoryController {
         repo = await prisma.repository.update({
           where: { id: repo.id },
           data: {
+            githubRepoId: metadata.githubRepoId,
             description: metadata.description,
             defaultBranch: metadata.defaultBranch,
             isPrivate: metadata.isPrivate,
+            isFork: metadata.isFork,
+            isArchived: metadata.isArchived,
             language: metadata.language,
+            topics: metadata.topics,
             starsCount: metadata.starsCount,
             forksCount: metadata.forksCount,
-            sizeKb: metadata.sizeKb
+            watchersCount: metadata.watchersCount,
+            openIssuesCount: metadata.openIssuesCount,
+            sizeKb: metadata.sizeKb,
+            githubCreatedAt: toDate(metadata.githubCreatedAt),
+            githubUpdatedAt: toDate(metadata.githubUpdatedAt),
+            pushedAt: toDate(metadata.pushedAt)
           }
         });
       } else {
@@ -51,6 +86,7 @@ export class RepositoryController {
           data: {
             userId: user.id,
             githubAccountId: user.githubAccount?.id || null,
+            githubRepoId: metadata.githubRepoId,
             name: metadata.name,
             fullName: metadata.fullName,
             owner: metadata.owner,
@@ -58,10 +94,18 @@ export class RepositoryController {
             description: metadata.description,
             defaultBranch: metadata.defaultBranch,
             isPrivate: metadata.isPrivate,
+            isFork: metadata.isFork,
+            isArchived: metadata.isArchived,
             language: metadata.language,
+            topics: metadata.topics,
             starsCount: metadata.starsCount,
             forksCount: metadata.forksCount,
-            sizeKb: metadata.sizeKb
+            watchersCount: metadata.watchersCount,
+            openIssuesCount: metadata.openIssuesCount,
+            sizeKb: metadata.sizeKb,
+            githubCreatedAt: toDate(metadata.githubCreatedAt),
+            githubUpdatedAt: toDate(metadata.githubUpdatedAt),
+            pushedAt: toDate(metadata.pushedAt)
           }
         });
       }
@@ -84,9 +128,15 @@ export class RepositoryController {
         throw AppError.badRequest('Link a GitHub account before browsing your repositories.');
       }
 
-      const repos = await GitHubService.fetchUserRepos(accessToken);
+      const { repos, truncated } = await GitHubService.fetchUserRepos(accessToken);
 
-      return successResponse(res, 200, 'GitHub repositories retrieved successfully', { repositories: repos });
+      return successResponse(
+        res,
+        200,
+        'GitHub repositories retrieved successfully',
+        { repositories: repos },
+        truncated ? { truncated: true } : undefined
+      );
     } catch (error) {
       next(error);
     }

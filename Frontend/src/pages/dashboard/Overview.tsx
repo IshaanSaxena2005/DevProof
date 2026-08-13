@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle, RefreshCw, CheckCircle2, Star } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
@@ -14,6 +14,12 @@ function scoreColor(n: number) {
   if (n >= 80) return "#77fc75";
   if (n >= 60) return "#f59e0b";
   return "#ef4444";
+}
+
+/** ISO -> short date, or an em-dash when GitHub gave us no timestamp. */
+function formatWhen(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function StatCard({
@@ -218,6 +224,100 @@ export default function Overview() {
             )}
           </div>
         </GlassCard>
+      </div>
+
+      {/* Repository intelligence — sourced entirely from synced GitHub data */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FolderGit2 className="w-4 h-4 text-white/40" />
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Repository Intelligence</h3>
+          {o.github.connected && o.github.lastSyncedAt && (
+            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+              · synced {formatWhen(o.github.lastSyncedAt)}
+            </span>
+          )}
+        </div>
+
+        {o.github.connected ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Primary technologies */}
+            <GlassCard hover={false} className="p-6">
+              <h4 className="text-xs font-bold text-white/70 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Code2 className="w-3.5 h-3.5 text-primary" /> Primary Technologies
+              </h4>
+              {o.github.primaryTechnologies.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {o.github.primaryTechnologies.map((tech) => (
+                    <span
+                      key={tech}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-white/30">
+                  No language data yet — sync your GitHub repositories to populate this.
+                </p>
+              )}
+            </GlassCard>
+
+            {/* Recent activity */}
+            <GlassCard hover={false} className="p-6">
+              <h4 className="text-xs font-bold text-white/70 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Activity className="w-3.5 h-3.5 text-primary" /> Recent Activity
+              </h4>
+              {o.github.recentActivity.length > 0 ? (
+                <div className="flex flex-col divide-y divide-white/[0.05]">
+                  {o.github.recentActivity.map((r) => (
+                    <a
+                      key={r.fullName}
+                      href={r.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-3 py-2 group first:pt-0 last:pb-0"
+                    >
+                      <span className="text-[13px] text-white/70 group-hover:text-white truncate transition-colors" title={r.fullName}>
+                        {r.name}
+                      </span>
+                      <span className="flex items-center gap-3 shrink-0 text-[11px] text-white/30">
+                        {r.starsCount > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Star className="w-3 h-3" /> {r.starsCount}
+                          </span>
+                        )}
+                        <span>{formatWhen(r.pushedAt)}</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-white/30">No recent pushes recorded yet.</p>
+              )}
+            </GlassCard>
+          </div>
+        ) : (
+          <GlassCard hover={false} className="flex flex-col items-center gap-3 p-8 text-center">
+            <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40">
+              <FolderGit2 className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-semibold text-white">
+              Connect GitHub to unlock repository intelligence.
+            </p>
+            <p className="text-xs max-w-md" style={{ color: "var(--text-secondary)" }}>
+              Link your account to surface your primary technologies, recent activity, and
+              language footprint here.
+            </p>
+            <Link
+              to="/dashboard/settings"
+              className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5"
+              style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+            >
+              Link GitHub
+            </Link>
+          </GlassCard>
+        )}
       </div>
     </PageContainer>
   );
