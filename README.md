@@ -580,68 +580,6 @@ Recommendations
 
 ---
 
-## 🗺️ Roadmap
-
-### Phase 1 — Platform Foundation
-
-- Frontend architecture
-- Dashboard foundation
-- Core UI components
-- Routing
-- Responsive design
-
-### Phase 2 — Authentication
-
-- Email/password authentication
-- Secure sessions
-- HTTP-only JWT cookies
-- Protected dashboard routes
-
-### Phase 3 — GitHub Integration
-
-- GitHub OAuth
-- Account linking
-- GitHub synchronization
-- Repository integration
-
-### Phase 4 — Authentication & OAuth Stabilization
-
-- Secure OAuth account linking
-- Session-aware GitHub integration
-- OAuth error handling
-- Authentication UX improvements
-
-### Phase 5 — GitHub Evidence Engine
-
-- Repository ingestion
-- Repository synchronization
-- GitHub metadata
-- Repository ownership
-- Developer 360 GitHub evidence
-- Repository intelligence
-
-### Phase 6 — Coding Evidence
-
-- LeetCode integration
-- GeeksforGeeks integration
-- Problem-solving evidence
-- Coding activity
-- Competitive programming intelligence
-
-### Future
-
-- Resume intelligence
-- LinkedIn evidence
-- Certification verification
-- Additional coding platforms
-- Advanced engineering scoring
-- Recruiter-facing developer profiles
-- Evidence-based talent discovery
-- Advanced AI career recommendations
-- Continuous developer intelligence
-
----
-
 ## 🎯 Vision
 
 > **Your engineering profile should be backed by evidence, not just claims.**
@@ -673,17 +611,15 @@ DevProof should be able to show the evidence behind it.
 ## 👨‍💻 Author
 
 **Ishaan Saxena**
+**Hardesh Agarwal**
 
 Developer focused on building full-stack, AI-powered, and data-driven software systems.
-
-- GitHub: https://github.com/IshaanSaxena2005
-- Project: **DevProof**
 
 ---
 
 ## 📄 License
 
-DevProof is proprietary software developed by **Ishaan Saxena**.
+DevProof is proprietary software developed by **Ishaan Saxena and Hardesh Agarwal**.
 
 Unauthorized copying, redistribution, modification, or commercial use is not permitted without prior written permission from the copyright holder.
 
