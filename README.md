@@ -613,7 +613,7 @@ DevProof should be able to show the evidence behind it.
 **Ishaan Saxena**
 **Hardesh Agarwal**
 
-Developer focused on building full-stack, AI-powered, and data-driven software systems.
+Developers focused on building full-stack, AI-powered, and data-driven software systems.
 
 ---
 
