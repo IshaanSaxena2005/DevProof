@@ -215,48 +215,78 @@ export class GitHubService {
   }
 
   /**
-   * List every repository the authenticated GitHub user owns or collaborates on.
+   * List the installations of this GitHub App that the authenticated user can see.
    *
-   * Walks GitHub's pagination rather than returning only the first page: keeps
-   * requesting successive pages until a short page arrives (the last one) or the
-   * {@link MAX_REPO_PAGES} safety cap is hit. Returns whether the cap truncated
-   * the result so the caller can report it instead of silently claiming a full sync.
+   * Returns their numeric ids. An empty array is a normal, expected state: the
+   * user authorized DevProof but has not installed it on any account yet.
+   */
+  static async fetchUserInstallations(accessToken: string): Promise<number[]> {
+    const response = await this.request(
+      `${GITHUB_API}/user/installations?per_page=100`,
+      this.headers(accessToken)
+    );
+    this.assertOk(response, 'listing where DevProof is installed');
+
+    const data = await this.parseJson<any>(response, 'listing where DevProof is installed');
+    const installations = Array.isArray(data?.installations) ? data.installations : [];
+
+    return installations
+      .map((entry: any) => Number(entry?.id))
+      .filter((id: number) => Number.isFinite(id));
+  }
+
+  /**
+   * Every repository DevProof may read for this user.
+   *
+   * DevProof authenticates as a GitHub App, not an OAuth App, so /user/repos is
+   * the wrong source: a user-to-server token only reaches repositories covered
+   * by an *installation*, and the `scope` parameter is ignored entirely. Access
+   * is therefore enumerated per installation, which is also what makes the
+   * per-repository consent the user granted at install time authoritative here.
+   *
+   * Results are keyed by full name so a repository visible through two
+   * installations (personal plus organization) is only synced once.
    */
   static async fetchUserRepos(
     accessToken: string
-  ): Promise<{ repos: GitHubRepoDetails[]; truncated: boolean }> {
-    const repos: GitHubRepoDetails[] = [];
-    let page = 1;
+  ): Promise<{ repos: GitHubRepoDetails[]; truncated: boolean; installationCount: number }> {
+    const installationIds = await this.fetchUserInstallations(accessToken);
+    const byFullName = new Map<string, GitHubRepoDetails>();
     let truncated = false;
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const url =
-        `${GITHUB_API}/user/repos?sort=updated&per_page=${REPOS_PER_PAGE}&page=${page}` +
-        `&affiliation=owner,collaborator,organization_member`;
-      const response = await this.request(url, this.headers(accessToken));
-      this.assertOk(response, 'listing your repositories');
+    for (const installationId of installationIds) {
+      let page = 1;
 
-      const data = await this.parseJson<any>(response, 'listing your repositories');
-      if (!Array.isArray(data)) {
-        throw AppError.serviceUnavailable('GitHub returned an unexpected repositories payload.');
-      }
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const url =
+          `${GITHUB_API}/user/installations/${installationId}/repositories` +
+          `?per_page=${REPOS_PER_PAGE}&page=${page}`;
+        const response = await this.request(url, this.headers(accessToken));
+        this.assertOk(response, 'listing the repositories DevProof can access');
 
-      for (const repo of data) {
-        repos.push(this.mapRepo(repo));
-      }
+        const data = await this.parseJson<any>(response, 'listing the repositories DevProof can access');
+        if (!Array.isArray(data?.repositories)) {
+          throw AppError.serviceUnavailable('GitHub returned an unexpected repositories payload.');
+        }
 
-      // A page shorter than the page size is the last page.
-      if (data.length < REPOS_PER_PAGE) break;
+        for (const repo of data.repositories) {
+          const mapped = this.mapRepo(repo);
+          byFullName.set(mapped.fullName, mapped);
+        }
 
-      page += 1;
-      if (page > MAX_REPO_PAGES) {
-        truncated = true;
-        break;
+        // A page shorter than the page size is the last page.
+        if (data.repositories.length < REPOS_PER_PAGE) break;
+
+        page += 1;
+        if (page > MAX_REPO_PAGES) {
+          truncated = true;
+          break;
+        }
       }
     }
 
-    return { repos, truncated };
+    return { repos: [...byFullName.values()], truncated, installationCount: installationIds.length };
   }
 
   /**

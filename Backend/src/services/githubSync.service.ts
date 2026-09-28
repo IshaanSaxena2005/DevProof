@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import { AppError } from '../utils/appError';
 import { GitHubService, GitHubRepoDetails } from './github.service';
+import { GitHubAppService } from './githubApp.service';
 
 /** GitHub account fields safe to return to the client (access token excluded). */
 export interface SafeGitHubAccountSummary {
@@ -65,8 +66,28 @@ export class GitHubSyncService {
     // 1. Fresh profile (also the earliest point a revoked token surfaces).
     const profile = await GitHubService.fetchAuthenticatedProfile(account.accessToken);
 
-    // 2. Every repository, across all pages.
-    const { repos, truncated } = await GitHubService.fetchUserRepos(account.accessToken);
+    // 2. Every repository DevProof may read, across all installations and pages.
+    const { repos, truncated, installationCount } = await GitHubService.fetchUserRepos(account.accessToken);
+
+    // Neither of these is a failure of this sync — they are consent states the
+    // user has to resolve on GitHub. Reporting "0 synced" would read as an empty
+    // GitHub account, which is the one thing it definitely does not mean.
+    if (installationCount === 0) {
+      throw AppError.badRequest(
+        'DevProof is not installed on any of your GitHub accounts yet, so it cannot see any repositories. ' +
+          `Install it and choose which repositories to share: ${GitHubAppService.installationUrl()}`
+      );
+    }
+
+    // Installed, but granting access to nothing: the "only select repositories"
+    // option with an empty selection. Distinct from the case above, and the
+    // user has to widen the existing installation rather than create one.
+    if (repos.length === 0) {
+      throw AppError.badRequest(
+        'DevProof is installed on your GitHub account but has not been granted access to any repositories. ' +
+          `Open the installation and select the repositories to share: ${GitHubAppService.installationUrl()}`
+      );
+    }
 
     // Total stars is summed over repositories *owned* by this GitHub user, so a
     // collaborator/org repo's stars are not miscounted as the user's own impact.

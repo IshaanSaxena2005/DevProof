@@ -35,6 +35,19 @@ const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
   maxAge: GITHUB_OAUTH_STATE_TTL_MS
 };
 
+/**
+ * DevProof signs in as a **GitHub App**, whose client ids are prefixed `Iv1.`
+ * (legacy) or `Iv23` (current). An OAuth App id is never prefixed this way.
+ *
+ * Both credential types are accepted by /login/oauth/authorize, so the wrong one
+ * does not fail loudly — sign-in succeeds and the mismatch only surfaces later
+ * as an account that can somehow see no repositories. The check below therefore
+ * runs up front, and its sense is deliberately the opposite of what it was
+ * while DevProof used the OAuth App flow: repositories are now enumerated per
+ * installation (see github.service#fetchUserRepos), which an OAuth App has none of.
+ */
+const GITHUB_APP_CLIENT_ID_PREFIXES = ['Iv1.', 'Iv23'];
+
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const GITHUB_USER_URL = 'https://api.github.com/user';
 
@@ -153,6 +166,24 @@ export class AuthController {
   };
 
   /**
+   * Ends a failed GitHub OAuth attempt on the login page instead of as JSON.
+   *
+   * Both GitHub endpoints are top-level browser navigations, not XHR: the user
+   * physically follows a link to /auth/github and GitHub redirects back to
+   * /auth/github/callback. Handing those a JSON error body strands the user on
+   * the API origin with no markup and no way back. Login already renders
+   * ?error= (see Frontend/src/pages/Login.tsx), so every failure returns there.
+   *
+   * The message is truncated because it can carry an upstream GitHub response
+   * body, which is neither useful nor safe at URL length.
+   */
+  private static redirectToLoginWithError(res: Response, error: unknown) {
+    const raw = error instanceof Error ? error.message : "";
+    const message = raw.slice(0, 300) || "GitHub sign-in failed. Please try again.";
+    return res.redirect(`${env.FRONTEND_URL}/login?error=${encodeURIComponent(message)}`);
+  }
+
+  /**
    * Initiate GitHub OAuth redirect
    */
   static githubOAuth = async (req: Request, res: Response, next: NextFunction) => {
@@ -164,15 +195,26 @@ export class AuthController {
         );
       }
 
+      if (!GITHUB_APP_CLIENT_ID_PREFIXES.some((p) => env.GITHUB_CLIENT_ID.startsWith(p))) {
+        throw AppError.badRequest(
+          'GITHUB_CLIENT_ID does not look like a GitHub App client id (those start with "Iv"). ' +
+          'DevProof signs in as a GitHub App — open https://github.com/settings/apps, pick your app, ' +
+          'and copy its Client ID and a generated client secret.'
+        );
+      }
+
       const state = crypto.randomBytes(24).toString('hex');
       res.cookie(GITHUB_OAUTH_STATE_COOKIE, state, OAUTH_STATE_COOKIE_OPTIONS);
 
       const redirectUri = encodeURIComponent(env.GITHUB_CALLBACK_URL);
-      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email,repo&state=${state}`;
+      // No `scope` parameter: a GitHub App ignores it outright and derives access
+      // from the permissions granted when it was installed. Sending one would
+      // imply a level of access this flow does not actually negotiate.
+      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&state=${state}`;
 
       return res.redirect(githubAuthUrl);
     } catch (error) {
-      next(error);
+      return AuthController.redirectToLoginWithError(res, error);
     }
   };
 
@@ -279,10 +321,7 @@ export class AuthController {
       // redirect. A token in the URL leaks into history, logs, and Referer.
       return res.redirect(`${env.FRONTEND_URL}/dashboard?auth=success`);
     } catch (error) {
-      // For OAuth errors, redirect to the login page with a descriptive error
-      // instead of returning a JSON error response (this is a browser redirect flow).
-      const message = error instanceof Error ? encodeURIComponent(error.message) : 'oauth_error';
-      return res.redirect(`${env.FRONTEND_URL}/login?error=${message}`);
+      return AuthController.redirectToLoginWithError(res, error);
     }
   };
 
