@@ -22,31 +22,56 @@ A resume communicates what the developer claims.
 
 **DevProof brings these signals together and turns them into engineering evidence.**
 
-### Core Intelligence
+---
 
-- 📊 Developer Intelligence
-- 💻 Engineering Evidence
-- 🧠 AI-powered Insights
-- 📈 Growth Analytics
-- 🎯 Career Readiness
+## 📍 Current Status
+
+DevProof is under active development. The project's own first principle is that unavailable
+data must read as unavailable — so this README states plainly what is wired end to end and
+what is still scaffolding.
+
+| Area | Status |
+|---|---|
+| Email/password auth, JWT cookies, protected routes | ✅ Built |
+| GitHub App sign-in, profile + repository sync | ✅ Built |
+| Repository static analysis engine (metrics + findings) | ✅ Built |
+| Developer 360 aggregation endpoint | ✅ Built |
+| AI insights endpoint (Groq) | ✅ Built |
+| GitHub App JWT + webhook signature verification | ✅ Built |
+| Dashboard: Overview, Repositories, Repository Details, Developer 360, AI Insights, Skills | ✅ Live backend data |
+| Dashboard: Growth, Career Readiness, Problem Solving | ⚠️ Sample data in the UI |
+| Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
+| Certification endpoints (with evidence-ladder promotion) | ✅ Built |
+| Course / coding-profile endpoints | ❌ Models exist in the schema, nothing exposes them |
+| LeetCode / GeeksforGeeks integration | ❌ Not built |
+
+The three sample-data pages render a `SampleDataNotice` banner in the UI naming exactly what
+is not real, rather than passing mock numbers off as measurements.
+
+The AI Insights page reads `GET /api/v1/ai/insights` directly, so it shows a real Groq-generated
+summary of your stored analyses — or an empty state when nothing has been analyzed yet. It renders
+only the four things the endpoint actually returns (summary, strengths, risks, recommendations)
+plus the measured average score; no projected career trajectory or invented sub-scores.
 
 ---
 
-## ✨ Core Features
+## ✨ Features
 
 | Feature | Description |
 |---|---|
-| 🔐 **Secure Authentication** | Email/password authentication with HTTP-only JWT cookies and GitHub OAuth |
-| 🐙 **GitHub Integration** | Connect GitHub and synchronize developer profiles and repositories |
-| 🔍 **Repository Intelligence** | Analyze repositories, technologies, activity, and engineering signals |
-| 👨‍💻 **Developer 360** | Build a multi-dimensional developer profile from real engineering evidence |
-| 🧩 **Skill Intelligence** | Identify technologies and skills supported by actual engineering activity |
-| 🧠 **Problem Solving Intelligence** | Aggregate competitive-programming evidence from coding platforms |
-| 📈 **Growth Analytics** | Track development activity, technology growth, projects, and engineering progression |
-| 🎯 **Career Readiness** | Evaluate readiness for different engineering roles |
-| 🤖 **AI Insights** | Generate engineering strengths, risks, recommendations, and development insights |
-| 📜 **Credentials & Evidence** | Organize certifications and professional evidence |
-| 🔄 **Continuous Sync** | Keep connected engineering data synchronized without manual re-entry |
+| 🔐 **Secure Authentication** | Email/password with HTTP-only JWT cookies, plus GitHub App sign-in |
+| 🐙 **GitHub Integration** | Connect GitHub, sync profile and repositories without duplicating rows |
+| 🔍 **Repository Analysis** | Static analysis producing scored metrics and severity-ranked findings |
+| 👨‍💻 **Developer 360** | Aggregates repositories, analyses, skills, credentials and target roles into one overview |
+| 🤖 **AI Insights** | Groq-backed summary of strengths, risks and recommendations, grounded only in stored analysis data |
+| 🪝 **GitHub App & Webhooks** | App JWT minting and HMAC-verified webhook intake |
+| 🩺 **Health Endpoint** | Reports uptime, environment and live database connectivity |
+
+### Planned
+
+Skill intelligence endpoints, competitive-programming ingestion, growth analytics and career
+readiness scoring are designed in the schema (`Skill`, `SkillEvidence`, `CodingProfile`,
+`TargetRole`, `Recommendation`) but are not yet served by the API.
 
 ---
 
@@ -60,24 +85,8 @@ DevProof aims to answer:
 
 > **"What evidence demonstrates that they can do it?"**
 
-### Traditional Developer Profile
-
-```text
-Resume
-   ↓
-Self-Reported Skills
-   ↓
-Projects
-   ↓
-Recruiter Evaluation
-```
-
-### DevProof
-
 ```text
 GitHub
-LeetCode
-GFG
 Projects
 Certifications
 Coding Activity
@@ -96,201 +105,71 @@ Actionable Recommendations
 
 ---
 
-## 🐙 GitHub Intelligence
+## 🔍 Repository Analysis
 
-GitHub is one of the primary evidence sources in DevProof.
+The analysis engine reads repository contents through the GitHub API and scores six
+categories, each stored as a `Metric` row alongside severity-ranked `Finding` rows:
 
-After connecting a GitHub account, DevProof can synchronize:
+- **Documentation** — README presence and quality
+- **Testing** — test files and automation
+- **Security** — hardcoded secrets and dynamic-execution sinks
+- **Code Quality** — structure and clean-architecture signals
+- **Maintainability** — CI/CD configuration
+- **Dependency Health** — dependency management
 
-- GitHub profile
-- Public repositories
-- Repository metadata
-- Languages
-- Topics
-- Stars
-- Forks
-- Watchers
-- Open issues
-- Repository activity
-- Created / updated / pushed timestamps
-- Fork and archived status
-
-Repositories are stored with per-user ownership and synchronized safely without creating duplicate records.
-
-### Repository Intelligence
-
-Each repository can become an engineering evidence source.
-
-DevProof can surface:
-
-- Repository quality
-- Technology usage
-- Engineering activity
-- Project maturity
-- Repository metadata
-- Analysis status
-- Development signals
-
-Where analysis has not yet been performed, DevProof explicitly shows **Analysis Pending** rather than fabricating a score.
+Results roll up into an `overallScore` and a `healthStatus`. Where analysis has not run,
+DevProof reports **Analysis Pending** rather than fabricating a score.
 
 ---
 
-## 👨‍💻 Developer 360
+## 🤖 AI Insights
 
-Developer 360 provides a consolidated view of engineering capability.
+The AI layer interprets evidence — it never invents it.
 
-Instead of looking at individual repositories independently, DevProof combines multiple evidence sources into a broader developer profile.
-
-### Developer 360 can surface
-
-- Technical skills
-- Technologies
-- Repository activity
-- GitHub evidence
-- Problem-solving evidence
-- Project evidence
-- Engineering strengths
-- Development risks
-- Professional growth
-
-The goal is to create a profile that represents **engineering capability rather than simply listing technologies**.
+- Provider: **Groq**, via its OpenAI-compatible chat completions API
+- Default model: `openai/gpt-oss-120b` (override with `GROQ_MODEL`)
+- The prompt contains only real stored metrics and findings
+- Responses are forced to JSON and validated with Zod before reaching the frontend
+- If the user has **no completed analyses, the model is never called** — the endpoint returns
+  `hasEvidence: false` instead of letting an LLM confabulate plausible strengths
+- `GROQ_API_KEY` is optional: the server boots without it and the endpoint returns a clear
+  **503** rather than crashing at startup
 
 ---
 
-## 📊 Evidence Engine
+## 🔐 GitHub App Sign-In
 
-DevProof organizes developer information into evidence categories.
+DevProof authenticates as a **GitHub App**, not an OAuth App. Two consequences
+matter when setting it up:
 
-```text
-                    Developer
-                        │
-           ┌────────────┼────────────┐
-           ▼            ▼            ▼
-        GitHub        Coding       Projects
-           │         Profiles         │
-           ▼            ▼             ▼
-      Repository     Problem        Project
-       Evidence      Solving        Evidence
-           │         Evidence         │
-           └────────────┼────────────┘
-                        ▼
-                 Evidence Engine
-                        │
-           ┌────────────┼────────────┐
-           ▼            ▼            ▼
-         Skills        Growth       Career
-                                    Readiness
-                        │
-                        ▼
-                   AI Insights
-```
+1. **Authorizing and installing are separate steps.** Signing in proves identity.
+   It grants access to no repositories at all until the user also *installs*
+   DevProof and picks which repositories to share. A freshly signed-in user with
+   no installation sees an explicit prompt to install, not an empty list.
+2. **The `scope` parameter does nothing.** A GitHub App derives access from the
+   permissions granted at install time, so repositories are enumerated per
+   installation via `/user/installations` rather than `/user/repos`.
 
----
+Set `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` from
+https://github.com/settings/apps. A GitHub App client id starts with `Iv1.` or
+`Iv23`; the server rejects anything else rather than failing silently later.
+`GITHUB_APP_SLUG` is optional and only shapes the install link.
 
-## 💻 Problem Solving Intelligence
-
-DevProof brings competitive-programming activity into the developer evidence model.
-
-Supported platforms can contribute signals such as:
-
-- Problems solved
-- Easy / Medium / Hard distribution
-- Contest performance
-- Rankings
-- Coding activity
-- Streaks
-- Platform-specific statistics
-
-The system normalizes platform-specific data into a common evidence structure.
-
----
-
-## 📈 Growth Intelligence
-
-Developer growth is not represented by a single number.
-
-DevProof tracks signals such as:
-
-- Repository growth
-- Project activity
-- Technologies learned
-- Skill progression
-- Development consistency
-- Achievements
-- Engineering milestones
-
-The objective is to answer:
-
-> **"Is this developer actually progressing?"**
-
----
-
-## 🎯 Career Readiness
-
-DevProof translates engineering evidence into role-oriented readiness.
-
-Potential dimensions include:
-
-- Technical Skills
-- Projects
-- Problem Solving
-- Version Control
-- Documentation
-- Communication
-- Role-specific requirements
-
-The system can identify gaps and convert them into actionable development milestones.
-
----
-
-## 🤖 DevProof Intelligence
-
-The AI layer transforms collected evidence into understandable engineering insights.
-
-### Strength Analysis
-
-Identify areas where the developer demonstrates strong evidence.
-
-### Risk Analysis
-
-Identify gaps such as:
-
-- Limited testing evidence
-- Limited backend experience
-- Limited cloud exposure
-- Low open-source activity
-
-### Engineering Recommendations
-
-Generate actionable next steps such as:
-
-- Improve testing
-- Build scalable backend systems
-- Strengthen CI/CD
-- Learn cloud infrastructure
-- Contribute to open source
-- Build larger full-stack projects
-
-The AI layer is designed to **interpret evidence, not invent it**.
+Public repositories can still be analyzed by URL with no GitHub account linked
+at all — installation is required only for private ones.
 
 ---
 
 ## 🔐 Authentication & Security
 
-DevProof uses a security-first authentication architecture.
-
-### Authentication
-
-- Email/password authentication
-- HTTP-only JWT cookies
-- GitHub OAuth
-- Protected dashboard routes
-- Session restoration
-- Secure logout
-
-JWT tokens are never stored in `localStorage` or `sessionStorage`.
-
-GitHub access tokens remain server-side and are never exposed to the frontend.
+- Email/password authentication with bcrypt-hashed passwords
+- HTTP-only JWT cookies — tokens are never stored in `localStorage` or `sessionStorage`
+- GitHub App sign-in; access tokens stay server-side and are never exposed to the frontend
+- Repository access is per-installation: the user chooses which repositories DevProof may read
+- Zod request validation, Helmet security headers, CORS with credentials
+- Rate limiting: 200 requests per 15 minutes per IP on `/api`
+- Webhook payloads verified with a timing-safe HMAC SHA-256 comparison
+- All repository and analysis data is scoped to the authenticated user
 
 ---
 
@@ -299,18 +178,17 @@ GitHub access tokens remain server-side and are never exposed to the frontend.
 ```mermaid
 flowchart LR
     USER["Developer"]
-    FE["DevProof Frontend<br/>React + TypeScript"]
-    API["Backend API<br/>Node.js + Express"]
-    DB[("PostgreSQL<br/>Prisma")]
-    GH["GitHub"]
-    CODE["Coding Platforms"]
-    AI["AI Intelligence"]
+    FE["DevProof Frontend<br/>React 19 + TypeScript + Vite"]
+    API["Backend API<br/>Node.js + Express + TypeScript"]
+    DB[("PostgreSQL 16<br/>Prisma")]
+    GH["GitHub API<br/>App auth + Installations + Webhooks"]
+    AI["Groq<br/>openai/gpt-oss-120b"]
 
     USER --> FE
     FE --> API
     API --> DB
     API --> GH
-    API --> CODE
+    GH -. webhooks .-> API
     API --> AI
 ```
 
@@ -320,38 +198,26 @@ flowchart LR
 
 ### Frontend
 
-- React
+- React 19
 - TypeScript
 - Vite
-- Tailwind CSS
-- React Router
-- Framer Motion
+- Tailwind CSS v4
+- React Router v7
+- Motion (`motion/react`)
 - Lucide Icons
+- Spline (interactive WebGL background)
 
 ### Backend
 
 - Node.js
-- Express.js
+- Express 4
 - TypeScript
-- Prisma
-- PostgreSQL
-- JWT
-- bcrypt
+- Prisma 5
+- PostgreSQL 16
+- jsonwebtoken + bcryptjs
 - Zod
-- Helmet
-- Express Rate Limit
-
-### Integrations
-
-- GitHub OAuth
-- GitHub API
-- Competitive Programming Platforms
-
-### AI
-
-- LLM-powered engineering analysis
-- Structured developer intelligence
-- Evidence-based recommendations
+- Helmet, CORS, express-rate-limit
+- Morgan + Winston logging
 
 ---
 
@@ -361,13 +227,16 @@ flowchart LR
 DevProof/
 ├── Frontend/
 │   ├── src/
-│   │   ├── components/
+│   │   ├── components/      # landing sections, dashboard primitives, state blocks
 │   │   ├── pages/
+│   │   │   ├── Login.tsx
+│   │   │   └── dashboard/   # Overview, Repositories, Developer360, Skills, ...
 │   │   ├── layouts/
-│   │   ├── context/
+│   │   ├── context/         # AuthContext
 │   │   ├── hooks/
-│   │   ├── services/
-│   │   └── lib/
+│   │   ├── services/        # auth.ts, github.ts
+│   │   └── lib/             # api.ts, types.ts, useResource.ts
+│   ├── Dockerfile
 │   └── package.json
 │
 ├── Backend/
@@ -378,14 +247,18 @@ DevProof/
 │   │   ├── controllers/
 │   │   ├── routes/
 │   │   ├── services/
-│   │   ├── middleware/
-│   │   ├── config/
-│   │   └── utils/
+│   │   ├── middlewares/
+│   │   ├── validators/
+│   │   ├── config/          # env.ts, database.ts
+│   │   └── utils/           # apiResponse, appError, logger
 │   ├── test/
+│   ├── Dockerfile
+│   ├── docker-compose.yml   # PostgreSQL only
 │   └── package.json
 │
+├── docker-compose.yml       # full stack: postgres + backend + frontend
 ├── README.md
-└── package.json
+└── package.json             # root scripts that delegate into Backend/Frontend
 ```
 
 ---
@@ -399,45 +272,43 @@ DevProof/
 - Docker Desktop
 - Git
 
-### Clone Repository
+### Clone
 
 ```bash
 git clone https://github.com/IshaanSaxena2005/DevProof.git
 cd DevProof
 ```
 
-### Backend
+### Option A — full stack in Docker
+
+Create `Backend/.env` first (see below), then:
+
+```bash
+docker compose up -d --build
+```
+
+This starts PostgreSQL, the backend and the frontend together.
+
+### Option B — Postgres in Docker, apps on the host
+
+Start just the database:
 
 ```bash
 cd Backend
-npm install
-```
-
-Create `Backend/.env`, then start PostgreSQL:
-
-```bash
 docker compose up -d
 ```
 
-Apply Prisma migrations:
+Install dependencies, apply migrations and run the backend:
 
 ```bash
+npm install
 npm run prisma:migrate
-```
-
-Start the backend:
-
-```bash
 npm run dev
 ```
 
-Backend:
+Backend: `http://localhost:5000`
 
-`http://localhost:5000`
-
-### Frontend
-
-Open another terminal:
+In another terminal:
 
 ```bash
 cd Frontend
@@ -445,42 +316,86 @@ npm install
 npm run dev
 ```
 
-Frontend:
+Frontend: `http://localhost:5173`
 
-`http://localhost:5173`
+> PostgreSQL is published on host port **5434** (not 5432), because 5432 and 5433 are
+> commonly already taken by other local Postgres instances.
+
+### Root scripts
+
+From the repository root:
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+npm run build
+npm test
+```
 
 ---
 
 ## 🔑 Environment Variables
 
-### Backend
+Both apps ship a `.env.example` — copy it and fill in the values.
 
-Create `Backend/.env`:
+### Backend — `Backend/.env`
 
 ```env
-DATABASE_URL=
-JWT_SECRET=
+PORT=5000
+NODE_ENV=development
 
+DATABASE_URL=postgresql://devproof:devproof_local_dev@localhost:5434/devproof_db?schema=public
+JWT_SECRET=
+JWT_EXPIRES_IN=7d
+
+# GitHub App sign-in (optional — the server boots without it).
+# From https://github.com/settings/apps, NOT an OAuth App: the client id must
+# start with Iv1. or Iv23, and the server rejects anything else.
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-GITHUB_CALLBACK_URL=
+GITHUB_APP_SLUG=
+GITHUB_CALLBACK_URL=http://localhost:5000/api/v1/auth/github/callback
 
-FRONTEND_URL=
+# GitHub App + webhooks (optional)
+GITHUB_APP_ID=
+GITHUB_PRIVATE_KEY=
+GITHUB_WEBHOOK_SECRET=
+
+FRONTEND_URL=http://localhost:5173
+
+# AI insights (optional — endpoint returns 503 when unset)
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-### Frontend
+`DATABASE_URL` and `JWT_SECRET` are the only required values; `JWT_SECRET` must be at least
+8 characters. Generate one with:
 
-Create `Frontend/.env`:
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+### Frontend — `Frontend/.env`
 
 ```env
-VITE_API_URL=
+VITE_API_URL=http://localhost:5000/api/v1
 ```
+
+Optional — `src/lib/api.ts` falls back to that exact value when unset.
 
 > Never commit `.env` files, OAuth secrets, JWT secrets, or API credentials.
 
 ---
 
-## 🔌 Core API
+## 🔌 API Reference
+
+All routes are mounted under `/api/v1`. `/` and `/health` redirect to the health endpoint.
+
+### Health
+
+```text
+GET    /api/v1/health
+```
 
 ### Authentication
 
@@ -488,45 +403,108 @@ VITE_API_URL=
 POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/logout
-GET    /api/v1/auth/me
+GET    /api/v1/auth/me                  🔒
 GET    /api/v1/auth/github
 GET    /api/v1/auth/github/callback
-POST   /api/v1/auth/github/sync
-POST   /api/v1/auth/github/disconnect
+POST   /api/v1/auth/github/sync         🔒
+POST   /api/v1/auth/github/disconnect   🔒
 ```
 
-### Repositories
+### Repositories 🔒
 
 ```text
 GET    /api/v1/repositories
-GET    /api/v1/repositories/:id
 GET    /api/v1/repositories/github
+GET    /api/v1/repositories/:id
 POST   /api/v1/repositories/connect
 POST   /api/v1/repositories/sync
+DELETE /api/v1/repositories/:id
 ```
 
-### Developer Intelligence
+### Analysis 🔒
+
+```text
+POST   /api/v1/analysis/trigger
+GET    /api/v1/analysis/repo/:repositoryId
+GET    /api/v1/analysis/:id
+```
+
+### Developer Intelligence 🔒
 
 ```text
 GET    /api/v1/developer360/overview
 ```
 
-### Analysis
+### Skills 🔒
 
 ```text
-POST   /api/v1/analysis/trigger
+GET    /api/v1/skills
+POST   /api/v1/skills            (add a CLAIMED skill)
+POST   /api/v1/skills/derive     (rebuild from repository evidence)
+DELETE /api/v1/skills/:id
+```
+
+### Certifications 🔒
+
+```text
+GET    /api/v1/certifications
+POST   /api/v1/certifications
+PATCH  /api/v1/certifications/:id
+DELETE /api/v1/certifications/:id
+```
+
+Adding a certification promotes any skill it names to `CREDENTIAL_VERIFIED`,
+unless repository evidence already places it higher. Removing the last
+certification backing a skill drops it back to `CLAIMED`.
+
+### AI 🔒
+
+```text
+GET    /api/v1/ai/insights
+```
+
+### Webhooks
+
+```text
+GET    /api/v1/webhooks/github/status
+POST   /api/v1/webhooks/github
+```
+
+🔒 = requires the session cookie.
+
+---
+
+## 🖥️ Frontend Routes
+
+```text
+/                              Landing page
+/login                         Login / register
+
+/dashboard/overview            🔒 live data
+/dashboard/repositories        🔒 live data
+/dashboard/repositories/:id    🔒 live data
+/dashboard/developer-360       🔒 live data
+/dashboard/skills              🔒 live data
+/dashboard/problem-solving     🔒 sample data
+/dashboard/credentials         🔒
+/dashboard/growth              🔒 sample data
+/dashboard/career-readiness    🔒 sample data
+/dashboard/ai-insights         🔒 live data
+/dashboard/settings            🔒
 ```
 
 ---
 
 ## 🧪 Testing
 
-Run the backend test suite:
+The backend test suite runs on the built output via `node --test`, so `npm test` compiles first:
 
 ```bash
 cd Backend
 npm test
 ```
+
+Covers the analysis routes, GitHub service, GitHub App service, webhook routes and AI service.
 
 Production builds:
 
@@ -546,11 +524,13 @@ npm run build
 
 ### Evidence Over Claims
 
-A technology should ideally be supported by actual engineering activity.
+A technology should be supported by actual engineering activity.
 
 ### No Fabricated Metrics
 
-Unavailable data is represented as unavailable rather than invented.
+Unavailable data is represented as unavailable rather than invented. A missing average score
+is `null`, not a placeholder number; an unanalyzed repository reads **Analysis Pending**; and
+sample-data screens say so on screen.
 
 ### Server-Side Secrets
 
@@ -558,25 +538,12 @@ OAuth credentials and access tokens remain on the backend.
 
 ### User Ownership
 
-Developer data is scoped to the authenticated user.
+Developer data is scoped to the authenticated user; a repository is tracked at most once per
+user and never leaks across users.
 
-### Modular Integrations
+### Optional Integrations Degrade Cleanly
 
-External evidence sources are normalized so additional platforms can be integrated independently.
-
-### Progressive Intelligence
-
-```text
-Raw Signals
-    ↓
-Structured Evidence
-    ↓
-Developer Intelligence
-    ↓
-Insights
-    ↓
-Recommendations
-```
+Missing GitHub or Groq credentials produce a clear error at call time, never a startup crash.
 
 ---
 

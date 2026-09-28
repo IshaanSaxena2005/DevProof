@@ -281,8 +281,11 @@ export default function ProblemSolving() {
           <div className="flex gap-1 min-w-max">
             <div className="flex flex-col gap-1 pr-2">
               <span className="text-xs text-white/40 h-3"></span>
-              {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((day) => (
-                <span key={day} className="text-xs text-white/40 h-3 flex items-center">
+              {/* Three entries are blank spacers, so the label itself cannot be the
+                  key - "" would collide three ways. The list is static and never
+                  reorders, so the index is a stable identity here. */}
+              {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((day, dayIndex) => (
+                <span key={dayIndex} className="text-xs text-white/40 h-3 flex items-center">
                   {day}
                 </span>
               ))}

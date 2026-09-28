@@ -139,6 +139,42 @@ export interface Skill {
   currentLevel: EvidenceLevel;
 }
 
+/** A single repository-backed justification for a skill. */
+export interface SkillEvidence {
+  id: string;
+  /** REPOSITORY_LANGUAGE | REPOSITORY_TOPIC | ANALYSIS_SIGNAL */
+  evidenceType: string;
+  title: string;
+  snippet: string | null;
+  sourceUrl: string | null;
+  level: EvidenceLevel;
+}
+
+/** A skill together with everything that justifies it. */
+export interface SkillWithEvidence extends Skill {
+  evidences: SkillEvidence[];
+}
+
+export interface SkillsResponse {
+  skills: SkillWithEvidence[];
+}
+
+/** Outcome of rebuilding skills from repository evidence. */
+export interface DeriveSkillsResponse {
+  summary: {
+    created: number;
+    updated: number;
+    total: number;
+    repositoriesConsidered: number;
+    repositoriesAnalyzed: number;
+  };
+  skills: SkillWithEvidence[];
+}
+
+export interface SkillResponse {
+  skill: SkillWithEvidence;
+}
+
 /** A repository's most recent push, as surfaced in the GitHub evidence block. */
 export interface GitHubActivityItem {
   name: string;
@@ -233,8 +269,22 @@ export interface GitHubRepoOption {
   forksCount: number;
 }
 
+/**
+ * Why the repository list looks the way it does.
+ *
+ * An empty list under the GitHub App flow is ambiguous on its own — it can mean
+ * the app was never installed, or that it was installed with no repositories
+ * selected. The backend resolves that so the UI can say which, instead of
+ * claiming the account has no repositories.
+ */
+export type GitHubAccessState = "granted" | "not_installed" | "no_repositories_selected";
+
 export interface GitHubReposResponse {
   repositories: GitHubRepoOption[];
+  accessState: GitHubAccessState;
+  installationCount: number;
+  /** Install screen for a new installation, configuration page for an existing one. */
+  installationUrl: string;
 }
 
 /** Richer GitHub account snapshot returned by the sync endpoints (never the token). */
@@ -276,4 +326,49 @@ export interface AnalysisResponse {
 
 export interface Developer360Response {
   overview: Developer360Overview;
+}
+
+/* ── AI insights (GET /ai/insights) ───────────────────── */
+
+export type InsightPriority = "HIGH" | "MEDIUM" | "LOW";
+
+export interface InsightStrength {
+  title: string;
+  detail: string;
+}
+
+export interface InsightRisk {
+  title: string;
+  severity: InsightPriority;
+  detail: string;
+}
+
+export interface InsightRecommendation {
+  title: string;
+  rationale: string;
+  priority: InsightPriority;
+}
+
+export interface AiInsights {
+  summary: string;
+  strengths: InsightStrength[];
+  risks: InsightRisk[];
+  recommendations: InsightRecommendation[];
+}
+
+/**
+ * Mirrors AiInsightsResult in Backend/src/services/ai.service.ts.
+ *
+ * `hasEvidence` is false when the user has no COMPLETED analyses; the backend
+ * deliberately skips the model call in that case, so `insights` is null and the
+ * page must render an empty state rather than anything score-shaped.
+ */
+export interface AiInsightsResponse {
+  hasEvidence: boolean;
+  insights: AiInsights | null;
+  evidence: {
+    repositoriesAnalyzed: number;
+    /** null when nothing has been analyzed — never coerce to 0. */
+    averageScore: number | null;
+  };
 }

@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { GitHubService } from '../services/github.service';
 import { GitHubSyncService } from '../services/githubSync.service';
+import { GitHubAppService } from '../services/githubApp.service';
 import { prisma } from '../config/database';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/appError';
@@ -128,13 +129,29 @@ export class RepositoryController {
         throw AppError.badRequest('Link a GitHub account before browsing your repositories.');
       }
 
-      const { repos, truncated } = await GitHubService.fetchUserRepos(accessToken);
+      const { repos, truncated, installationCount } = await GitHubService.fetchUserRepos(accessToken);
+
+      // An empty list here is almost never "this account has no repositories".
+      // Under the GitHub App flow it means DevProof was not installed, or was
+      // installed with an empty repository selection — both fixable by the user,
+      // but only if we say which one it is instead of reporting nothing found.
+      const accessState =
+        repos.length > 0
+          ? 'granted'
+          : installationCount === 0
+            ? 'not_installed'
+            : 'no_repositories_selected';
 
       return successResponse(
         res,
         200,
         'GitHub repositories retrieved successfully',
-        { repositories: repos },
+        {
+          repositories: repos,
+          accessState,
+          installationCount,
+          installationUrl: GitHubAppService.installationUrl()
+        },
         truncated ? { truncated: true } : undefined
       );
     } catch (error) {

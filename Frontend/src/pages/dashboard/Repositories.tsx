@@ -10,7 +10,7 @@ import { ApiError } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
-import type { GitHubRepoOption, RepositoriesResponse, Repository } from "../../lib/types";
+import type { GitHubAccessState, GitHubRepoOption, RepositoriesResponse, Repository } from "../../lib/types";
 
 function scoreColor(score: number) {
   if (score >= 80) return "#16ff00";
@@ -50,6 +50,9 @@ export default function Repositories() {
   const [showManualEntry, setShowManualEntry] = useState(false);
 
   const [ghRepos, setGhRepos] = useState<GitHubRepoOption[] | null>(null);
+  // Why the list is empty, and where to send the user to fix it.
+  const [ghAccess, setGhAccess] = useState<GitHubAccessState | null>(null);
+  const [ghInstallUrl, setGhInstallUrl] = useState<string | null>(null);
   const [ghLoading, setGhLoading] = useState(false);
   const [ghError, setGhError] = useState<string | null>(null);
   const [connectingFullName, setConnectingFullName] = useState<string | null>(null);
@@ -87,7 +90,10 @@ export default function Repositories() {
     githubService
       .listGitHubRepos()
       .then((res) => {
-        if (active) setGhRepos(res.repositories);
+        if (!active) return;
+        setGhRepos(res.repositories);
+        setGhAccess(res.accessState);
+        setGhInstallUrl(res.installationUrl);
       })
       .catch((err) => {
         if (active) setGhError(err instanceof ApiError ? err.message : "Could not load your GitHub repositories.");
@@ -304,12 +310,38 @@ export default function Repositories() {
                       const connectedNames = new Set(repositories.map((r) => r.fullName));
                       const available = (ghRepos ?? []).filter((r) => !connectedNames.has(r.fullName));
                       if (available.length === 0) {
+                        // Three different situations produce an empty list, and
+                        // only one of them is "nothing left to connect". The other
+                        // two are GitHub consent states the user has to resolve,
+                        // so each gets the link that actually fixes it.
+                        if (ghRepos && ghRepos.length > 0) {
+                          return (
+                            <p className="text-xs text-white/35 py-2">
+                              All of your GitHub repositories are already connected.
+                            </p>
+                          );
+                        }
+
+                        const needsWiderAccess = ghAccess === "no_repositories_selected";
+
                         return (
-                          <p className="text-xs text-white/35 py-2">
-                            {ghRepos && ghRepos.length > 0
-                              ? "All of your GitHub repositories are already connected."
-                              : "No repositories found on your GitHub account."}
-                          </p>
+                          <div className="py-2 flex flex-col gap-2">
+                            <p className="text-xs text-white/50">
+                              {needsWiderAccess
+                                ? "DevProof is installed on your GitHub account but has not been granted access to any repositories."
+                                : "DevProof is not installed on your GitHub account yet, so it cannot see any repositories."}
+                            </p>
+                            {ghInstallUrl && (
+                              <a
+                                href={ghInstallUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="self-start text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/20 transition-all"
+                              >
+                                {needsWiderAccess ? "Select repositories" : "Install DevProof"}
+                              </a>
+                            )}
+                          </div>
                         );
                       }
                       return (
