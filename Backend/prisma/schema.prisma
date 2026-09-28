@@ -218,6 +218,10 @@ model Skill {
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   evidences SkillEvidence[]
 
+  // Derivation re-runs on every analysis, so it must be able to upsert a skill
+  // rather than accumulate a duplicate row per run. One named skill per user.
+  @@unique([userId, name])
+  @@index([userId])
   @@map("skills")
 }
 
