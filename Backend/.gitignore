@@ -18,3 +18,7 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local AI/tool files
+.claude/
+.freebuff/
