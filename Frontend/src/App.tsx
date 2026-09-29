@@ -26,6 +26,7 @@ import RepositoryDetails from "./pages/dashboard/RepositoryDetails";
 import Developer360 from "./pages/dashboard/Developer360";
 import Skills from "./pages/dashboard/Skills";
 import ProblemSolving from "./pages/dashboard/ProblemSolving";
+import ProfessionalProfile from "./pages/dashboard/ProfessionalProfile";
 import Credentials from "./pages/dashboard/Credentials";
 import Growth from "./pages/dashboard/Growth";
 import CareerReadiness from "./pages/dashboard/CareerReadiness";
@@ -80,6 +81,7 @@ export default function App() {
               <Route path="skills" element={<Skills />} />
               <Route path="problem-solving" element={<ProblemSolving />} />
               <Route path="credentials" element={<Credentials />} />
+              <Route path="professional-profile" element={<ProfessionalProfile />} />
               <Route path="growth" element={<Growth />} />
               <Route path="career-readiness" element={<CareerReadiness />} />
               <Route path="ai-insights" element={<AiInsights />} />
