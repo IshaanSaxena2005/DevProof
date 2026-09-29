@@ -228,9 +228,9 @@ export default function Repositories() {
               onChange={(e) => setVisibility(e.target.value as any)}
               className="bg-white/[0.02] border border-white/10 text-xs rounded-full px-3 py-2 text-white/70 outline-none focus:border-primary/40"
             >
-              <option value="all">All Visibility</option>
-              <option value="public">Public</option>
-              <option value="private">Private</option>
+              <option value="all" className="bg-[#0b0b0d] text-white">All Visibility</option>
+              <option value="public" className="bg-[#0b0b0d] text-white">Public</option>
+              <option value="private" className="bg-[#0b0b0d] text-white">Private</option>
             </select>
 
             {/* Language filter */}
@@ -239,9 +239,9 @@ export default function Repositories() {
               onChange={(e) => setSelectedLanguage(e.target.value)}
               className="bg-white/[0.02] border border-white/10 text-xs rounded-full px-3 py-2 text-white/70 outline-none focus:border-primary/40"
             >
-              <option value="all">All Languages</option>
+              <option value="all" className="bg-[#0b0b0d] text-white">All Languages</option>
               {languages.map((lang) => (
-                <option key={lang} value={lang}>{lang}</option>
+                <option key={lang} value={lang} className="bg-[#0b0b0d] text-white">{lang}</option>
               ))}
             </select>
 
@@ -251,9 +251,9 @@ export default function Repositories() {
               onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-white/[0.02] border border-white/10 text-xs rounded-full px-3 py-2 text-white/70 outline-none focus:border-primary/40"
             >
-              <option value="updated">Recently Updated</option>
-              <option value="stars">Stars</option>
-              <option value="name">Name</option>
+              <option value="updated" className="bg-[#0b0b0d] text-white">Recently Updated</option>
+              <option value="stars" className="bg-[#0b0b0d] text-white">Stars</option>
+              <option value="name" className="bg-[#0b0b0d] text-white">Name</option>
             </select>
 
             <button
