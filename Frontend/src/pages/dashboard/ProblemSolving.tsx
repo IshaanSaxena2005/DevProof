@@ -1,440 +1,520 @@
+import { useState } from "react";
 import { motion } from "motion/react";
-import { TrendingUp, Flame, Trophy, Target, AlertCircle, CheckCircle2, Brain } from "lucide-react";
+import {
+  Target,
+  Flame,
+  CheckCircle2,
+  AlertTriangle,
+  Braces,
+  BarChart3,
+  PieChart,
+  Lightbulb,
+  Link2,
+} from "lucide-react";
+import PageContainer from "../../components/PageContainer";
+import GlassCard from "../../components/GlassCard";
 import { SampleDataNotice } from "../../components/StateBlocks";
+import { Reveal, SectionLabel, StatLabel, PendingNotice } from "./ps/shared";
+import { DIFFICULTY_COLORS } from "./ps/shared";
+import PlatformCard, { type PlatformProfile } from "./ps/PlatformCard";
+import ProblemActivityChart, { type ActivityPoint } from "./ps/ProblemActivityChart";
+import DifficultyDonut, { difficultyPercent } from "./ps/DifficultyDonut";
+import ConsistencyHeatmap, { ConsistencyStats } from "./ps/ConsistencyHeatmap";
 
-const mockStats = {
-  problemsSolved: 325,
-  acceptanceRate: 82,
-  currentStreak: 45,
-  contestRating: 1725,
+/* ────────────────────────────────────────────────────────────
+   Sample problem-solving data.
+
+   No LeetCode / GeeksforGeeks integration exists yet, so nothing on this page
+   comes from an API. These figures are illustrative and are surfaced to the
+   user by the SampleDataNotice above the fold. When the real integrations
+   land, delete this block, fetch platform state via `api`, and flip CONNECTED
+   off when neither platform is linked.
+   ──────────────────────────────────────────────────────────── */
+
+const PLATFORMS: PlatformProfile[] = [
+  {
+    platform: "LeetCode",
+    username: "arjunmehta",
+    connected: true,
+    lastSyncedAt: "2h ago",
+    profileUrl: "https://leetcode.com/arjunmehta",
+    headline: { label: "Solved", value: 342 },
+    breakdown: [
+      { label: "Easy", count: 150, color: DIFFICULTY_COLORS.easy },
+      { label: "Medium", count: 155, color: DIFFICULTY_COLORS.medium },
+      { label: "Hard", count: 37, color: DIFFICULTY_COLORS.hard },
+    ],
+    stats: [
+      { label: "Acceptance", value: "68%" },
+      { label: "Contest", value: "1542" },
+      { label: "Streak", value: "18 d" },
+    ],
+    progress: {
+      label: "Medium difficulty coverage",
+      percent: 55,
+      caption: "155 of 280 medium problems attempted",
+    },
+  },
+  {
+    platform: "GeeksforGeeks",
+    username: "arjun.mehta",
+    connected: true,
+    lastSyncedAt: "5h ago",
+    profileUrl: "https://www.geeksforgeeks.org/user/arjunmehta/",
+    headline: { label: "Problems Solved", value: 286 },
+    breakdown: [
+      { label: "Easy", count: 141, color: DIFFICULTY_COLORS.easy },
+      { label: "Medium", count: 119, color: DIFFICULTY_COLORS.medium },
+      { label: "Hard", count: 26, color: DIFFICULTY_COLORS.hard },
+    ],
+    stats: [
+      { label: "Coding Score", value: "742" },
+      { label: "Streak", value: "12 d" },
+      { label: "Articles", value: "24" },
+    ],
+    progress: {
+      label: "Institute rank trajectory",
+      percent: 42,
+      caption: "Top 12% of active GFG problem solvers",
+    },
+  },
+];
+
+const OVERVIEW = {
+  total: 628,
+  easy: 291,
+  medium: 274,
+  hard: 63,
+  streak: 18,
 };
 
-const difficultyBreakdown = [
-  { level: "Easy", solved: 145, total: 180, color: "bg-green-500" },
-  { level: "Medium", solved: 142, total: 200, color: "bg-yellow-500" },
-  { level: "Hard", solved: 38, total: 100, color: "bg-red-500" },
+const DIFFICULTY_DISTRIBUTION = [
+  { label: "Easy", count: OVERVIEW.easy, color: DIFFICULTY_COLORS.easy },
+  { label: "Medium", count: OVERVIEW.medium, color: DIFFICULTY_COLORS.medium },
+  { label: "Hard", count: OVERVIEW.hard, color: DIFFICULTY_COLORS.hard },
 ];
 
-const topicMastery = [
-  { topic: "Arrays", mastery: 92, level: "Expert" },
-  { topic: "Strings", mastery: 88, level: "Expert" },
-  { topic: "Hashing", mastery: 85, level: "Advanced" },
-  { topic: "Linked Lists", mastery: 78, level: "Advanced" },
-  { topic: "Trees", mastery: 75, level: "Advanced" },
-  { topic: "Graphs", mastery: 68, level: "Intermediate" },
-  { topic: "Dynamic Programming", mastery: 45, level: "Beginner" },
-  { topic: "Greedy", mastery: 72, level: "Intermediate" },
-  { topic: "Backtracking", mastery: 58, level: "Intermediate" },
-  { topic: "Binary Search", mastery: 80, level: "Advanced" },
-  { topic: "Stacks", mastery: 85, level: "Advanced" },
-  { topic: "Queues", mastery: 82, level: "Advanced" },
-];
-
-const contestPerformance = [
-  { name: "Weekly Contest 345", rank: 1245, solved: 3, ratingChange: +12 },
-  { name: "Biweekly Contest 89", rank: 892, solved: 4, ratingChange: +18 },
-  { name: "Weekly Contest 344", rank: 1567, solved: 2, ratingChange: -5 },
-  { name: "Biweekly Contest 88", rank: 1023, solved: 3, ratingChange: +8 },
-];
-
-const strengths = [
-  "Fast implementation",
-  "Strong array concepts",
-  "Good graph intuition",
-  "Consistent practice",
-];
-
-const areasToImprove = [
-  "Dynamic Programming",
-  "Advanced Graphs",
-  "Segment Trees",
-  "Bit Manipulation",
-];
-
-const generateHeatmap = () => {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-  const weeks = 26;
-  const heatmap = [];
-  
-  for (let i = 0; i < weeks; i++) {
-    const week = [];
-    for (let j = 0; j < 7; j++) {
-      const activity = Math.random();
-      let level = 0;
-      if (activity > 0.8) level = 4;
-      else if (activity > 0.6) level = 3;
-      else if (activity > 0.4) level = 2;
-      else if (activity > 0.2) level = 1;
-      week.push(level);
-    }
-    heatmap.push(week);
+/** Seeded per-period series so switching periods doesn't reshuffle points. */
+function seriesFor(period: string, seed: number): ActivityPoint[] {
+  const days = period === "7D" ? 7 : period === "30D" ? 30 : period === "90D" ? 90 : 52;
+  const points: ActivityPoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const n = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453;
+    const r = n - Math.floor(n);
+    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    // Mostly 0-3 with occasional spikes; quieter weekends
+    const base = weekend ? 1 : 2.2;
+    const value = Math.max(0, Math.round(base + r * 3.5 - 1.2));
+    points.push({
+      label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      value: days > 90 ? Math.round(value / 2) : value,
+    });
   }
-  
-  return { months, heatmap };
-};
-
-const { months, heatmap } = generateHeatmap();
-
-const getHeatmapColor = (level: number) => {
-  const colors = [
-    "bg-white/5",
-    "bg-green-900/40",
-    "bg-green-700/60",
-    "bg-green-500/80",
-    "bg-green-400",
-  ];
-  return colors[level];
-};
-
-export default function ProblemSolving() {
-  return (
-    <div className="w-full flex flex-col gap-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">
-          Problem Solving
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-          Track coding achievements, contest performance, and skill mastery
-        </p>
-      </div>
-
-      <SampleDataNotice what="No coding-profile endpoint exists yet, and the LeetCode/GeeksforGeeks integrations are unbuilt. The activity heatmap is randomly generated on each load." />
-
-      {/* Problem Solving Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        <StatCard
-          icon={<Target className="w-5 h-5" />}
-          label="Problems Solved"
-          value={mockStats.problemsSolved}
-          color="text-green-400"
-        />
-        <StatCard
-          icon={<TrendingUp className="w-5 h-5" />}
-          label="Acceptance Rate"
-          value={`${mockStats.acceptanceRate}%`}
-          color="text-blue-400"
-        />
-        <StatCard
-          icon={<Flame className="w-5 h-5" />}
-          label="Current Streak"
-          value={`${mockStats.currentStreak} Days`}
-          color="text-orange-400"
-        />
-        <StatCard
-          icon={<Trophy className="w-5 h-5" />}
-          label="Contest Rating"
-          value={mockStats.contestRating}
-          color="text-purple-400"
-        />
-      </motion.div>
-
-      {/* Difficulty Breakdown */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="glass-panel p-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Difficulty Breakdown</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {difficultyBreakdown.map((item) => (
-            <div key={item.level} className="glass-inset p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-medium">{item.level}</span>
-                <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                  {item.solved}/{item.total}
-                </span>
-              </div>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(item.solved / item.total) * 100}%` }}
-                  transition={{ duration: 1, delay: 0.2 }}
-                  className={`h-full ${item.color}`}
-                />
-              </div>
-              <p className="text-xs mt-2" style={{ color: "var(--text-tertiary)" }}>
-                {Math.round((item.solved / item.total) * 100)}% solved
-              </p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Topic Mastery */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="glass-panel p-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Topic Mastery</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {topicMastery.map((item, index) => (
-            <motion.div
-              key={item.topic}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
-              className="glass-inset p-3"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white text-sm font-medium">{item.topic}</span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    item.mastery >= 80
-                      ? "bg-green-500/20 text-green-400"
-                      : item.mastery >= 60
-                      ? "bg-yellow-500/20 text-yellow-400"
-                      : "bg-red-500/20 text-red-400"
-                  }`}
-                >
-                  {item.level}
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${item.mastery}%` }}
-                  transition={{ duration: 0.8, delay: 0.4 + index * 0.05 }}
-                  className={`h-full ${
-                    item.mastery >= 80
-                      ? "bg-green-500"
-                      : item.mastery >= 60
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
-                  }`}
-                />
-              </div>
-              <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
-                {item.mastery}% mastery
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Contest Performance */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="glass-panel p-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Contest Performance</h2>
-        <div className="space-y-3">
-          {contestPerformance.map((contest, index) => (
-            <motion.div
-              key={contest.name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
-              className="glass-inset p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-            >
-              <div>
-                <p className="text-white font-medium">{contest.name}</p>
-                <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
-                  Rank #{contest.rank}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-white font-semibold">{contest.solved}</p>
-                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                    Solved
-                  </p>
-                </div>
-                <div
-                  className={`text-center px-3 py-1 rounded-lg ${
-                    contest.ratingChange > 0
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-red-500/20 text-red-400"
-                  }`}
-                >
-                  <p className="font-semibold">
-                    {contest.ratingChange > 0 ? "+" : ""}
-                    {contest.ratingChange}
-                  </p>
-                  <p className="text-xs">Rating</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Daily Activity Heatmap */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="glass-panel p-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Daily Activity (6 Months)</h2>
-        <div className="overflow-x-auto">
-          <div className="flex gap-1 min-w-max">
-            <div className="flex flex-col gap-1 pr-2">
-              <span className="text-xs text-white/40 h-3"></span>
-              {/* Three entries are blank spacers, so the label itself cannot be the
-                  key - "" would collide three ways. The list is static and never
-                  reorders, so the index is a stable identity here. */}
-              {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((day, dayIndex) => (
-                <span key={dayIndex} className="text-xs text-white/40 h-3 flex items-center">
-                  {day}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-1">
-              {heatmap.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1">
-                  {week.map((level, dayIndex) => (
-                    <motion.div
-                      key={`${weekIndex}-${dayIndex}`}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        duration: 0.2,
-                        delay: 0.5 + weekIndex * 0.02 + dayIndex * 0.01,
-                      }}
-                      className={`w-3 h-3 rounded-sm ${getHeatmapColor(level)}`}
-                      title={`Activity level: ${level}`}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex gap-4 mt-3">
-            {months.map((month) => (
-              <span key={month} className="text-xs text-white/40">
-                {month}
-              </span>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Strengths and Areas to Improve */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="glass-panel p-6"
-        >
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-400" />
-            Strengths
-          </h2>
-          <div className="space-y-2">
-            {strengths.map((strength, index) => (
-              <motion.div
-                key={strength}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.6 + index * 0.1 }}
-                className="glass-inset p-3 flex items-center gap-3"
-              >
-                <div className="w-2 h-2 rounded-full bg-green-400" />
-                <span className="text-white text-sm">{strength}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="glass-panel p-6"
-        >
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-orange-400" />
-            Areas to Improve
-          </h2>
-          <div className="space-y-2">
-            {areasToImprove.map((area, index) => (
-              <motion.div
-                key={area}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.7 + index * 0.1 }}
-                className="glass-inset p-3 flex items-center gap-3"
-              >
-                <div className="w-2 h-2 rounded-full bg-orange-400" />
-                <span className="text-white text-sm">{area}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* DevProof Intelligence Summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
-        className="glass-panel p-6 border-l-4 border-l-green-400"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <Brain className="w-6 h-6 text-green-400" />
-          <h2 className="text-lg font-semibold text-white">
-            DevProof Intelligence Summary
-          </h2>
-        </div>
-        <p className="text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          This developer demonstrates consistent problem-solving ability with strong
-          performance in core data structures. The 82% acceptance rate and 45-day
-          streak show dedication and consistency. Mastery in Arrays, Strings, and Hashing
-          is exceptional (88%+), while Dynamic Programming remains the primary growth
-          area (45% mastery). Improving advanced algorithms will significantly strengthen
-          interview readiness.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="glass-chip px-3 py-1.5 text-xs text-green-400">
-            Strong Fundamentals
-          </span>
-          <span className="glass-chip px-3 py-1.5 text-xs text-blue-400">
-            Consistent Practice
-          </span>
-          <span className="glass-chip px-3 py-1.5 text-xs text-yellow-400">
-            Focus on DP
-          </span>
-        </div>
-      </motion.div>
-    </div>
-  );
+  return points;
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  color: string;
-}) {
+const TOPICS: { topic: string; solved: number; accuracy: number }[] = [
+  { topic: "Arrays", solved: 48, accuracy: 82 },
+  { topic: "Strings", solved: 39, accuracy: 79 },
+  { topic: "Hashing", solved: 31, accuracy: 76 },
+  { topic: "Two Pointers", solved: 27, accuracy: 81 },
+  { topic: "Sliding Window", solved: 22, accuracy: 74 },
+  { topic: "Binary Search", solved: 26, accuracy: 77 },
+  { topic: "Linked List", solved: 19, accuracy: 72 },
+  { topic: "Stack & Queue", solved: 24, accuracy: 75 },
+  { topic: "Trees", solved: 21, accuracy: 68 },
+  { topic: "Graphs", solved: 17, accuracy: 64 },
+  { topic: "Dynamic Programming", solved: 12, accuracy: 51 },
+];
+
+const RECENT_ACTIVITY: {
+  platform: "LeetCode" | "GFG";
+  problem: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  topic: string;
+  status: string;
+  date: string;
+}[] = [
+  { platform: "LeetCode", problem: "Two Sum", difficulty: "Easy", topic: "Hashing", status: "Solved", date: "Sep 28" },
+  { platform: "LeetCode", problem: "3Sum", difficulty: "Medium", topic: "Two Pointers", status: "Solved", date: "Sep 27" },
+  { platform: "GFG", problem: "Kadane's Algorithm", difficulty: "Medium", topic: "Arrays", status: "Solved", date: "Sep 26" },
+  { platform: "LeetCode", problem: "Longest Substring Without Repeating", difficulty: "Medium", topic: "Sliding Window", status: "Solved", date: "Sep 26" },
+  { platform: "GFG", problem: "N-Queen Problem", difficulty: "Hard", topic: "Backtracking", status: "Solved", date: "Sep 24" },
+  { platform: "LeetCode", problem: "Merge k Sorted Lists", difficulty: "Hard", topic: "Linked List", status: "Attempted", date: "Sep 23" },
+  { platform: "LeetCode", problem: "Binary Tree Level Order", difficulty: "Medium", topic: "Trees", status: "Solved", date: "Sep 22" },
+];
+
+const PERIODS = ["7D", "30D", "90D", "1Y"] as const;
+
+const DIFFICULTY_BADGE: Record<string, string> = {
+  Easy: "text-green-300 bg-green-500/10 border-green-500/25",
+  Medium: "text-amber-300 bg-amber-500/10 border-amber-500/25",
+  Hard: "text-red-300 bg-red-500/10 border-red-500/25",
+};
+
+const PLATFORM_BADGE: Record<string, string> = {
+  LeetCode: "text-amber-200/90 bg-amber-500/[0.08] border-amber-500/20",
+  GFG: "text-emerald-200/90 bg-emerald-500/[0.08] border-emerald-500/20",
+};
+
+/* ──────────────────────────────────────────────────────────── */
+
+export default function ProblemSolving() {
+  const [period, setPeriod] = useState<(typeof PERIODS)[number]>("30D");
+  const series = seriesFor(period, 7);
+
+  const overviewCards = [
+    { icon: Target, label: "Total Problems Solved", value: OVERVIEW.total, sub: "Across 2 platforms", color: "text-primary", border: "border-primary/25", bg: "bg-primary/10" },
+    { icon: CheckCircle2, label: "Easy", value: OVERVIEW.easy, sub: `${difficultyPercent(OVERVIEW.easy, OVERVIEW.total)}% of all solves`, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
+    { icon: AlertTriangle, label: "Medium", value: OVERVIEW.medium, sub: `${difficultyPercent(OVERVIEW.medium, OVERVIEW.total)}% of all solves`, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
+    { icon: Braces, label: "Hard", value: OVERVIEW.hard, sub: `${difficultyPercent(OVERVIEW.hard, OVERVIEW.total)}% of all solves`, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
+    { icon: Flame, label: "Current Streak", value: OVERVIEW.streak, sub: "Days in a row", color: "text-orange-300", border: "border-orange-500/25", bg: "bg-orange-500/10" },
+  ];
+
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      className="glass-panel p-5"
+    <PageContainer
+      title="Problem Solving"
+      description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 rounded-lg bg-white/5 ${color}`}>{icon}</div>
+      {/* Header-right status indicator. Pulled up beside the page title to sit
+          top-right, as the title block above only occupies the left side. */}
+      <div className="-mt-16 mb-4 flex justify-end">
+        <span className="glass-chip px-3 py-1.5 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Data synced</span>
+        </span>
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>
-        {label}
-      </p>
-    </motion.div>
+
+      <SampleDataNotice what="No coding-platform integration is built yet. The LeetCode and GeeksforGeeks figures below are realistic placeholders shown to demonstrate the Problem Solving intelligence layout." />
+
+      {/* ── 1. Overall overview ── */}
+      <Reveal>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+          {overviewCards.map((c, i) => (
+            <motion.div
+              key={c.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+              whileHover={{ y: -3 }}
+              className="glass-panel p-5 relative overflow-hidden"
+            >
+              <div className={`w-9 h-9 rounded-xl border ${c.border} ${c.bg} flex items-center justify-center ${c.color} mb-4`}>
+                <c.icon className="w-4 h-4" />
+              </div>
+              <p className="text-[26px] leading-none font-extrabold text-white tracking-tight tabular-nums">
+                {c.value.toLocaleString()}
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mt-2.5">{c.label}</p>
+              <p className="text-[11px] text-white/30 mt-0.5">{c.sub}</p>
+            </motion.div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* ── 2. Platform cards ── */}
+      <Reveal delay={0.1}>
+        <SectionLabel right={<span className="text-[10px] font-semibold uppercase tracking-widest text-white/25">Sources: competitive programming</span>}>
+          Connected Platforms
+        </SectionLabel>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+          {PLATFORMS.map((p) => (
+            <PlatformCard key={p.platform} profile={p} />
+          ))}
+        </div>
+      </Reveal>
+
+      {/* ── 3. Problem solving analytics ── */}
+      <Reveal delay={0.15}>
+        <SectionLabel>Problem Solving Analytics</SectionLabel>
+        <GlassCard hover={false} className="p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-3.5 h-3.5 text-primary" />
+              <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">Problems Solved — Last {period}</h3>
+            </div>
+
+            {/* Period selector */}
+            <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 self-start">
+              {PERIODS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`relative px-3 py-1 rounded-full text-[10px] font-bold tracking-widest transition-colors cursor-pointer ${
+                    period === p ? "text-black" : "text-white/40 hover:text-white/70"
+                  }`}
+                >
+                  {period === p && (
+                    <motion.span
+                      layoutId="ps-period-pill"
+                      className="absolute inset-0 rounded-full bg-primary"
+                      transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                    />
+                  )}
+                  <span className="relative z-10">{p}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ProblemActivityChart data={series} />
+        </GlassCard>
+      </Reveal>
+
+      {/* ── 4. Difficulty distribution ── */}
+      <Reveal delay={0.2}>
+        <SectionLabel>Difficulty Distribution</SectionLabel>
+        <GlassCard hover={false} className="p-6 mb-8">
+          <div className="flex items-center gap-2 mb-5">
+            <PieChart className="w-3.5 h-3.5 text-primary" />
+            <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">How your solves split across difficulty</h3>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-8">
+            <DifficultyDonut segments={DIFFICULTY_DISTRIBUTION} />
+
+            <div className="flex-1 w-full space-y-4">
+              {DIFFICULTY_DISTRIBUTION.map((d) => (
+                <div key={d.label}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: d.color, boxShadow: `0 0 6px ${d.color}66` }} />
+                      <span className="text-sm font-semibold text-white/85">{d.label}</span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-bold text-white tabular-nums">{d.count}</span>
+                      <span className="text-[11px] text-white/35 tabular-nums">{difficultyPercent(d.count, OVERVIEW.total)}%</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${difficultyPercent(d.count, OVERVIEW.total)}%` }}
+                      transition={{ duration: 0.9, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      className="h-full rounded-full"
+                      style={{ background: d.color, boxShadow: `0 0 6px ${d.color}55` }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <p className="text-[11px] text-white/30 pt-1 leading-relaxed">
+                Counts combine both connected platforms for the trailing 12 months.
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+      </Reveal>
+
+      {/* ── 5. Topic performance ── */}
+      <Reveal delay={0.25}>
+        <SectionLabel>Topic Performance</SectionLabel>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+          {TOPICS.map((t, i) => (
+            <motion.div
+              key={t.topic}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.02 * i, duration: 0.4 }}
+              whileHover={{ y: -2 }}
+              className="glass-panel p-4"
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-white/90 leading-tight">{t.topic}</p>
+                  <p className="text-[11px] text-white/35 mt-0.5 tabular-nums">{t.solved} problems</p>
+                </div>
+                <span className="text-sm font-bold text-white/80 tabular-nums shrink-0">{t.accuracy}%</span>
+              </div>
+
+              {/* Accuracy as bar length — length encodes accuracy directly */}
+              <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${t.accuracy}%` }}
+                  transition={{ duration: 0.8, delay: 0.15 + 0.03 * i, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="h-full rounded-full"
+                  style={{
+                    background:
+                      t.accuracy >= 75 ? "rgba(22,255,0,0.7)" : t.accuracy >= 60 ? "rgba(251,191,36,0.7)" : "rgba(248,113,113,0.65)",
+                    boxShadow: `0 0 6px ${t.accuracy >= 75 ? "rgba(22,255,0,0.25)" : t.accuracy >= 60 ? "rgba(251,191,36,0.25)" : "rgba(248,113,113,0.2)"}`,
+                  }}
+                />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mt-2.5">
+                {t.accuracy}% accuracy
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* ── 6. Recent problem activity ── */}
+      <Reveal delay={0.3}>
+        <SectionLabel>Recent Problem Activity</SectionLabel>
+        <GlassCard hover={false} className="p-0 mb-8 overflow-hidden">
+          <div className="overflow-x-auto main-scroll">
+            <table className="w-full text-left border-collapse min-w-[760px]">
+              <thead>
+                <tr className="border-b border-white/[0.07]" style={{ background: "rgba(255,255,255,0.02)" }}>
+                  {["Platform", "Problem", "Difficulty", "Topic", "Status", "Date"].map((h) => (
+                    <th key={h} className="px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-white/35 whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {RECENT_ACTIVITY.map((r) => (
+                  <tr key={`${r.platform}-${r.problem}-${r.date}`} className="border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors">
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${PLATFORM_BADGE[r.platform]}`}>
+                        {r.platform}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-[13px] font-medium text-white/85 whitespace-nowrap">{r.problem}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${DIFFICULTY_BADGE[r.difficulty]}`}>
+                        {r.difficulty}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-[12px] text-white/50 whitespace-nowrap">{r.topic}</td>
+                    <td className="px-5 py-3.5">
+                      {r.status === "Solved" ? (
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-primary whitespace-nowrap">
+                          <CheckCircle2 className="w-3 h-3" /> Solved
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300/90 whitespace-nowrap">
+                          <AlertTriangle className="w-3 h-3" /> Attempted
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-[12px] text-white/35 tabular-nums whitespace-nowrap">{r.date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </GlassCard>
+      </Reveal>
+
+      {/* ── 7. Coding consistency ── */}
+      <Reveal delay={0.35}>
+        <SectionLabel>Coding Consistency</SectionLabel>
+        <div className="mb-8">
+          <ConsistencyStats
+            active
+            stats={{ currentStreak: 18, longestStreak: 41, thisWeek: 14, thisMonth: 52, activeDays: 61 }}
+          />
+          <div className="mt-4">
+            <ConsistencyHeatmap
+              active
+              seed={11}
+              weeks={26}
+              footerNote="Cells represent days with problem-solving activity across connected platforms — this is practice evidence, not GitHub commit activity."
+            />
+          </div>
+        </div>
+      </Reveal>
+
+      {/* ── 8. DevProof insight ── */}
+      <Reveal delay={0.4}>
+        <GlassCard hover={false} className="p-6 md:p-7 border-l-2 border-l-primary relative overflow-hidden mb-8">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(22,255,0,0.05) 0%, transparent 60%)" }}
+          />
+          <div className="relative">
+            <div className="flex items-center gap-2.5 mb-4">
+              <Lightbulb className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">DevProof Insight</h3>
+            </div>
+
+            <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
+              Your problem-solving activity is strongest in <span className="text-white font-semibold">Arrays, Hashing, and Two Pointer patterns</span> —
+              together 106 problems at 78–82% accuracy. Medium-difficulty problems make up 44% of everything you
+              solve, but your Hard count (63, 10%) is thin for interview-grade depth, and Graphs accuracy (64%)
+              trails your structural average by 12 points.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4">
+                <StatLabel>Focus Area</StatLabel>
+                <p className="text-sm font-bold text-amber-200 mt-1">Dynamic Programming</p>
+                <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+                  12 problems, 51% accuracy — the weakest coverage among your active topics.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+                <StatLabel>Recommendation</StatLabel>
+                <p className="text-sm font-bold text-white mt-1">Push medium/hard DP volume</p>
+                <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+                  Increase medium and hard DP problems to strengthen advanced problem-solving coverage before
+                  interview season.
+                </p>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      </Reveal>
+
+      {/* ── Unconnected state reference ──
+          No integration ships yet, so the live render path is the connected
+          preview above. This block documents (and previews) the unconnected
+          experience: when the real integration lands, `PLATFORMS.connected`
+          flips to false and every section renders its muted variant. */}
+      <Reveal delay={0.45}>
+        <SectionLabel>Platform Connection</SectionLabel>
+        <GlassCard hover={false} className="p-6 md:p-8 relative overflow-hidden mb-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-2">
+                <Link2 className="w-4 h-4 text-primary" />
+                <h3 className="text-base font-bold text-white tracking-tight">Connect your coding platforms</h3>
+              </div>
+              <p className="text-[13px] leading-relaxed max-w-xl" style={{ color: "var(--text-secondary)" }}>
+                Connect LeetCode and GeeksforGeeks to turn your coding activity into measurable problem-solving
+                evidence. Until connected, the sections above show illustrative preview data — nothing is synced
+                from your accounts yet.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-5">
+                <button
+                  className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                  disabled
+                  title="Integration coming soon"
+                >
+                  Connect LeetCode
+                </button>
+                <button
+                  className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/12 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/25 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled
+                  title="Integration coming soon"
+                >
+                  Connect GeeksforGeeks
+                </button>
+              </div>
+            </div>
+
+            {/* Small inline preview of the unconnected platform cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-[420px] shrink-0">
+              {PLATFORMS.map((p) => (
+                <PlatformCard key={`nc-${p.platform}`} profile={{ ...p, connected: false }} />
+              ))}
+            </div>
+          </div>
+        </GlassCard>
+      </Reveal>
+
+      <PendingNotice>
+        <span className="font-semibold text-amber-200/90">Integrations pending.</span> The connect buttons stay
+        disabled until the LeetCode / GeeksforGeeks integrations ship. Platform cards, charts, topics, the activity
+        table, and the heatmap above render their muted, unconnected variants automatically once the page is driven
+        by real platform state instead of preview data.
+      </PendingNotice>
+    </PageContainer>
   );
 }
