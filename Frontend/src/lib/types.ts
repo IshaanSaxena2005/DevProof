@@ -372,3 +372,43 @@ export interface AiInsightsResponse {
     averageScore: number | null;
   };
 }
+/* ── Certifications (GET/POST/PATCH/DELETE /certifications) ── */
+
+/**
+ * A user-recorded professional certification. Every field except name and
+ * issuer is optional — the backend stores null when the user omits them.
+ */
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  credentialId: string | null;
+  credentialUrl: string | null;
+  /** ISO timestamp, or null when the user did not date the credential. */
+  issueDate: string | null;
+  createdAt: string;
+}
+
+/** Payload for POST/PATCH /certifications — only name and issuer are required. */
+export interface CertificationInput {
+  name: string;
+  issuer: string;
+  credentialId?: string;
+  credentialUrl?: string;
+  /** ISO date string; omitted/null becomes null on the backend. */
+  issueDate?: string;
+}
+
+/**
+ * Result of adding/updating a certification. `promotedSkills` reports which
+ * skills moved up the evidence ladder as a result, so the UI can explain the
+ * change instead of letting the skill list quietly differ.
+ */
+export interface CertificationMutationResponse {
+  certification: Certification;
+  promotedSkills: string[];
+}
+
+export interface CertificationsResponse {
+  certifications: Certification[];
+}

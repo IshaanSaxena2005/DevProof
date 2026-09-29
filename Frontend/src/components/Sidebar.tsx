@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { label: "Developer 360", href: "/dashboard/developer-360", icon: User },
   { label: "Skills", href: "/dashboard/skills", icon: Code2 },
   { label: "Problem Solving", href: "/dashboard/problem-solving", icon: Target },
-  { label: "Learning", href: "/dashboard/credentials", icon: Award },
+  { label: "Learning & Achievements", href: "/dashboard/learning", icon: Award },
   { label: "Professional Profile", href: "/dashboard/professional-profile", icon: IdCard },
   { label: "Growth", href: "/dashboard/growth", icon: TrendingUp },
   { label: "Career Readiness", href: "/dashboard/career-readiness", icon: Briefcase },

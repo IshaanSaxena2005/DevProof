@@ -16,6 +16,7 @@ import Footer from "./components/Footer";
 // Auth
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import Login from "./pages/Login";
 
 // Dashboard imports
@@ -27,6 +28,7 @@ import Developer360 from "./pages/dashboard/Developer360";
 import Skills from "./pages/dashboard/Skills";
 import ProblemSolving from "./pages/dashboard/ProblemSolving";
 import ProfessionalProfile from "./pages/dashboard/ProfessionalProfile";
+import LearningAchievements from "./pages/dashboard/LearningAchievements";
 import Credentials from "./pages/dashboard/Credentials";
 import Growth from "./pages/dashboard/Growth";
 import CareerReadiness from "./pages/dashboard/CareerReadiness";
@@ -64,6 +66,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* Every route change starts at the top — the dashboard scrolls in a
+            <main> container, which ScrollToTop resets explicitly. */}
+        <ScrollToTop />
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />
@@ -82,6 +87,7 @@ export default function App() {
               <Route path="problem-solving" element={<ProblemSolving />} />
               <Route path="credentials" element={<Credentials />} />
               <Route path="professional-profile" element={<ProfessionalProfile />} />
+              <Route path="learning" element={<LearningAchievements />} />
               <Route path="growth" element={<Growth />} />
               <Route path="career-readiness" element={<CareerReadiness />} />
               <Route path="ai-insights" element={<AiInsights />} />
