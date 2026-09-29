@@ -1,364 +1,284 @@
 import { motion } from "motion/react";
-import { Briefcase, CheckCircle, AlertTriangle, TrendingUp, Award, Target, Clock, Zap, Shield, Code2, Database, Cloud, FlaskConical, FileText, GitFork, FolderGit2, Trophy, Users, Building2, GraduationCap, Brain } from "lucide-react";
+import {
+  Briefcase,
+  CheckCircle,
+  AlertTriangle,
+  FolderGit2,
+  Target,
+  Award,
+  Code2,
+  Info,
+  Gauge,
+  TrendingUp,
+} from "lucide-react";
 import PageContainer from "../../components/PageContainer";
-import { SampleDataNotice } from "../../components/StateBlocks";
+import GlassCard from "../../components/GlassCard";
+import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
+import { api } from "../../lib/api";
+import { useResource } from "../../lib/useResource";
+import { certificationsService } from "../../services/certifications";
+import type { Developer360Response } from "../../lib/types";
 
-// TEMP DEVELOPMENT BYPASS: Using mock data instead of API calls
-// Remove this and restore API calls when backend is ready
+/* ── helpers ─────────────────────────────────────────── */
 
-const careerReadinessScore = 88;
+function scoreColor(n: number) {
+  if (n >= 80) return "#77fc75";
+  if (n >= 60) return "#f59e0b";
+  return "#ef4444";
+}
 
-const readinessBreakdown = [
-  { category: "Technical Skills", score: 92, explanation: "Strong frontend expertise with React and TypeScript", icon: Code2, color: "#77fc75" },
-  { category: "Projects", score: 85, explanation: "Multiple completed projects with good quality", icon: FolderGit2, color: "#60a5fa" },
-  { category: "Problem Solving", score: 89, explanation: "Consistent problem-solving performance", icon: Target, color: "#a78bfa" },
-  { category: "Version Control", score: 88, explanation: "Proficient Git workflow and collaboration", icon: GitFork, color: "#34d399" },
-  { category: "Documentation", score: 78, explanation: "Good documentation practices", icon: FileText, color: "#f59e0b" },
-  { category: "Communication", score: 82, explanation: "Clear technical communication", icon: Users, color: "#fb923c" },
-];
+function SLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4">{children}</p>;
+}
 
-const hiringReadiness = [
-  { role: "Internship Ready", readiness: 95, status: "Ready", icon: GraduationCap, color: "#77fc75" },
-  { role: "Frontend Ready", readiness: 92, status: "Ready", icon: Code2, color: "#77fc75" },
-  { role: "Backend Ready", readiness: 68, status: "In Progress", icon: Database, color: "#f59e0b" },
-  { role: "Full Stack Ready", readiness: 78, status: "In Progress", icon: Cloud, color: "#f59e0b" },
-  { role: "SDE-1 Ready", readiness: 72, status: "In Progress", icon: Building2, color: "#f59e0b" },
-  { role: "AI/ML Ready", readiness: 35, status: "Not Ready", icon: Brain, color: "#ef4444" },
-];
+/** Explains why a panel shows nothing: the source has no data yet. */
+function UnavailableNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+      <Info className="w-3.5 h-3.5 text-white/30 shrink-0 mt-0.5" />
+      <p className="text-[12px] leading-relaxed text-white/40">{children}</p>
+    </div>
+  );
+}
 
-const skillGapAnalysis = [
-  { skill: "Testing", priority: "High", difficulty: "Medium", time: "3 weeks", icon: FlaskConical, color: "#ef4444" },
-  { skill: "Cloud", priority: "High", difficulty: "High", time: "2 months", icon: Cloud, color: "#ef4444" },
-  { skill: "CI/CD", priority: "High", difficulty: "Medium", time: "4 weeks", icon: Zap, color: "#ef4444" },
-  { skill: "System Design", priority: "Medium", difficulty: "High", time: "3 months", icon: Shield, color: "#f59e0b" },
-  { skill: "Scalability", priority: "Medium", difficulty: "High", time: "2 months", icon: TrendingUp, color: "#f59e0b" },
-];
-
-const evidenceSummary = [
-  { label: "Repositories", value: 18, icon: FolderGit2 },
-  { label: "Projects", value: 12, icon: Target },
-  { label: "Verified Skills", value: 24, icon: CheckCircle },
-  { label: "Technologies", value: 32, icon: Code2 },
-  { label: "Certificates", value: 5, icon: Award },
-  { label: "Problem Solving", value: 89, icon: Target },
-];
-
-const careerRoadmap = [
-  { stage: "Current", title: "Frontend Developer", score: 88, current: true },
-  { stage: "Intern Ready", title: "Software Engineering Intern", score: 95, current: false },
-  { stage: "Junior Engineer", title: "Junior Software Engineer", score: 85, current: false },
-  { stage: "Software Engineer", title: "Software Engineer (SDE-1)", score: 78, current: false },
-  { stage: "Senior Engineer", title: "Senior Software Engineer", score: 72, current: false },
-];
+/* ── page ────────────────────────────────────────────── */
 
 export default function CareerReadiness() {
+  const { data, loading, error, reload } = useResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview")
+  );
+  // Certifications load independently; a failure here degrades to zero tiles
+  // rather than failing the whole page (the overview data is the primary read).
+  const { data: certData, loading: certsLoading } = useResource(() => certificationsService.list());
+
+  if (loading || certsLoading) {
+    return (
+      <PageContainer title="Career Readiness" description="Role readiness matching and evidence-based career signals.">
+        <LoadingBlock label="Loading your career evidence…" />
+      </PageContainer>
+    );
+  }
+
+  if (error || !data?.overview) {
+    return (
+      <PageContainer title="Career Readiness" description="Role readiness matching and evidence-based career signals.">
+        <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
+      </PageContainer>
+    );
+  }
+
+  const o = data.overview;
+  const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
+  const certifications = certData?.certifications ?? [];
+  const credentialVerified = o.evidenceTiers.CREDENTIAL_VERIFIED ?? 0;
+  const practicallyEvidenced = o.evidenceTiers.PRACTICALLY_EVIDENCED ?? 0;
+
+  // Evidence Summary — every tile measured from live endpoints.
+  const evidenceTiles = [
+    { icon: FolderGit2, label: "Repositories", value: String(o.totalRepositories), source: "connected" },
+    { icon: Target, label: "Analyses", value: String(o.totalAnalyzed), source: "completed" },
+    { icon: Code2, label: "Skills", value: String(o.skillsList.length), source: `${practicallyEvidenced} evidenced` },
+    { icon: Award, label: "Certifications", value: String(certifications.length), source: certifications.length > 0 ? "recorded" : "none yet" },
+    { icon: CheckCircle, label: "Credential-Verified", value: String(credentialVerified), source: "skill tier" },
+    {
+      icon: Gauge,
+      label: "Developer Score",
+      value: score !== null ? String(score) : "—",
+      source: score !== null ? "/ 100 average" : "not measured",
+    },
+  ];
+
+  // Strongest categories — real averaged scores from the evidence ladder.
+  const strongestCategories = [...o.categoryBreakdown]
+    .filter((c) => c.score !== null)
+    .sort((a, b) => (b.score as number) - (a.score as number))
+    .slice(0, 3);
+  const weakestCategories = [...o.categoryBreakdown]
+    .filter((c) => c.score !== null)
+    .sort((a, b) => (a.score as number) - (b.score as number))
+    .slice(0, 2);
+
+  const hasAnyEvidence = o.totalAnalyzed > 0 || o.skillsList.length > 0 || certifications.length > 0;
+
   return (
     <PageContainer
       title="Career Readiness"
-      description="Track role suitability profiles, target readiness matching, and gap analysis results."
+      description="Role readiness matching and evidence-based career signals."
     >
-      <SampleDataNotice what="Career Readiness uses sample data for development." />
-
-      {/* Career Readiness Score */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="glass-panel p-8 mb-6 text-center"
-      >
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative inline-block"
-        >
-          <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-          <div className="relative">
-            <Briefcase className="w-12 h-12 text-primary mx-auto mb-4" />
-            <div className="text-7xl font-bold text-white mb-2">
-              {careerReadinessScore} <span className="text-4xl text-white/40">/ 100</span>
-            </div>
+      {/* ── Readiness score: honestly unavailable — no backend model exists ── */}
+      <GlassCard hover={false} className="p-8 mb-6 text-center relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(119,252,117,0.05) 0%, transparent 55%)" }}
+        />
+        <div className="relative flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/35">
+            <Briefcase className="w-6 h-6" />
           </div>
-        </motion.div>
-        <h2 className="text-xl font-semibold text-white mb-2">Ready for Software Engineering Roles</h2>
-        <div className="flex items-center justify-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-400" />
-          <span className="text-sm text-green-400 font-medium">High Confidence</span>
-        </div>
-      </motion.div>
-
-      {/* Readiness Breakdown */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Readiness Breakdown</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {readinessBreakdown.map((item, index) => (
-            <motion.div
-              key={item.category}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
-              className="glass-inset p-4"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg" style={{ background: `${item.color}20` }}>
-                  <item.icon className="w-5 h-5" style={{ color: item.color }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium text-sm">{item.category}</h3>
-                  <p className="text-xs" style={{ color: item.color }}>{item.score}%</p>
-                </div>
-              </div>
-              <p className="text-xs mb-2" style={{ color: "var(--text-tertiary)" }}>
-                {item.explanation}
-              </p>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${item.score}%` }}
-                  transition={{ duration: 0.8, delay: 0.3 + index * 0.05 }}
-                  className="h-full rounded-full"
-                  style={{ background: item.color }}
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Hiring Readiness */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Hiring Readiness</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {hiringReadiness.map((item, index) => (
-            <motion.div
-              key={item.role}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
-              className="glass-inset p-4"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg" style={{ background: `${item.color}20` }}>
-                  <item.icon className="w-5 h-5" style={{ color: item.color }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium text-sm">{item.role}</h3>
-                  <span className={`text-xs px-2 py-1 rounded-full`} style={{ background: `${item.color}20`, color: item.color }}>
-                    {item.status}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-white">{item.readiness}%</span>
-                <span className="text-xs text-white/40">Ready</span>
-              </div>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${item.readiness}%` }}
-                  transition={{ duration: 0.8, delay: 0.4 + index * 0.05 }}
-                  className="h-full rounded-full"
-                  style={{ background: item.color }}
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Skill Gap Analysis */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Skill Gap Analysis</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {skillGapAnalysis.map((item, index) => (
-            <motion.div
-              key={item.skill}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
-              className="glass-inset p-4"
-            >
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 rounded-lg" style={{ background: `${item.color}20` }}>
-                  <item.icon className="w-5 h-5" style={{ color: item.color }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium text-sm mb-2">{item.skill}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full`} style={{ background: `${item.color}20`, color: item.color }}>
-                      {item.priority}
-                    </span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-white/60">
-                      {item.difficulty}
-                    </span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-white/60 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {item.time}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Evidence Summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Evidence Summary</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {evidenceSummary.map((evidence, index) => (
-            <motion.div
-              key={evidence.label}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
-              className="glass-inset p-4 text-center"
-            >
-              <evidence.icon className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-xl font-bold text-white">{evidence.value}</p>
-              <p className="text-xs text-white/40 mt-1">{evidence.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Recruiter View */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Recruiter View</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="glass-inset p-4">
-            <h3 className="text-white font-medium mb-3 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              Top Strengths
-            </h3>
-            <ul className="space-y-2">
-              <li className="text-sm text-white/70">• Strong React & TypeScript expertise</li>
-              <li className="text-sm text-white/70">• Clean code architecture</li>
-              <li className="text-sm text-white/70">• Consistent project delivery</li>
-              <li className="text-sm text-white/70">• Good problem-solving skills</li>
-            </ul>
-          </div>
-          <div className="glass-inset p-4">
-            <h3 className="text-white font-medium mb-3 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              Top Risks
-            </h3>
-            <ul className="space-y-2">
-              <li className="text-sm text-white/70">• Limited backend experience</li>
-              <li className="text-sm text-white/70">• Low testing coverage</li>
-              <li className="text-sm text-white/70">• Minimal cloud infrastructure</li>
-              <li className="text-sm text-white/70">• Small open source presence</li>
-            </ul>
-          </div>
-        </div>
-        <div className="glass-inset p-4 mt-4 border-l-4 border-l-primary">
-          <h3 className="text-white font-medium mb-2">Overall Impression</h3>
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            Strong frontend developer with excellent technical foundation. Ready for junior to mid-level frontend roles.
-            Backend and cloud skills need development for full-stack positions. High potential for growth.
+          <h2 className="text-lg font-bold text-white uppercase tracking-wider">Career Readiness Score</h2>
+          <p className="text-5xl font-extrabold text-white/25 select-none">—</p>
+          <p className="text-[13px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            DevProof does not compute a readiness score yet — there is no role-matching model in the
+            backend, so no number is shown here rather than an invented one.
           </p>
+          <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 mt-1">
+            <p className="text-[11px] text-amber-100/70 font-semibold uppercase tracking-widest">
+              Role matching — coming soon
+            </p>
+          </div>
         </div>
-      </motion.div>
+      </GlassCard>
 
-      {/* Career Roadmap */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Career Roadmap</h2>
-        <div className="flex flex-col gap-3">
-          {careerRoadmap.map((stage, index) => (
-            <div key={stage.stage} className="flex items-start gap-4">
-              <div className="flex flex-col items-center">
-                <div className={`w-4 h-4 rounded-full ${stage.current ? 'bg-primary shadow-[0_0_12px_rgba(119,252,117,0.8)]' : 'bg-white/20'}`} />
-                {index < careerRoadmap.length - 1 && (
-                  <div className="w-0.5 h-12 bg-white/10 mt-2" />
-                )}
-              </div>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.7 + index * 0.1 }}
-                className={`flex-1 glass-inset p-4 ${stage.current ? 'border-l-4 border-l-primary' : ''}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-white font-medium text-sm">{stage.title}</h3>
-                  {stage.current && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
-                      Current
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-white">{stage.score}%</span>
-                  <span className="text-xs text-white/40">Ready</span>
-                </div>
-              </motion.div>
-            </div>
+      {/* ── Measured evidence standing ── */}
+      <div className="mb-6">
+        <SLabel>Evidence Summary</SLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {evidenceTiles.map((tile, i) => (
+            <motion.div
+              key={tile.label}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i, duration: 0.4 }}
+              className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-center"
+            >
+              <tile.icon className="w-5 h-5 text-primary mx-auto mb-2" />
+              <p className="text-xl font-bold text-white tabular-nums">{tile.value}</p>
+              <p className="text-[11px] text-white/40 mt-0.5">{tile.label}</p>
+              <p className="text-[10px] text-white/25 mt-0.5">{tile.source}</p>
+            </motion.div>
           ))}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Final DevProof Recommendation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
-        className="glass-panel p-8 border-l-4 border-l-primary"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <Trophy className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-semibold text-white">Final DevProof Recommendation</h2>
+      {/* ── Strongest / weakest categories — real category averages ── */}
+      {strongestCategories.length > 0 && (
+        <div className="mb-6">
+          <SLabel>Measured Skill Standing</SLabel>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <GlassCard hover={false} className="p-6">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-primary" /> Strongest Categories
+              </h3>
+              <div className="space-y-3">
+                {strongestCategories.map((c) => (
+                  <div key={c.category}>
+                    <div className="flex items-center justify-between text-[12px] mb-1.5">
+                      <span className="text-white/70">{c.category.charAt(0) + c.category.slice(1).toLowerCase().replace(/_/g, " ")}</span>
+                      <span className="text-white/45 tabular-nums font-semibold">{c.score}/100 · {c.skillCount} skills</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${c.score}%` }}
+                        transition={{ duration: 0.9, delay: 0.2 }}
+                        className="h-full rounded-full"
+                        style={{ background: scoreColor(c.score as number), boxShadow: `0 0 6px ${scoreColor(c.score as number)}55` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+
+            <GlassCard hover={false} className="p-6">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" /> Development Areas
+              </h3>
+              {weakestCategories.length > 0 ? (
+                <div className="space-y-3">
+                  {weakestCategories.map((c) => (
+                    <div key={c.category}>
+                      <div className="flex items-center justify-between text-[12px] mb-1.5">
+                        <span className="text-white/70">{c.category.charAt(0) + c.category.slice(1).toLowerCase().replace(/_/g, " ")}</span>
+                        <span className="text-white/45 tabular-nums font-semibold">{c.score}/100 · {c.skillCount} skills</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${c.score}%` }}
+                          transition={{ duration: 0.9, delay: 0.3 }}
+                          className="h-full rounded-full"
+                          style={{ background: scoreColor(c.score as number), boxShadow: `0 0 6px ${scoreColor(c.score as number)}55` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <UnavailableNote>No recorded skill categories yet.</UnavailableNote>
+              )}
+            </GlassCard>
+          </div>
         </div>
-        <p className="text-lg leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
-          This developer demonstrates strong readiness for software engineering roles, particularly in frontend development.
-          The 88-point career readiness score reflects solid technical skills, consistent project delivery, and good problem-solving
-          capabilities. The profile shows excellent potential for growth with clear pathways to full-stack and senior roles.
-          Focus on backend systems, testing, and cloud infrastructure to maximize career opportunities.
+      )}
+
+      {/* ── Evidence ladder ── */}
+      <div className="mb-6">
+        <SLabel>Skill Evidence Ladder</SLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {(
+            [
+              ["CLAIMED", "Claimed", "#94a3b8"],
+              ["LEARNED", "Learned", "#60a5fa"],
+              ["CREDENTIAL_VERIFIED", "Credential verified", "#a78bfa"],
+              ["PRACTICALLY_EVIDENCED", "Practically evidenced", "#77fc75"],
+            ] as const
+          ).map(([tier, label, color], i) => (
+            <motion.div
+              key={tier}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i, duration: 0.4 }}
+              className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}88` }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">{label}</span>
+              </div>
+              <p className="text-3xl font-bold tabular-nums" style={{ color }}>{o.evidenceTiers[tier] ?? 0}</p>
+              <p className="text-[11px] text-white/25 mt-1">{(o.evidenceTiers[tier] ?? 0) === 1 ? "skill" : "skills"}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Readiness breakdown: unavailable until the model exists ── */}
+      <div className="mb-6">
+        <SLabel>Role Readiness Breakdown</SLabel>
+        <GlassCard hover={false} className="p-6 md:p-8">
+          <div className="flex flex-col items-center text-center gap-3 py-4">
+            <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/35">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              {hasAnyEvidence ? "Awaiting the readiness model" : "No evidence to assess yet"}
+            </h3>
+            <p className="text-[12px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              {hasAnyEvidence
+                ? "Your evidence base is growing — analyses, skills, and credentials are recorded. Role-by-role readiness percentages require the role-matching model, which is not built yet."
+                : "Analyze repositories, record skills, and add certifications — the readiness model will consume exactly this evidence when it ships."}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 w-full">
+              {["Frontend", "Backend", "Full Stack", "SDE-1"].map((role) => (
+                <div key={role} className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{role}</p>
+                  <p className="text-sm font-bold text-white/25 mt-1.5">—</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* ── Footnote ── */}
+      <GlassCard hover={false} className="p-5">
+        <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+          Every count on this page is measured from your connected repositories, completed analyses,
+          recorded skills, and saved certifications. The career readiness score and role percentages
+          are hidden rather than estimated — DevProof will only show them once a real readiness model
+          produces them.
         </p>
-        <div className="flex flex-wrap gap-3">
-          <span className="glass-chip px-4 py-2 text-sm text-green-400">
-            Ready for Frontend Roles
-          </span>
-          <span className="glass-chip px-4 py-2 text-sm text-blue-400">
-            Strong Growth Potential
-          </span>
-          <span className="glass-chip px-4 py-2 text-sm text-yellow-400">
-            Focus on Backend Skills
-          </span>
-          <span className="glass-chip px-4 py-2 text-sm text-purple-400">
-            High Hiring Readiness
-          </span>
-        </div>
-      </motion.div>
+      </GlassCard>
     </PageContainer>
   );
 }

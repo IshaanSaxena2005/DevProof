@@ -1,467 +1,311 @@
 import { motion } from "motion/react";
-import { TrendingUp, FolderGit2, Code2, Database, Cloud, FlaskConical, Brain, Award, Calendar, Target, Zap } from "lucide-react";
+import {
+  FolderGit2,
+  Code2,
+  Activity,
+  Gauge,
+  BadgeCheck,
+  History,
+  Info,
+} from "lucide-react";
+import { api } from "../../lib/api";
 import PageContainer from "../../components/PageContainer";
-import { SampleDataNotice } from "../../components/StateBlocks";
+import GlassCard from "../../components/GlassCard";
+import EmptyState from "../../components/EmptyState";
+import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
+import { useResource } from "../../lib/useResource";
+import { useAuth } from "../../hooks/useAuth";
+import { relativeTime } from "../../lib/utils";
+import type { Developer360Response, EvidenceLevel } from "../../lib/types";
 
-// TEMP DEVELOPMENT BYPASS: Using mock data instead of API calls
-// Remove this and restore API calls when backend is ready
+/* ── presentation helpers ────────────────────────────── */
 
-const growthStats = {
-  repositoriesBuilt: 18,
-  projectsCompleted: 12,
-  technologiesLearned: 24,
-  currentGrowthScore: 87,
+function scoreColor(n: number) {
+  if (n >= 80) return "#77fc75";
+  if (n >= 60) return "#f59e0b";
+  return "#ef4444";
+}
+
+const TIER_ORDER: EvidenceLevel[] = [
+  "CLAIMED",
+  "LEARNED",
+  "CREDENTIAL_VERIFIED",
+  "PRACTICALLY_EVIDENCED",
+];
+
+const TIER_COLOR: Record<EvidenceLevel, string> = {
+  CLAIMED: "#94a3b8",
+  LEARNED: "#60a5fa",
+  CREDENTIAL_VERIFIED: "#a78bfa",
+  PRACTICALLY_EVIDENCED: "#77fc75",
 };
 
-const monthlyGrowthData = [
-  { month: "Jan", score: 65 },
-  { month: "Feb", score: 68 },
-  { month: "Mar", score: 70 },
-  { month: "Apr", score: 72 },
-  { month: "May", score: 75 },
-  { month: "Jun", score: 78 },
-  { month: "Jul", score: 80 },
-  { month: "Aug", score: 82 },
-  { month: "Sep", score: 84 },
-  { month: "Oct", score: 85 },
-  { month: "Nov", score: 86 },
-  { month: "Dec", score: 87 },
-];
+/** FRONTEND -> Frontend, DEPENDENCY_HEALTH -> Dependency health */
+function humanize(value: string) {
+  const lower = value.replace(/_/g, " ").toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
 
-const skillProgress = [
-  { skill: "Frontend", previousLevel: "Intermediate", currentLevel: "Expert", progress: 92, icon: Code2, color: "#77fc75" },
-  { skill: "Backend", previousLevel: "Beginner", currentLevel: "Advanced", progress: 78, icon: Cloud, color: "#60a5fa" },
-  { skill: "Databases", previousLevel: "Beginner", currentLevel: "Intermediate", progress: 65, icon: Database, color: "#a78bfa" },
-  { skill: "DevOps", previousLevel: "Beginner", currentLevel: "Intermediate", progress: 58, icon: Cloud, color: "#f59e0b" },
-  { skill: "Testing", previousLevel: "Beginner", currentLevel: "Intermediate", progress: 62, icon: FlaskConical, color: "#34d399" },
-  { skill: "AI / ML", previousLevel: "Beginner", currentLevel: "Beginner", progress: 35, icon: Brain, color: "#fb923c" },
-];
-
-const repositoryGrowth = [
-  { name: "SpendWise", started: "Jan 2024", completed: "Mar 2024", score: 82 },
-  { name: "CloudPilot", started: "Apr 2024", completed: "Jun 2024", score: 78 },
-  { name: "DevProof", started: "Jul 2024", completed: "Present", score: 87 },
-  { name: "Inventory System", started: "Oct 2024", completed: "In Progress", score: 65 },
-];
-
-const achievementBadges = [
-  { name: "100 Commits", icon: Zap, color: "#77fc75", earned: true },
-  { name: "10 Repositories", icon: FolderGit2, color: "#60a5fa", earned: true },
-  { name: "Frontend Expert", icon: Code2, color: "#a78bfa", earned: true },
-  { name: "Open Source", icon: Award, color: "#f59e0b", earned: true },
-  { name: "Fast Learner", icon: TrendingUp, color: "#34d399", earned: true },
-];
-
-const nextMilestones = [
-  { title: "Complete CI/CD", estimated: "2 weeks", priority: "high" },
-  { title: "Learn Kubernetes", estimated: "1 month", priority: "medium" },
-  { title: "Improve Testing", estimated: "3 weeks", priority: "high" },
-  { title: "Deploy Full Stack Project", estimated: "1 month", priority: "medium" },
-];
-
-const generateHeatmap = () => {
-  const weeks = 52;
-  const heatmap = [];
-  
-  for (let i = 0; i < weeks; i++) {
-    const week = [];
-    for (let j = 0; j < 7; j++) {
-      const activity = Math.random();
-      let level = 0;
-      if (activity > 0.8) level = 4;
-      else if (activity > 0.6) level = 3;
-      else if (activity > 0.4) level = 2;
-      else if (activity > 0.2) level = 1;
-      week.push(level);
-    }
-    heatmap.push(week);
-  }
-  
-  return heatmap;
-};
-
-const heatmap = generateHeatmap();
-
-const getHeatmapColor = (level: number) => {
-  const colors = [
-    "bg-white/5",
-    "bg-green-900/40",
-    "bg-green-700/60",
-    "bg-green-500/80",
-    "bg-green-400",
-  ];
-  return colors[level];
-};
-
-export default function Growth() {
+/** Thin bar in the same anatomy as Developer360's category bars. */
+function Bar({ score, color }: { score: number; color: string }) {
   return (
-    <PageContainer
-      title="Growth & Analytics"
-      description="Track your engineering journey, skill progression, and development consistency over time."
-    >
-      <SampleDataNotice what="Growth analytics use sample data for development." />
-
-      {/* Growth Overview */}
+    <div className="relative w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-      >
-        <StatCard
-          icon={<FolderGit2 className="w-5 h-5" />}
-          label="Repositories Built"
-          value={growthStats.repositoriesBuilt}
-          color="text-green-400"
-        />
-        <StatCard
-          icon={<Target className="w-5 h-5" />}
-          label="Projects Completed"
-          value={growthStats.projectsCompleted}
-          color="text-blue-400"
-        />
-        <StatCard
-          icon={<Code2 className="w-5 h-5" />}
-          label="Technologies Learned"
-          value={growthStats.technologiesLearned}
-          color="text-purple-400"
-        />
-        <StatCard
-          icon={<TrendingUp className="w-5 h-5" />}
-          label="Current Growth Score"
-          value={growthStats.currentGrowthScore}
-          color="text-orange-400"
-        />
-      </motion.div>
-
-      {/* Monthly Growth Timeline */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Monthly Growth Timeline</h2>
-        <div className="h-48 relative">
-          <svg className="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
-            {/* Grid lines */}
-            {[0, 25, 50, 75, 100].map((line) => (
-              <line
-                key={line}
-                x1="0"
-                y1={200 - (line * 2)}
-                x2="600"
-                y2={200 - (line * 2)}
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="1"
-              />
-            ))}
-            {/* Area fill */}
-            <motion.path
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1.5, delay: 0.2 }}
-              d={`M0,${200 - (monthlyGrowthData[0].score * 2)} ${monthlyGrowthData.map((d, i) => `L${i * 54.5},${200 - (d.score * 2)}`).join(" ")} L540,200 L0,200`}
-              fill="rgba(119, 252, 117, 0.1)"
-            />
-            {/* Line */}
-            <motion.path
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1.5, delay: 0.2 }}
-              d={`M0,${200 - (monthlyGrowthData[0].score * 2)} ${monthlyGrowthData.map((d, i) => `L${i * 54.5},${200 - (d.score * 2)}`).join(" ")}`}
-              fill="none"
-              stroke="#77fc75"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Points */}
-            {monthlyGrowthData.map((d, i) => (
-              <circle
-                key={i}
-                cx={i * 54.5}
-                cy={200 - (d.score * 2)}
-                r="4"
-                fill="#77fc75"
-                className="hover:scale-150 transition-transform cursor-pointer"
-              />
-            ))}
-          </svg>
-          <div className="flex justify-between mt-2 text-xs text-white/40">
-            {monthlyGrowthData.map((d) => (
-              <span key={d.month}>{d.month}</span>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Skill Progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Skill Progress</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {skillProgress.map((skill, index) => (
-            <motion.div
-              key={skill.skill}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
-              className="glass-inset p-4"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg" style={{ background: `${skill.color}20` }}>
-                  <skill.icon className="w-5 h-5" style={{ color: skill.color }} />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium">{skill.skill}</h3>
-                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                    {skill.previousLevel} →
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold" style={{ color: skill.color }}>
-                  {skill.currentLevel}
-                </span>
-                <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {skill.progress}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${skill.progress}%` }}
-                  transition={{ duration: 0.8, delay: 0.4 + index * 0.05 }}
-                  className="h-full rounded-full"
-                  style={{ background: skill.color }}
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Repository Growth */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Repository Growth</h2>
-        <div className="space-y-3">
-          {repositoryGrowth.map((repo, index) => (
-            <motion.div
-              key={repo.name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
-              className="glass-inset p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-            >
-              <div>
-                <h3 className="text-white font-medium">{repo.name}</h3>
-                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {repo.started} → {repo.completed}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-white font-semibold">{repo.score}</p>
-                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                    Score
-                  </p>
-                </div>
-                <div
-                  className={`text-center px-3 py-1 rounded-lg ${
-                    repo.score >= 80
-                      ? "bg-green-500/20 text-green-400"
-                      : repo.score >= 60
-                      ? "bg-yellow-500/20 text-yellow-400"
-                      : "bg-red-500/20 text-red-400"
-                  }`}
-                >
-                  <p className="font-semibold text-sm">{repo.score >= 80 ? "Excellent" : repo.score >= 60 ? "Good" : "Needs Work"}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Achievement Badges */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Achievement Badges</h2>
-        <div className="flex flex-wrap gap-3">
-          {achievementBadges.map((badge, index) => (
-            <motion.div
-              key={badge.name}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
-              className={`glass-chip px-4 py-2.5 flex items-center gap-2 ${
-                badge.earned ? "" : "opacity-50"
-              }`}
-              style={{ borderColor: badge.earned ? `${badge.color}40` : undefined }}
-            >
-              <badge.icon className="w-4 h-4" style={{ color: badge.color }} />
-              <span className="text-sm font-medium text-white">{badge.name}</span>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Development Consistency Heatmap */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Development Consistency (1 Year)</h2>
-        <div className="overflow-x-auto">
-          <div className="flex gap-1 min-w-max">
-            <div className="flex flex-col gap-1 pr-2">
-              <span className="text-xs text-white/40 h-3"></span>
-              {/* Three entries are blank spacers, so the label itself cannot be the
-                  key - "" would collide three ways. The list is static and never
-                  reorders, so the index is a stable identity here. */}
-              {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((day, dayIndex) => (
-                <span key={dayIndex} className="text-xs text-white/40 h-3 flex items-center">
-                  {day}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-1">
-              {heatmap.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1">
-                  {week.map((level, dayIndex) => (
-                    <motion.div
-                      key={`${weekIndex}-${dayIndex}`}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        duration: 0.2,
-                        delay: 0.6 + weekIndex * 0.01 + dayIndex * 0.005,
-                      }}
-                      className={`w-3 h-3 rounded-sm ${getHeatmapColor(level)}`}
-                      title={`Activity level: ${level}`}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Next Milestones */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="glass-panel p-6 mb-6"
-      >
-        <h2 className="text-lg font-semibold text-white mb-4">Next Milestones</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {nextMilestones.map((milestone, index) => (
-            <motion.div
-              key={milestone.title}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.7 + index * 0.1 }}
-              className="glass-inset p-4 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-primary" />
-                <div>
-                  <h3 className="text-white font-medium text-sm">{milestone.title}</h3>
-                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                    Est: {milestone.estimated}
-                  </p>
-                </div>
-              </div>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  milestone.priority === "high"
-                    ? "bg-red-500/20 text-red-400"
-                    : "bg-yellow-500/20 text-yellow-400"
-                }`}
-              >
-                {milestone.priority}
-              </span>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* DevProof Growth Summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
-        className="glass-panel p-6 border-l-4 border-l-green-400"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <Brain className="w-6 h-6 text-green-400" />
-          <h2 className="text-lg font-semibold text-white">
-            DevProof Growth Summary
-          </h2>
-        </div>
-        <p className="text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          Your engineering profile shows consistent year-over-year improvement with strong frontend growth.
-          The 87-point growth score reflects solid progress across repositories and technologies. Increasing
-          testing and cloud expertise will accelerate overall engineering maturity. Focus on completing
-          CI/CD implementation and improving test coverage to reach the next growth tier.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="glass-chip px-3 py-1.5 text-xs text-green-400">
-            Strong Frontend Growth
-          </span>
-          <span className="glass-chip px-3 py-1.5 text-xs text-blue-400">
-            Consistent Progress
-          </span>
-          <span className="glass-chip px-3 py-1.5 text-xs text-yellow-400">
-            Focus on Testing
-          </span>
-        </div>
-      </motion.div>
-    </PageContainer>
+        initial={{ width: 0 }}
+        animate={{ width: `${score}%` }}
+        transition={{ duration: 0.9, delay: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
+        className="absolute inset-y-0 left-0 rounded-full"
+        style={{ background: color, boxShadow: `0 0 8px ${color}55` }}
+      />
+    </div>
   );
 }
 
+function SLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
+}
+
+/** Overview stat card — GlassCard anatomy shared with Overview.tsx. */
 function StatCard({
-  icon,
+  icon: Icon,
   label,
   value,
-  color,
+  sub,
 }: {
-  icon: React.ReactNode;
+  icon: typeof FolderGit2;
   label: string;
-  value: number;
-  color: string;
+  value: string;
+  sub: string;
 }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      className="glass-panel p-5"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 rounded-lg bg-white/5 ${color}`}>{icon}</div>
+    <GlassCard hover className="p-6 flex items-center gap-4">
+      <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+        <Icon className="w-5 h-5" />
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>
-        {label}
-      </p>
-    </motion.div>
+      <div className="min-w-0">
+        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-tertiary)" }}>
+          {label}
+        </div>
+        <div className="text-xl font-bold text-white mt-0.5">{value}</div>
+        <div className="text-[11px] text-white/30 mt-0.5 truncate">{sub}</div>
+      </div>
+    </GlassCard>
+  );
+}
+
+/** Explains why a panel shows nothing: the source has no data yet. */
+function UnavailableNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+      <Info className="w-3.5 h-3.5 text-white/30 shrink-0 mt-0.5" />
+      <p className="text-[12px] leading-relaxed text-white/40">{children}</p>
+    </div>
+  );
+}
+
+/* ── page ────────────────────────────────────────────── */
+
+export default function Growth() {
+  const { user } = useAuth();
+  const { data, loading, error, reload } = useResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview")
+  );
+
+  if (loading) {
+    return (
+      <PageContainer title="Growth & Analytics" description="Your measured engineering growth across repositories and skills.">
+        <LoadingBlock label="Loading your growth evidence…" />
+      </PageContainer>
+    );
+  }
+
+  if (error || !data?.overview) {
+    return (
+      <PageContainer title="Growth & Analytics" description="Your measured engineering growth across repositories and skills.">
+        <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
+      </PageContainer>
+    );
+  }
+
+  const o = data.overview;
+  const firstName = (user?.name ?? "").trim().split(/\s+/)[0];
+  // null = no completed analyses: "not measured", never a zero.
+  const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
+
+  // Per-category averages over recorded skills (null when none) — the same
+  // derivation Skills.tsx uses, so the two pages can never disagree.
+  const categoryRows = o.categoryBreakdown
+    .map((c) => ({ ...c }))
+    .sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
+    .slice(0, 8);
+
+  const tiers = TIER_ORDER.map((tier) => ({ tier, count: o.evidenceTiers[tier] ?? 0 }));
+
+  return (
+    <PageContainer
+      title="Growth & Analytics"
+      description="Your measured engineering growth across repositories, analyses, and skills."
+    >
+      {/* Overview — every figure measured from live data */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={FolderGit2} label="Repositories" value={`${o.totalRepositories}`} sub="connected to DevProof" />
+        <StatCard icon={Activity} label="Analyses Completed" value={`${o.totalAnalyzed}`} sub={score !== null ? `avg score ${score}/100` : "no scores yet"} />
+        <StatCard icon={Code2} label="Skills Recorded" value={`${o.skillsList.length}`} sub={`${tiers[3].count} practically evidenced`} />
+        <StatCard
+          icon={Gauge}
+          label="Developer Score"
+          value={score !== null ? `${score}/100` : "—"}
+          sub={score !== null ? "average across analyses" : "not measured yet"}
+        />
+      </div>
+
+      {/* Analysis score snapshot */}
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="mb-6">
+        <SLabel>Analysis Score</SLabel>
+        <GlassCard hover={false} className="p-6 md:p-8 relative overflow-hidden">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at 85% 20%, rgba(119,252,117,0.06) 0%, transparent 55%)" }}
+          />
+          <div className="relative flex flex-col md:flex-row items-center gap-8">
+            <div className="text-center shrink-0">
+              <span className="text-5xl font-extrabold text-white">{score ?? "—"}</span>
+              {score !== null && <span className="text-sm" style={{ color: "var(--text-tertiary)" }}>/100</span>}
+              <div
+                className="text-xs uppercase tracking-widest font-semibold mt-2"
+                style={{ color: score !== null ? scoreColor(score) : "var(--text-tertiary)" }}
+              >
+                {score !== null ? "Measured" : "No data yet"}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {score !== null
+                  ? `${firstName ? `${firstName}, y` : "Y"}our average engineering quality across ${o.totalAnalyzed} completed ${o.totalAnalyzed === 1 ? "analysis" : "analyses"}. Scores move as you connect and analyze more repositories — this is your current standing, not a projection.`
+                  : "No repository analyses have completed yet, so there is no score to chart. Analyze a repository to start your measured baseline."}
+              </p>
+              {score !== null && (
+                <div className="mt-4 max-w-sm">
+                  <Bar score={score} color={scoreColor(score)} />
+                </div>
+              )}
+            </div>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Skill category standing */}
+      {categoryRows.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.05 }} className="mb-6">
+          <SLabel>Skill Category Standing</SLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {categoryRows.map((c) => {
+              const empty = c.score === null;
+              const color = empty ? "rgba(255,255,255,0.25)" : scoreColor(c.score as number);
+              return (
+                <div key={c.category} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 flex flex-col gap-3 hover:border-white/[0.16] transition-all duration-300">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-white/85">{humanize(c.category)}</h3>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color, background: `${color}15` }}>
+                      {c.skillCount}
+                    </span>
+                  </div>
+                  {empty ? (
+                    <p className="text-[12px] text-white/25 italic">No skills recorded yet</p>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold tabular-nums" style={{ color }}>{c.score}</span>
+                        <span className="text-xs text-white/30 font-medium">/ 100</span>
+                      </div>
+                      <Bar score={c.score as number} color={color} />
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Evidence ladder */}
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }} className="mb-6">
+        <SLabel>Evidence Ladder</SLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {tiers.map(({ tier, count }, i) => (
+            <motion.div
+              key={tier}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06 * i, duration: 0.4 }}
+              className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 flex flex-col gap-2"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TIER_COLOR[tier], boxShadow: `0 0 6px ${TIER_COLOR[tier]}88` }} />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 leading-tight">{humanize(tier)}</p>
+              </div>
+              <p className="text-3xl font-bold tabular-nums" style={{ color: TIER_COLOR[tier] }}>{count}</p>
+              <p className="text-[11px] text-white/25">{count === 1 ? "skill" : "skills"}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Recent repository activity — real push timestamps */}
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.15 }} className="mb-6">
+        <SLabel>Recent Repository Activity</SLabel>
+        <GlassCard hover={false} className="p-6">
+          {o.github.connected && o.github.recentActivity.length > 0 ? (
+            <div className="flex flex-col divide-y divide-white/[0.05]">
+              {o.github.recentActivity.slice(0, 6).map((r) => (
+                <a
+                  key={r.fullName}
+                  href={r.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between gap-3 py-2.5 group first:pt-0 last:pb-0"
+                >
+                  <span className="min-w-0">
+                    <span className="text-[13px] text-white/70 group-hover:text-white truncate block transition-colors" title={r.fullName}>
+                      {r.name}
+                    </span>
+                    {r.language && <span className="text-[10px] text-white/30">{r.language}</span>}
+                  </span>
+                  <span className="text-[11px] text-white/30 shrink-0">{relativeTime(r.pushedAt)}</span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <UnavailableNote>
+              {o.github.connected
+                ? "No recent pushes recorded on your connected repositories yet."
+                : "No GitHub account linked, so repository activity cannot be shown."}
+            </UnavailableNote>
+          )}
+        </GlassCard>
+      </motion.div>
+
+      {/* Historical growth — honestly unavailable, no fabricated timeline */}
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.2 }} className="mb-6">
+        <SLabel>Growth Over Time</SLabel>
+        <EmptyState
+          icon={History}
+          title="Historical trends not available yet"
+          description="DevProof records your repository analyses, skills, and scores as they happen — but the backend does not yet store point-in-time snapshots, so month-over-month trends cannot be shown honestly. Your timeline will begin accumulating as you keep using the dashboard."
+        />
+      </motion.div>
+
+      {/* Footnote on measurement scope */}
+      <GlassCard hover={false} className="p-5">
+        <p className="text-[12px] leading-relaxed flex items-start gap-2.5" style={{ color: "var(--text-tertiary)" }}>
+          <BadgeCheck className="w-4 h-4 text-primary/60 shrink-0 mt-0.5" />
+          <span>
+            Every figure on this page is measured from your connected repositories, completed
+            analyses, {o.skillsList.length} recorded skills, and your linked GitHub account. Nothing here is
+            estimated or simulated — sections without a data source show that they are unavailable instead.
+          </span>
+        </p>
+      </GlassCard>
+    </PageContainer>
   );
 }
