@@ -50,16 +50,17 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
     <aside className="w-64 h-full flex flex-col bg-black/[0.45] border-r border-white/[0.08] backdrop-blur-2xl select-none justify-between overflow-hidden">
       {/* Brand Header: Vercel/Linear-inspired logo area (~65px) */}
-      <div className="h-16 px-5 border-b border-white/[0.08] flex items-center gap-3 relative overflow-hidden shrink-0">
+      <div className="h-16 px-4 border-b border-white/[0.08] flex items-center gap-3 relative overflow-hidden shrink-0">
         <div className="absolute inset-0 bg-primary/[0.02] pointer-events-none" />
-        <div className="flex items-center gap-3">
-          {/* Logo container: Rounded glass square */}
-          <div className="relative w-9 h-9 rounded-xl border border-white/[0.12] bg-white/[0.04] flex items-center justify-center shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Logo container: Rounded glass square — sized to read as the main
+              brand mark while staying inside the 64px header row. */}
+          <div className="relative w-12 h-12 rounded-xl border border-white/[0.12] bg-white/[0.04] flex items-center justify-center shadow-lg backdrop-blur-md shrink-0">
             <div className="absolute inset-0 bg-primary/20 blur-md rounded-xl opacity-40" />
             <img
               src="/logo.png"
               alt="DevProof"
-              className="relative w-6 h-6 object-contain select-none z-10"
+              className="relative w-9 h-9 object-contain select-none z-10"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
                 const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
@@ -68,12 +69,12 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             />
             {/* Fallback visible only when logo.png is missing */}
             <div className="hidden items-center justify-center z-10" id="sidebar-logo-fallback">
-              <div className="w-2.5 h-2.5 rounded-sm bg-primary shadow-[0_0_8px_rgba(22,255,0,0.8)]" />
+              <div className="w-3 h-3 rounded-sm bg-primary shadow-[0_0_8px_rgba(22,255,0,0.8)]" />
             </div>
           </div>
           {/* Title & Subtitle stacked vertically */}
-          <div className="flex flex-col">
-            <span className="text-[14px] font-bold tracking-tight text-white/95">DevProof</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[15px] font-bold tracking-tight text-white/95">DevProof</span>
             <span className="text-[9px] font-semibold text-primary uppercase tracking-widest leading-none mt-0.5">
               Developer Intelligence
             </span>

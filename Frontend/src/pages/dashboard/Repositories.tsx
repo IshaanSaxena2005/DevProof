@@ -10,6 +10,7 @@ import { ApiError } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
+import { relativeTime } from "../../lib/utils";
 import type { GitHubAccessState, GitHubRepoOption, RepositoriesResponse, Repository } from "../../lib/types";
 
 function scoreColor(score: number) {
@@ -22,9 +23,27 @@ function latestAnalysis(repo: Repository) {
   return repo.analyses?.[0] ?? null;
 }
 
-/** ISO -> short date for the "updated" line on each repo card. */
-function formatWhen(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+/**
+ * The freshest GitHub-reported activity timestamp for a repository.
+ *
+ * `updatedAt` is the local DB row's own update time — it bumps for every
+ * repository on each account sync, which is why cards all showed the same
+ * date. GitHub's `pushedAt` (last push; falls back to `githubUpdatedAt`) is
+ * the real activity signal.
+ */
+function githubActivityAt(repo: Repository): string | null {
+  return repo.pushedAt ?? repo.githubUpdatedAt;
+}
+
+/** Full date for the hover tooltip on relative timestamps. */
+function formatFullDate(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 type SyncState =
@@ -176,8 +195,11 @@ export default function Repositories() {
     .sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "stars") return b.starsCount - a.starsCount;
-      // Default: recently updated
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      // Default: recently updated — sorted on GitHub's own timestamps, not the
+      // local row's updatedAt (which is identical for everything after a sync).
+      return (
+        new Date(githubActivityAt(b) ?? 0).getTime() - new Date(githubActivityAt(a) ?? 0).getTime()
+      );
     });
 
   return (
@@ -508,7 +530,9 @@ export default function Repositories() {
                         <span className="flex items-center gap-1">
                           <GitFork className="w-3 h-3" /> {repo.forksCount}
                         </span>
-                        <span className="ml-auto">Updated {formatWhen(repo.updatedAt)}</span>
+                        <span className="ml-auto" title={formatFullDate(githubActivityAt(repo) ?? repo.updatedAt)}>
+                          Updated {relativeTime(githubActivityAt(repo) ?? repo.updatedAt)}
+                        </span>
                       </div>
                     </div>
 
