@@ -37,6 +37,17 @@ export class AppError extends Error {
     return new AppError(message, 500, undefined, false);
   }
 
+  /**
+   * The request is valid but the capability does not exist yet.
+   *
+   * Distinct from 400 (the caller asked for something wrong) and 503 (it exists
+   * but is temporarily down): 501 says the caller is right and we have not
+   * built it, which is not something a retry will fix.
+   */
+  static notImplemented(message: string) {
+    return new AppError(message, 501);
+  }
+
   static serviceUnavailable(message = 'Service temporarily unavailable') {
     return new AppError(message, 503);
   }
