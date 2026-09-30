@@ -20,131 +20,178 @@ import PlatformCard, { type PlatformProfile } from "./ps/PlatformCard";
 import ProblemActivityChart, { type ActivityPoint } from "./ps/ProblemActivityChart";
 import DifficultyDonut, { difficultyPercent } from "./ps/DifficultyDonut";
 import ConsistencyHeatmap, { ConsistencyStats } from "./ps/ConsistencyHeatmap";
+import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
+import { ApiError } from "../../lib/api";
+import { useResource } from "../../lib/useResource";
+import { codingProfilesService } from "../../services/codingProfiles";
+import type { CodingPlatform, CodingProfile, CodingProfilesResponse } from "../../lib/types";
 
 /* ────────────────────────────────────────────────────────────
-   Sample problem-solving data.
+   Adapter: CodingProfile rows -> the shapes this page's components expect.
 
-   No LeetCode / GeeksforGeeks integration exists yet, so nothing on this page
-   comes from an API. These figures are illustrative and are surfaced to the
-   user by the SampleDataNotice above the fold. When the real integrations
-   land, delete this block, fetch platform state via `api`, and flip CONNECTED
-   off when neither platform is linked.
+   The API returns structured, nullable values (acceptanceRate: 0.428,
+   rating: null). The components below want display-ready strings
+   ("43%", "18 d"). Formatting lives here rather than in the backend so that
+   changing a label never needs a deploy, and so a statistic a platform does
+   not report can simply be dropped instead of being rendered as a zero.
    ──────────────────────────────────────────────────────────── */
 
-const PLATFORMS: PlatformProfile[] = [
-  {
-    platform: "LeetCode",
-    username: "arjunmehta",
-    connected: true,
-    lastSyncedAt: "2h ago",
-    profileUrl: "https://leetcode.com/arjunmehta",
-    headline: { label: "Solved", value: 342 },
-    breakdown: [
-      { label: "Easy", count: 150, color: DIFFICULTY_COLORS.easy },
-      { label: "Medium", count: 155, color: DIFFICULTY_COLORS.medium },
-      { label: "Hard", count: 37, color: DIFFICULTY_COLORS.hard },
-    ],
-    stats: [
-      { label: "Acceptance", value: "68%" },
-      { label: "Contest", value: "1542" },
-      { label: "Streak", value: "18 d" },
-    ],
-    progress: {
-      label: "Medium difficulty coverage",
-      percent: 55,
-      caption: "155 of 280 medium problems attempted",
-    },
-  },
-  {
-    platform: "GeeksforGeeks",
-    username: "arjun.mehta",
-    connected: true,
-    lastSyncedAt: "5h ago",
-    profileUrl: "https://www.geeksforgeeks.org/user/arjunmehta/",
-    headline: { label: "Problems Solved", value: 286 },
-    breakdown: [
-      { label: "Easy", count: 141, color: DIFFICULTY_COLORS.easy },
-      { label: "Medium", count: 119, color: DIFFICULTY_COLORS.medium },
-      { label: "Hard", count: 26, color: DIFFICULTY_COLORS.hard },
-    ],
-    stats: [
-      { label: "Coding Score", value: "742" },
-      { label: "Streak", value: "12 d" },
-      { label: "Articles", value: "24" },
-    ],
-    progress: {
-      label: "Institute rank trajectory",
-      percent: 42,
-      caption: "Top 12% of active GFG problem solvers",
-    },
-  },
-];
-
-const OVERVIEW = {
-  total: 628,
-  easy: 291,
-  medium: 274,
-  hard: 63,
-  streak: 18,
+const PLATFORM_LABEL: Record<CodingPlatform, PlatformProfile["platform"]> = {
+  LEETCODE: "LeetCode",
+  GEEKSFORGEEKS: "GeeksforGeeks",
 };
 
-const DIFFICULTY_DISTRIBUTION = [
-  { label: "Easy", count: OVERVIEW.easy, color: DIFFICULTY_COLORS.easy },
-  { label: "Medium", count: OVERVIEW.medium, color: DIFFICULTY_COLORS.medium },
-  { label: "Hard", count: OVERVIEW.hard, color: DIFFICULTY_COLORS.hard },
-];
+/** "2 hours ago" style relative time for the last sync. */
+function relativeTime(iso: string | null): string | undefined {
+  if (!iso) return undefined;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return undefined;
 
-/** Seeded per-period series so switching periods doesn't reshuffle points. */
-function seriesFor(period: string, seed: number): ActivityPoint[] {
-  const days = period === "7D" ? 7 : period === "30D" ? 30 : period === "90D" ? 90 : 52;
+  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
+
+/** Merges every connected platform's daily counts into one ISO-date map. */
+function mergeCalendars(profiles: CodingProfile[]): Record<string, number> {
+  const merged: Record<string, number> = {};
+  for (const profile of profiles) {
+    for (const [day, count] of Object.entries(profile.rawStats?.submissionCalendar ?? {})) {
+      merged[day] = (merged[day] ?? 0) + count;
+    }
+  }
+  return merged;
+}
+
+/** Local YYYY-MM-DD. Not toISOString(), which shifts to UTC and skews the day. */
+function dayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+}
+
+/** Daily submission counts over the trailing window the period selector asks for. */
+function seriesFrom(calendar: Record<string, number>, period: string): ActivityPoint[] {
+  const days = period === "7D" ? 7 : period === "30D" ? 30 : period === "90D" ? 90 : 365;
   const points: ActivityPoint[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const n = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453;
-    const r = n - Math.floor(n);
-    const weekend = d.getDay() === 0 || d.getDay() === 6;
-    // Mostly 0-3 with occasional spikes; quieter weekends
-    const base = weekend ? 1 : 2.2;
-    const value = Math.max(0, Math.round(base + r * 3.5 - 1.2));
+  // A year of daily columns is unreadable, so 1Y is bucketed into weeks.
+  const step = days > 90 ? 7 : 1;
+
+  for (let i = days - step; i >= 0; i -= step) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+
+    let value = 0;
+    for (let d = 0; d < step; d++) {
+      const bucket = new Date(date);
+      bucket.setDate(date.getDate() + d);
+      value += calendar[dayKey(bucket)] ?? 0;
+    }
+
     points.push({
-      label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      value: days > 90 ? Math.round(value / 2) : value,
+      label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      value,
     });
   }
   return points;
 }
 
-const TOPICS: { topic: string; solved: number; accuracy: number }[] = [
-  { topic: "Arrays", solved: 48, accuracy: 82 },
-  { topic: "Strings", solved: 39, accuracy: 79 },
-  { topic: "Hashing", solved: 31, accuracy: 76 },
-  { topic: "Two Pointers", solved: 27, accuracy: 81 },
-  { topic: "Sliding Window", solved: 22, accuracy: 74 },
-  { topic: "Binary Search", solved: 26, accuracy: 77 },
-  { topic: "Linked List", solved: 19, accuracy: 72 },
-  { topic: "Stack & Queue", solved: 24, accuracy: 75 },
-  { topic: "Trees", solved: 21, accuracy: 68 },
-  { topic: "Graphs", solved: 17, accuracy: 64 },
-  { topic: "Dynamic Programming", solved: 12, accuracy: 51 },
-];
+/** Longest run of consecutive active days anywhere in the recorded history. */
+function longestStreakFrom(calendar: Record<string, number>): number {
+  const days = Object.keys(calendar).sort();
+  let longest = 0;
+  let run = 0;
+  let previous: number | null = null;
 
-const RECENT_ACTIVITY: {
-  platform: "LeetCode" | "GFG";
-  problem: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  topic: string;
-  status: string;
-  date: string;
-}[] = [
-  { platform: "LeetCode", problem: "Two Sum", difficulty: "Easy", topic: "Hashing", status: "Solved", date: "Sep 28" },
-  { platform: "LeetCode", problem: "3Sum", difficulty: "Medium", topic: "Two Pointers", status: "Solved", date: "Sep 27" },
-  { platform: "GFG", problem: "Kadane's Algorithm", difficulty: "Medium", topic: "Arrays", status: "Solved", date: "Sep 26" },
-  { platform: "LeetCode", problem: "Longest Substring Without Repeating", difficulty: "Medium", topic: "Sliding Window", status: "Solved", date: "Sep 26" },
-  { platform: "GFG", problem: "N-Queen Problem", difficulty: "Hard", topic: "Backtracking", status: "Solved", date: "Sep 24" },
-  { platform: "LeetCode", problem: "Merge k Sorted Lists", difficulty: "Hard", topic: "Linked List", status: "Attempted", date: "Sep 23" },
-  { platform: "LeetCode", problem: "Binary Tree Level Order", difficulty: "Medium", topic: "Trees", status: "Solved", date: "Sep 22" },
-];
+  for (const day of days) {
+    const time = new Date(`${day}T00:00:00`).getTime();
+    const consecutive = previous !== null && Math.round((time - previous) / 86400000) === 1;
+    run = consecutive ? run + 1 : 1;
+    if (run > longest) longest = run;
+    previous = time;
+  }
+  return longest;
+}
+
+/** Submissions across the trailing `days` window. */
+function submissionsWithin(calendar: Record<string, number>, days: number): number {
+  let total = 0;
+  for (let i = 0; i < days; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    total += calendar[dayKey(date)] ?? 0;
+  }
+  return total;
+}
+
+/**
+ * One platform's card.
+ *
+ * `stats` only carries entries the platform actually reported: a null rating
+ * means "never entered a contest", and an empty slot says that more honestly
+ * than a zero would.
+ */
+function toPlatformCard(
+  platform: CodingPlatform,
+  profile: CodingProfile | undefined
+): PlatformProfile {
+  const label = PLATFORM_LABEL[platform];
+
+  if (!profile) {
+    return {
+      platform: label,
+      username: "",
+      connected: false,
+      headline: { label: "Solved", value: 0 },
+      stats: [],
+    };
+  }
+
+  const stats: PlatformProfile["stats"] = [];
+  if (profile.acceptanceRate !== null) {
+    stats.push({ label: "Acceptance", value: `${Math.round(profile.acceptanceRate * 100)}%` });
+  }
+  if (profile.rating !== null) {
+    stats.push({ label: "Contest", value: String(Math.round(profile.rating)) });
+  }
+  if (profile.streakDays !== null) {
+    stats.push({ label: "Streak", value: `${profile.streakDays} d` });
+  }
+  if (profile.totalActiveDays !== null) {
+    stats.push({ label: "Active days", value: String(profile.totalActiveDays) });
+  }
+
+  // Medium coverage is the one progress figure both sides of the ratio exist
+  // for; without the site-wide total there is nothing honest to show.
+  const mediumTotal = profile.rawStats?.totalAvailable?.medium ?? null;
+  const progress =
+    mediumTotal && mediumTotal > 0
+      ? {
+          label: "Medium difficulty coverage",
+          percent: Math.round((profile.mediumSolved / mediumTotal) * 100),
+          caption: `${profile.mediumSolved} of ${mediumTotal.toLocaleString()} medium problems solved`,
+        }
+      : undefined;
+
+  return {
+    platform: label,
+    username: profile.handle,
+    connected: true,
+    lastSyncedAt: relativeTime(profile.lastSyncedAt),
+    profileUrl: profile.profileUrl ?? undefined,
+    headline: { label: "Solved", value: profile.totalSolved },
+    breakdown: [
+      { label: "Easy", count: profile.easySolved, color: DIFFICULTY_COLORS.easy },
+      { label: "Medium", count: profile.mediumSolved, color: DIFFICULTY_COLORS.medium },
+      { label: "Hard", count: profile.hardSolved, color: DIFFICULTY_COLORS.hard },
+    ],
+    stats,
+    progress,
+  };
+}
 
 const PERIODS = ["7D", "30D", "90D", "1Y"] as const;
 
@@ -163,15 +210,190 @@ const PLATFORM_BADGE: Record<string, string> = {
 
 export default function ProblemSolving() {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("30D");
-  const series = seriesFor(period, 7);
+
+  const { data, loading, error, reload } = useResource<CodingProfilesResponse>(
+    () => codingProfilesService.list(),
+    []
+  );
+
+  const [busy, setBusy] = useState<CodingPlatform | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [handleDraft, setHandleDraft] = useState("");
+
+  const profiles: CodingProfile[] = data?.profiles ?? [];
+  const leetcode = profiles.find((p) => p.platform === "LEETCODE");
+  const gfg = profiles.find((p) => p.platform === "GEEKSFORGEEKS");
+  const anyConnected = profiles.length > 0;
+
+  async function runConnect(platform: CodingPlatform, handle: string) {
+    setBusy(platform);
+    setActionError(null);
+    try {
+      await codingProfilesService.connect(platform, handle.trim());
+      setHandleDraft("");
+      reload();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Could not connect that profile.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runSync(platform: CodingPlatform) {
+    setBusy(platform);
+    setActionError(null);
+    try {
+      await codingProfilesService.sync(platform);
+      reload();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Could not sync that profile.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // ── Everything below is derived from the rows above, never invented ──
+  const calendar = mergeCalendars(profiles);
+  const series = seriesFrom(calendar, period);
+
+  const overview = {
+    total: profiles.reduce((sum, p) => sum + p.totalSolved, 0),
+    easy: profiles.reduce((sum, p) => sum + p.easySolved, 0),
+    medium: profiles.reduce((sum, p) => sum + p.mediumSolved, 0),
+    hard: profiles.reduce((sum, p) => sum + p.hardSolved, 0),
+    // Each platform publishes its own streak under its own definition. Taking
+    // the best one keeps the overview consistent with the platform cards;
+    // recomputing it here produced a second, different number for the same word.
+    streak: profiles.reduce((best, p) => Math.max(best, p.streakDays ?? 0), 0),
+  };
+
+  const platforms: PlatformProfile[] = [
+    toPlatformCard("LEETCODE", leetcode),
+    toPlatformCard("GEEKSFORGEEKS", gfg),
+  ];
+
+  const difficultyDistribution = [
+    { label: "Easy", count: overview.easy, color: DIFFICULTY_COLORS.easy },
+    { label: "Medium", count: overview.medium, color: DIFFICULTY_COLORS.medium },
+    { label: "Hard", count: overview.hard, color: DIFFICULTY_COLORS.hard },
+  ];
+
+  /**
+   * Topics carry a solve count but no accuracy: LeetCode reports problems
+   * solved per tag and nothing about attempts, so per-topic accuracy cannot be
+   * derived. It stays absent rather than being approximated.
+   */
+  const topics = (leetcode?.rawStats?.topics ?? []).slice(0, 12).map((t) => ({
+    topic: t.tag,
+    solved: t.solved,
+    accuracy: null as number | null,
+  }));
+
+  /**
+   * Most recent solves, one row per problem.
+   *
+   * The feed can contain the same problem more than once — re-solving it is a
+   * real event — but two identical rows read as a rendering fault, and the
+   * table keys on problem and date. The first occurrence is the most recent.
+   */
+  const recentActivity = [
+    ...new Map(
+      (leetcode?.rawStats?.recentSolves ?? []).map((solve) => [solve.title, solve])
+    ).values(),
+  ].map((solve) => ({
+    platform: "LeetCode" as const,
+    problem: solve.title,
+    // Every entry comes from the accepted-submissions feed, so there is no
+    // "Attempted" state to represent — LeetCode publishes no failed attempts.
+    difficulty: solve.difficulty ?? "—",
+    topic: solve.topic ?? "—",
+    status: "Solved",
+    date: solve.solvedAt
+      ? new Date(solve.solvedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      : "—",
+    url: solve.url,
+  }));
+
+  const consistency = {
+    currentStreak: overview.streak,
+    // Computed from the calendar because no platform publishes an all-time best.
+    longestStreak: Math.max(longestStreakFrom(calendar), overview.streak),
+    thisWeek: submissionsWithin(calendar, 7),
+    thisMonth: submissionsWithin(calendar, 30),
+    activeDays: Object.keys(calendar).length,
+  };
+
+  /**
+   * The insight panel, stated only in terms of what was measured.
+   *
+   * The previous copy cited per-topic accuracy, which no platform reports; this
+   * version talks about solve volume and difficulty mix, both of which are
+   * counted. Hard-problem share is the one judgement here, and the threshold it
+   * uses is stated in the sentence rather than hidden behind an adjective.
+   */
+  const hardShare = overview.total > 0 ? Math.round((overview.hard / overview.total) * 100) : 0;
+  const mediumShare = overview.total > 0 ? Math.round((overview.medium / overview.total) * 100) : 0;
+  const strongest = topics.slice(0, 3);
+  const thinnest = topics.length > 3 ? topics[topics.length - 1] : null;
+
+  const insight = anyConnected
+    ? {
+        summary:
+          strongest.length > 0
+            ? `Your solve volume is concentrated in ${strongest
+                .map((t) => t.topic)
+                .join(", ")} — ${strongest.reduce((sum, t) => sum + t.solved, 0)} problems across those topics. ` +
+              `Medium problems are ${mediumShare}% of everything you have solved and Hard ${hardShare}%. ` +
+              `Per-topic accuracy is not published by LeetCode, so these are counts rather than success rates.`
+            : `You have ${overview.total.toLocaleString()} solved problems recorded. Topic-level detail will appear once the platform reports it.`,
+        focusTitle: thinnest ? thinnest.topic : "Hard problems",
+        focusDetail: thinnest
+          ? `${thinnest.solved} problems — the thinnest coverage among the topics you have touched.`
+          : `${overview.hard} of ${overview.total} solves are Hard.`,
+        recommendationTitle: hardShare < 15 ? "Increase hard-problem volume" : "Keep the difficulty mix",
+        recommendationDetail:
+          hardShare < 15
+            ? `Hard problems are ${hardShare}% of your solves. Raising that share is the usual gap between practice volume and interview-grade depth.`
+            : `Hard problems are ${hardShare}% of your solves, which is a healthy share — depth is not the limiting factor here.`,
+      }
+    : {
+        summary:
+          "Nothing is connected yet, so there is nothing to analyse. Connect a platform and this panel will describe your actual solve history.",
+        focusTitle: "No data",
+        focusDetail: "Connect a coding platform to see where your coverage is thinnest.",
+        recommendationTitle: "Connect a platform",
+        recommendationDetail: "LeetCode can be connected below using your public username.",
+      };
 
   const overviewCards = [
-    { icon: Target, label: "Total Problems Solved", value: OVERVIEW.total, sub: "Across 2 platforms", color: "text-primary", border: "border-primary/25", bg: "bg-primary/10" },
-    { icon: CheckCircle2, label: "Easy", value: OVERVIEW.easy, sub: `${difficultyPercent(OVERVIEW.easy, OVERVIEW.total)}% of all solves`, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
-    { icon: AlertTriangle, label: "Medium", value: OVERVIEW.medium, sub: `${difficultyPercent(OVERVIEW.medium, OVERVIEW.total)}% of all solves`, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
-    { icon: Braces, label: "Hard", value: OVERVIEW.hard, sub: `${difficultyPercent(OVERVIEW.hard, OVERVIEW.total)}% of all solves`, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
-    { icon: Flame, label: "Current Streak", value: OVERVIEW.streak, sub: "Days in a row", color: "text-orange-300", border: "border-orange-500/25", bg: "bg-orange-500/10" },
+    { icon: Target, label: "Total Problems Solved", value: overview.total, sub: `Across ${profiles.length} platform${profiles.length === 1 ? "" : "s"}`, color: "text-primary", border: "border-primary/25", bg: "bg-primary/10" },
+    { icon: CheckCircle2, label: "Easy", value: overview.easy, sub: `${difficultyPercent(overview.easy, overview.total)}% of all solves`, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
+    { icon: AlertTriangle, label: "Medium", value: overview.medium, sub: `${difficultyPercent(overview.medium, overview.total)}% of all solves`, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
+    { icon: Braces, label: "Hard", value: overview.hard, sub: `${difficultyPercent(overview.hard, overview.total)}% of all solves`, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
+    { icon: Flame, label: "Current Streak", value: overview.streak, sub: "Days in a row", color: "text-orange-300", border: "border-orange-500/25", bg: "bg-orange-500/10" },
   ];
+
+  if (loading) {
+    return (
+      <PageContainer
+        title="Problem Solving"
+        description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
+      >
+        <LoadingBlock label="Loading your coding profiles…" />
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer
+        title="Problem Solving"
+        description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
+      >
+        <ErrorBlock message={error} onRetry={reload} />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer
@@ -183,11 +405,19 @@ export default function ProblemSolving() {
       <div className="-mt-16 mb-4 flex justify-end">
         <span className="glass-chip px-3 py-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Data synced</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{anyConnected ? "Data synced" : "Not connected"}</span>
         </span>
       </div>
 
-      <SampleDataNotice what="No coding-platform integration is built yet. The LeetCode and GeeksforGeeks figures below are realistic placeholders shown to demonstrate the Problem Solving intelligence layout." />
+      {!anyConnected && (
+        <SampleDataNotice what="No coding platform is connected yet, so there is nothing to measure. Connect LeetCode below and these sections fill with your real solve history." />
+      )}
+
+      {actionError && (
+        <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/[0.08] px-5 py-3.5">
+          <p className="text-[13px] text-red-300">{actionError}</p>
+        </div>
+      )}
 
       {/* ── 1. Overall overview ── */}
       <Reveal>
@@ -220,7 +450,7 @@ export default function ProblemSolving() {
           Connected Platforms
         </SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-          {PLATFORMS.map((p) => (
+          {platforms.map((p) => (
             <PlatformCard key={p.platform} profile={p} />
           ))}
         </div>
@@ -273,10 +503,10 @@ export default function ProblemSolving() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-8">
-            <DifficultyDonut segments={DIFFICULTY_DISTRIBUTION} />
+            <DifficultyDonut segments={difficultyDistribution} />
 
             <div className="flex-1 w-full space-y-4">
-              {DIFFICULTY_DISTRIBUTION.map((d) => (
+              {difficultyDistribution.map((d) => (
                 <div key={d.label}>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
@@ -285,13 +515,13 @@ export default function ProblemSolving() {
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-bold text-white tabular-nums">{d.count}</span>
-                      <span className="text-[11px] text-white/35 tabular-nums">{difficultyPercent(d.count, OVERVIEW.total)}%</span>
+                      <span className="text-[11px] text-white/35 tabular-nums">{difficultyPercent(d.count, overview.total)}%</span>
                     </div>
                   </div>
                   <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${difficultyPercent(d.count, OVERVIEW.total)}%` }}
+                      animate={{ width: `${difficultyPercent(d.count, overview.total)}%` }}
                       transition={{ duration: 0.9, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                       className="h-full rounded-full"
                       style={{ background: d.color, boxShadow: `0 0 6px ${d.color}55` }}
@@ -301,7 +531,9 @@ export default function ProblemSolving() {
               ))}
 
               <p className="text-[11px] text-white/30 pt-1 leading-relaxed">
-                Counts combine both connected platforms for the trailing 12 months.
+                {anyConnected
+                  ? `Counts come from ${profiles.map((p) => (p.platform === "LEETCODE" ? "LeetCode" : "GeeksforGeeks")).join(" and ")}.`
+                  : "No platform connected yet."}
               </p>
             </div>
           </div>
@@ -312,7 +544,7 @@ export default function ProblemSolving() {
       <Reveal delay={0.25}>
         <SectionLabel>Topic Performance</SectionLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
-          {TOPICS.map((t, i) => (
+          {topics.map((t, i) => (
             <motion.div
               key={t.topic}
               initial={{ opacity: 0, y: 12 }}
@@ -326,10 +558,16 @@ export default function ProblemSolving() {
                   <p className="text-sm font-semibold text-white/90 leading-tight">{t.topic}</p>
                   <p className="text-[11px] text-white/35 mt-0.5 tabular-nums">{t.solved} problems</p>
                 </div>
-                <span className="text-sm font-bold text-white/80 tabular-nums shrink-0">{t.accuracy}%</span>
+                {t.accuracy !== null && (
+                  <span className="text-sm font-bold text-white/80 tabular-nums shrink-0">{t.accuracy}%</span>
+                )}
               </div>
 
-              {/* Accuracy as bar length — length encodes accuracy directly */}
+              {/* Accuracy as bar length — length encodes accuracy directly.
+                  LeetCode reports problems solved per topic but nothing about
+                  attempts, so accuracy is unavailable and the bar is omitted
+                  rather than drawn from an approximation. */}
+              {t.accuracy !== null && (
               <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
@@ -343,9 +581,12 @@ export default function ProblemSolving() {
                   }}
                 />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mt-2.5">
-                {t.accuracy}% accuracy
-              </p>
+              )}
+              {t.accuracy !== null && (
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mt-2.5">
+                  {t.accuracy}% accuracy
+                </p>
+              )}
             </motion.div>
           ))}
         </div>
@@ -367,7 +608,7 @@ export default function ProblemSolving() {
                 </tr>
               </thead>
               <tbody>
-                {RECENT_ACTIVITY.map((r) => (
+                {recentActivity.map((r) => (
                   <tr key={`${r.platform}-${r.problem}-${r.date}`} className="border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors">
                     <td className="px-5 py-3.5">
                       <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${PLATFORM_BADGE[r.platform]}`}>
@@ -405,13 +646,11 @@ export default function ProblemSolving() {
       <Reveal delay={0.35}>
         <SectionLabel>Coding Consistency</SectionLabel>
         <div className="mb-8">
-          <ConsistencyStats
-            active
-            stats={{ currentStreak: 18, longestStreak: 41, thisWeek: 14, thisMonth: 52, activeDays: 61 }}
-          />
+          <ConsistencyStats active={anyConnected} stats={consistency} />
           <div className="mt-4">
             <ConsistencyHeatmap
-              active
+              active={anyConnected}
+              activity={calendar}
               seed={11}
               weeks={26}
               footerNote="Cells represent days with problem-solving activity across connected platforms — this is practice evidence, not GitHub commit activity."
@@ -434,26 +673,22 @@ export default function ProblemSolving() {
             </div>
 
             <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
-              Your problem-solving activity is strongest in <span className="text-white font-semibold">Arrays, Hashing, and Two Pointer patterns</span> —
-              together 106 problems at 78–82% accuracy. Medium-difficulty problems make up 44% of everything you
-              solve, but your Hard count (63, 10%) is thin for interview-grade depth, and Graphs accuracy (64%)
-              trails your structural average by 12 points.
+              {insight.summary}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4">
                 <StatLabel>Focus Area</StatLabel>
-                <p className="text-sm font-bold text-amber-200 mt-1">Dynamic Programming</p>
+                <p className="text-sm font-bold text-amber-200 mt-1">{insight.focusTitle}</p>
                 <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
-                  12 problems, 51% accuracy — the weakest coverage among your active topics.
+                  {insight.focusDetail}
                 </p>
               </div>
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
                 <StatLabel>Recommendation</StatLabel>
-                <p className="text-sm font-bold text-white mt-1">Push medium/hard DP volume</p>
+                <p className="text-sm font-bold text-white mt-1">{insight.recommendationTitle}</p>
                 <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
-                  Increase medium and hard DP problems to strengthen advanced problem-solving coverage before
-                  interview season.
+                  {insight.recommendationDetail}
                 </p>
               </div>
             </div>
@@ -481,18 +716,37 @@ export default function ProblemSolving() {
                 from your accounts yet.
               </p>
               <div className="flex flex-wrap gap-3 mt-5">
-                <button
-                  className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-                  disabled
-                  title="Integration coming soon"
-                >
-                  Connect LeetCode
-                </button>
+                {leetcode ? (
+                  <button
+                    onClick={() => void runSync("LEETCODE")}
+                    disabled={busy !== null}
+                    className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                  >
+                    {busy === "LEETCODE" ? "Syncing…" : "Sync LeetCode"}
+                  </button>
+                ) : (
+                  <>
+                    <input
+                      value={handleDraft}
+                      onChange={(e) => setHandleDraft(e.target.value)}
+                      placeholder="LeetCode username"
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
+                    />
+                    <button
+                      onClick={() => void runConnect("LEETCODE", handleDraft)}
+                      disabled={busy !== null || !handleDraft.trim()}
+                      className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                    >
+                      {busy === "LEETCODE" ? "Connecting…" : "Connect LeetCode"}
+                    </button>
+                  </>
+                )}
                 <button
                   className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/12 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/25 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled
-                  title="Integration coming soon"
+                  title="GeeksforGeeks integration is not built yet"
                 >
                   Connect GeeksforGeeks
                 </button>
@@ -501,7 +755,7 @@ export default function ProblemSolving() {
 
             {/* Small inline preview of the unconnected platform cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-[420px] shrink-0">
-              {PLATFORMS.map((p) => (
+              {platforms.map((p) => (
                 <PlatformCard key={`nc-${p.platform}`} profile={{ ...p, connected: false }} />
               ))}
             </div>
