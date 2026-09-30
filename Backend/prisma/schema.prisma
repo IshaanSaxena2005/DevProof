@@ -270,20 +270,54 @@ model Certification {
   @@map("certifications")
 }
 
+/// A competitive-programming profile the user has linked.
+///
+/// Counts default to 0 because "solved nothing" is a real measurement. Every
+/// other statistic is nullable on purpose: platforms differ in what they expose,
+/// and GeeksforGeeks has no contest rating at all. A null means "this platform
+/// does not report it", which must stay distinguishable from a measured zero —
+/// coercing absent data to 0 would put a fabricated number on the dashboard.
+///
+/// platform is a plain string rather than an enum so adding a platform needs no
+/// migration; accepted values are enforced by Zod at the route boundary.
 model CodingProfile {
-  id          String   @id @default(uuid())
-  userId      String
-  platform    String
-  handle      String
-  totalSolved Int      @default(0)
-  easySolved  Int      @default(0)
+  id           String  @id @default(uuid())
+  userId       String
+  platform     String
+  handle       String
+  profileUrl   String?
+
+  totalSolved  Int     @default(0)
+  easySolved   Int     @default(0)
   mediumSolved Int     @default(0)
-  hardSolved  Int      @default(0)
-  rating      Float?
-  updatedAt   DateTime @updatedAt
+  hardSolved   Int     @default(0)
+
+  /// Accepted submissions / total submissions, 0..1.
+  acceptanceRate   Float?
+  /// Site-wide rank by reputation, not by rating.
+  ranking          Int?
+  rating           Float?
+  contestsAttended Int?
+  globalRanking    Int?
+  topPercentage    Float?
+  streakDays       Int?
+  totalActiveDays  Int?
+
+  /// Platform-specific detail that does not deserve its own columns: the daily
+  /// submission calendar, per-tag counts, per-language counts. Shapes differ per
+  /// platform and are read only by the serializer for that platform.
+  rawStats Json?
+
+  /// Null until the first successful sync — distinguishes linked from synced.
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // One profile per platform per user, so a sync upserts rather than duplicates.
+  @@unique([userId, platform])
+  @@index([userId])
   @@map("coding_profiles")
 }
 

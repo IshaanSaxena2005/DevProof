@@ -24,17 +24,34 @@ function levelFor(n: number, seed: number, max: number) {
  * commits. Trailing weeks of the current month render as empty cells, like
  * GitHub does for future dates.
  */
+/** Submissions on a day mapped onto the 0..4 intensity ramp. */
+function levelForCount(count: number) {
+  if (count <= 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 3) return 2;
+  if (count <= 6) return 3;
+  return 4;
+}
+
 export default function ConsistencyHeatmap({
   seed,
   weeks = 26,
   active = true,
   footerNote,
+  activity,
 }: {
   seed: number;
   weeks?: number;
   /** False renders an all-empty grid — no platform connected yet. */
   active?: boolean;
   footerNote?: string;
+  /**
+   * Real activity as ISO date -> submissions that day.
+   *
+   * When supplied, every cell comes from it and `seed` is ignored; the seeded
+   * generator below is only the preview used before a platform is connected.
+   */
+  activity?: Record<string, number>;
 }) {
   const today = new Date();
   const totalDays = weeks * 7;
@@ -51,6 +68,16 @@ export default function ConsistencyHeatmap({
       cells.push(null);
       continue;
     }
+    if (activity) {
+      // Local date parts, not toISOString(): that converts to UTC and would
+      // shift every cell by a day for anyone west of Greenwich.
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+        date.getDate()
+      ).padStart(2, "0")}`;
+      cells.push(active ? levelForCount(activity[key] ?? 0) : 0);
+      continue;
+    }
+
     // Weekends trend quieter, like real practice patterns
     const weekend = date.getDay() === 0 || date.getDay() === 6;
     cells.push(active ? levelFor(i, seed, weekend ? 3 : 4) : 0);

@@ -412,3 +412,67 @@ export interface CertificationMutationResponse {
 export interface CertificationsResponse {
   certifications: Certification[];
 }
+
+/* ── Coding profiles (GET /coding-profiles) ───────────── */
+
+export type CodingPlatform = "LEETCODE" | "GEEKSFORGEEKS";
+
+/** One recent accepted solve. difficulty/topic are null if the lookup failed. */
+export interface RecentSolve {
+  title: string;
+  url: string;
+  solvedAt: string;
+  difficulty: string | null;
+  topic: string | null;
+}
+
+/**
+ * Platform-specific detail the backend stores as JSON.
+ *
+ * Present for LeetCode; other platforms may populate only part of it, so every
+ * member is treated as possibly absent at the call site.
+ */
+export interface CodingProfileRawStats {
+  /** ISO date -> submissions that day. */
+  submissionCalendar?: Record<string, number>;
+  totalAvailable?: { easy: number | null; medium: number | null; hard: number | null };
+  topics?: { tag: string; solved: number }[];
+  languages?: { language: string; solved: number }[];
+  recentSolves?: RecentSolve[];
+}
+
+/**
+ * A linked competitive-programming profile.
+ *
+ * Solve counts are always numbers because "solved nothing" is measurable.
+ * Everything else is nullable: platforms differ in what they expose, and null
+ * means "not reported", which must never render as a zero.
+ */
+export interface CodingProfile {
+  id: string;
+  platform: CodingPlatform;
+  handle: string;
+  profileUrl: string | null;
+  totalSolved: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  acceptanceRate: number | null;
+  ranking: number | null;
+  rating: number | null;
+  contestsAttended: number | null;
+  globalRanking: number | null;
+  topPercentage: number | null;
+  streakDays: number | null;
+  totalActiveDays: number | null;
+  rawStats: CodingProfileRawStats | null;
+  lastSyncedAt: string | null;
+}
+
+export interface CodingProfilesResponse {
+  profiles: CodingProfile[];
+}
+
+export interface CodingProfileResponse {
+  profile: CodingProfile;
+}
