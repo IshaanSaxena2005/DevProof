@@ -61,7 +61,7 @@ export default function HowItWorksSection() {
                   <Icon className="w-4.5 h-4.5 text-primary" />
                 </div>
                 <div>
-                  <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-primary">
+                  <span className="text-[11px] font-bold tracking-[0.3em] uppercase text-primary">
                     {step.number} • {step.title}
                   </span>
                   <p className="text-xs text-white/70 max-w-xs mx-auto mt-1 leading-relaxed">

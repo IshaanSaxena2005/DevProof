@@ -12,10 +12,9 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const NAV_LINKS = [
-  { label: "Product", href: "#product" },
   { label: "Intelligence", href: "#intelligence" },
-  { label: "Evidence", href: "#product" },
-  { label: "Developers", href: "#developer360" },
+  { label: "Developer 360", href: "#developer360" },
+  { label: "Growth", href: "#growth" },
   { label: "How It Works", href: "#how-it-works" },
 ];
 

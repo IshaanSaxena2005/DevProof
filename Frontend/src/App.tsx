@@ -47,12 +47,12 @@ function LandingPage() {
         <main>
           <HeroSection />
           <ProductProofStrip />
-          <CoreValueSection />
-          <RepositoryIntelligenceSection />
-          <Developer360Section />
-          <GrowthCareerSection />
-          <AiSection />
           <HowItWorksSection />
+          <RepositoryIntelligenceSection />
+          <CoreValueSection />
+          <Developer360Section />
+          <AiSection />
+          <GrowthCareerSection />
           <PrivacySecuritySection />
           <FinalCtaSection />
         </main>

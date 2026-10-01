@@ -10,7 +10,7 @@ const TRUST_ITEMS = [
 
 export default function PrivacySecuritySection() {
   return (
-    <div className="relative w-full py-8 border-t border-b border-white/[0.06] bg-black/30 backdrop-blur-sm z-20">
+    <div className="relative w-full py-6 border-t border-b border-white/[0.06] bg-black/30 backdrop-blur-sm z-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-4 gap-x-8">
           <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/50 text-center lg:text-left shrink-0">

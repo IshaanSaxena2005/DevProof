@@ -28,8 +28,8 @@ export default function Developer360Section() {
             <span style={{ color: "hsl(var(--primary))" }}>Multiple Signals.</span>
           </SectionTitle>
           <SectionLead>
-            DevProof correlates evidence across projects, activity, learning,
-            and experience — not just a single platform.
+            Seven skill dimensions, each scored by the evidence behind it —
+            not by self-reported confidence.
           </SectionLead>
         </motion.div>
 

@@ -196,7 +196,7 @@ export default function RepositoryIntelligenceSection() {
                   <span className="text-[10px] font-bold tracking-widest" style={{ color: "rgb(248,113,113)" }}>
                     HIGH
                   </span>
-                  <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                     Action Required
                   </span>
                 </div>
@@ -217,7 +217,7 @@ export default function RepositoryIntelligenceSection() {
                   <span className="text-[10px] font-bold tracking-widest" style={{ color: "hsl(var(--primary))" }}>
                     GOOD
                   </span>
-                  <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                     Best Practice
                   </span>
                 </div>

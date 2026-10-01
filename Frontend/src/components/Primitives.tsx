@@ -82,7 +82,7 @@ export function SectionTitle({
   return (
     <h2
       className={cn(
-        "text-display uppercase tracking-[-0.04em]",
+        "text-display tracking-[-0.04em]",
         align === "center" && "text-center",
         className
       )}

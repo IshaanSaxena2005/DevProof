@@ -13,6 +13,7 @@ import { cn } from "../lib/utils";
 import {
   GlassPanel,
   PanelHeader,
+  SectionLead,
   SectionShell,
   SectionTitle,
   WindowDots,
@@ -73,7 +74,7 @@ export default function GrowthCareerSection() {
         <div className="ambient-glow-green w-[600px] h-[400px] top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 animate-glow-pulse" />
       }
     >
-      {/* Section header */}
+      {/* Section header — merged lead from the former CareerIntelligence section */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -82,14 +83,17 @@ export default function GrowthCareerSection() {
         className="text-center mb-10"
       >
         <SectionTitle align="center">
-          Growth&nbsp;&amp;&nbsp;
-          <span style={{ color: "hsl(var(--primary))" }}>Career Intelligence.</span>
+          Growth &amp;
+          <span style={{ color: "hsl(var(--primary))" }}> Career Intelligence.</span>
         </SectionTitle>
+        <SectionLead align="center" className="mt-4">
+          Recommendations come from what you have actually built — not from a generic checklist.
+        </SectionLead>
       </motion.div>
 
       {/* ── Two main columns ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        {/* ── LEFT: Growth Analytics ── */}
+        {/* ── LEFT: Growth analytics ── */}
         <div className="flex flex-col gap-4">
           {/* Chart widget */}
           <motion.div
@@ -150,14 +154,12 @@ export default function GrowthCareerSection() {
                               background: isLatest
                                 ? "hsl(var(--primary))"
                                 : "rgba(255, 255, 255, 0.16)",
-                              boxShadow: isLatest
-                                ? "0 0 24px rgba(119,252,117,0.3)"
-                                : "none",
+                              boxShadow: isLatest ? "0 0 24px rgba(119,252,117,0.3)" : "none",
                             }}
                           />
                         </div>
                         <span
-                          className="text-[10px] font-semibold uppercase tracking-wider"
+                          className="text-[10px] md:text-xs font-semibold uppercase tracking-wider"
                           style={{ color: "var(--text-tertiary)" }}
                         >
                           {data.month}
@@ -208,7 +210,7 @@ export default function GrowthCareerSection() {
           </motion.div>
         </div>
 
-        {/* ── RIGHT: Career Intelligence ── */}
+        {/* ── RIGHT: Career intelligence ── */}
         <div className="flex flex-col gap-4">
           {/* Career readiness widget */}
           <motion.div
@@ -254,6 +256,7 @@ export default function GrowthCareerSection() {
                   </div>
                 </div>
 
+                {/* Progress bar visual */}
                 <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
@@ -329,7 +332,7 @@ export default function GrowthCareerSection() {
                     Largest Current Engineering Gap
                   </div>
                   <h3
-                    className="text-display uppercase tracking-tight"
+                    className="text-display tracking-tight"
                     style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)", lineHeight: 1.1 }}
                   >
                     Automated Testing

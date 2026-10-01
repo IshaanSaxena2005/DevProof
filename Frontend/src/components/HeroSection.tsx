@@ -93,7 +93,7 @@ export default function HeroSection() {
           </div>
 
           <p
-            className="opacity-0 animate-fade-up font-light mt-6 text-[11px] md:text-xs flex items-center gap-3"
+            className="opacity-0 animate-fade-up font-light mt-6 text-xs md:text-sm flex items-center gap-3"
             style={{ color: "var(--text-tertiary)", animationDelay: "0.8s" }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse inline-block shadow-[0_0_8px_rgba(119,252,117,0.8)]" />

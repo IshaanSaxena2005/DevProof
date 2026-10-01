@@ -34,7 +34,7 @@ export default function FinalCtaSection() {
 
             <div className="relative z-10 flex flex-col items-center">
               <h2
-                className="text-display uppercase mb-4 tracking-tight"
+                className="text-display mb-4 tracking-tight"
                 style={{ fontSize: "clamp(2.2rem, 5.5vw, 3.75rem)", lineHeight: 1.05 }}
               >
                 Your work already
@@ -42,18 +42,7 @@ export default function FinalCtaSection() {
                 tells a story.
               </h2>
 
-              <p
-                className="text-lg md:text-xl font-light mb-8"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                DevProof turns it into{" "}
-                <span className="font-semibold" style={{ color: "hsl(var(--primary))" }}>
-                  evidence
-                </span>
-                .
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
                 <div className="relative group">
                   <div
                     className="absolute -inset-1 rounded-full blur opacity-35 group-hover:opacity-60 transition-opacity duration-500"

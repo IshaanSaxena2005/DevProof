@@ -19,7 +19,7 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-white/90">Platform</h4>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/90">Platform</h3>
             <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
               {["Product", "Repository Intelligence", "Developer 360", "Growth", "Career Readiness"].map(
                 (l) => (
@@ -35,7 +35,7 @@ export default function Footer() {
 
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/90">Resources</h4>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-white/90">Resources</h3>
               <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
                 {["Documentation", "GitHub"].map((l) => (
                   <li key={l}>
@@ -47,7 +47,7 @@ export default function Footer() {
               </ul>
             </div>
             <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/90">Legal</h4>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-white/90">Legal</h3>
               <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
                 {["Privacy", "Terms"].map((l) => (
                   <li key={l}>
@@ -66,7 +66,7 @@ export default function Footer() {
             © 2026 DevProof
           </span>
           <span className="text-xs font-light" style={{ color: "var(--text-tertiary)" }}>
-            Real repositories • Measurable signals • Explainable insights
+            From claims to engineering evidence
           </span>
         </div>
       </div>
