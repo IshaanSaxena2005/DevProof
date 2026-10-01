@@ -127,7 +127,23 @@ export default function LearningAchievements() {
             />
           )}
 
-          {!loading && !error && certifications.length === 0 ? (
+          {loading ? (
+            /* Skeleton while /certifications is in flight — without it the
+               grid renders zero cards and reads as an empty list. */
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+              {[0, 1].map((i) => (
+                <div key={i} className="glass-panel p-5 animate-pulse" aria-hidden="true">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/[0.05] shrink-0" />
+                    <div className="flex-1 space-y-2.5">
+                      <div className="h-4 w-1/3 rounded bg-white/[0.05]" />
+                      <div className="h-3 w-1/2 rounded bg-white/[0.05]" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !error && certifications.length === 0 ? (
             <CertificationsEmpty onAdd={() => setShowForm(true)} />
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">

@@ -530,8 +530,11 @@ export default function Repositories() {
                         <span className="flex items-center gap-1">
                           <GitFork className="w-3 h-3" /> {repo.forksCount}
                         </span>
-                        <span className="ml-auto" title={formatFullDate(githubActivityAt(repo) ?? repo.updatedAt)}>
-                          Updated {relativeTime(githubActivityAt(repo) ?? repo.updatedAt)}
+                        {/* pushedAt/githubUpdatedAt only — the DB row's own
+                            updatedAt bumps on every sync and would present a
+                            sync event as GitHub activity. */}
+                        <span className="ml-auto" title={githubActivityAt(repo) ? formatFullDate(githubActivityAt(repo)!) : "Last GitHub activity not recorded — sync from GitHub to populate it"}>
+                          {githubActivityAt(repo) ? `Updated ${relativeTime(githubActivityAt(repo))}` : "Updated —"}
                         </span>
                       </div>
                     </div>

@@ -185,24 +185,24 @@ export function CertificationForm({
     <form onSubmit={handleSubmit} className="glass-panel p-5 mb-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Certification name *</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. AWS Solutions Architect" className={field} />
+          <label htmlFor="cert-name" className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Certification name *</label>
+          <input id="cert-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. AWS Solutions Architect" className={field} />
         </div>
         <div>
-          <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Issuing organization *</label>
-          <input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="e.g. Amazon Web Services" className={field} />
+          <label htmlFor="cert-issuer" className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Issuing organization *</label>
+          <input id="cert-issuer" value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="e.g. Amazon Web Services" className={field} />
         </div>
         <div>
-          <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Credential ID</label>
-          <input value={credentialId} onChange={(e) => setCredentialId(e.target.value)} placeholder="Optional" className={field} />
+          <label htmlFor="cert-credential-id" className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Credential ID</label>
+          <input id="cert-credential-id" value={credentialId} onChange={(e) => setCredentialId(e.target.value)} placeholder="Optional" className={field} />
         </div>
         <div>
-          <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Credential URL</label>
-          <input value={credentialUrl} onChange={(e) => setCredentialUrl(e.target.value)} placeholder="https://…" className={field} />
+          <label htmlFor="cert-credential-url" className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Credential URL</label>
+          <input id="cert-credential-url" type="url" value={credentialUrl} onChange={(e) => setCredentialUrl(e.target.value)} placeholder="https://…" className={field} />
         </div>
         <div>
-          <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Issue date</label>
-          <input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className={field} />
+          <label htmlFor="cert-issue-date" className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">Issue date</label>
+          <input id="cert-issue-date" type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className={field} />
         </div>
       </div>
 

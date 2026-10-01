@@ -8,10 +8,12 @@ import EvidenceCoverage from "./PP/EvidenceCoverage";
 import { useAuth } from "../../hooks/useAuth";
 
 /* ── completeness wiring ──────────────────────────────────────
-   Every component of completeness maps to a real data source in
-   this build. No resume/LinkedIn backend exists, so those rows are
-   null ("Not available") rather than invented percentages. Identity
-   and professional rows come from the live auth user when present.
+   The only measurable evidence in this build is what the auth user
+   actually provides: a name, an email, and a linked GitHub account.
+   The overall completeness is the fraction of those three recorded
+   signals present (3 → 100%, 2 → 67%…) — a coverage count, stated as
+   such. No resume/LinkedIn backend exists, so those components stay
+   "Not available" and no other percentage is estimated.
    ───────────────────────────────────────────────────────────── */
 
 export default function ProfessionalProfile() {
@@ -24,9 +26,10 @@ export default function ProfessionalProfile() {
   const avatarUrl = user?.avatarUrl ?? user?.githubAccount?.avatarUrl ?? null;
   const githubUsername = user?.githubAccount?.username ?? null;
 
-  const identityScore = name ? 100 : 40;
-  const professionalScore = githubUsername ? 40 : 20;
-
+  // Coverage of the three recorded identity signals, not a weighted score:
+  // every available component contributes equally and nothing is estimated.
+  const identityScore = name && email ? 100 : 0;
+  const professionalScore = githubUsername ? 100 : 0;
   const overall = Math.round(
     [identityScore, professionalScore, 0, 0, 0, 0].reduce((a, b) => a + b, 0) / 6
   );
@@ -87,7 +90,7 @@ export default function ProfessionalProfile() {
               <PPStatLabel>Profile Completeness</PPStatLabel>
               <CompletenessRing percent={overall} />
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 text-center">
-                {overall > 0 ? "Identity evidence only" : "No evidence yet"}
+                Share of available evidence recorded
               </p>
             </div>
           </div>
@@ -183,8 +186,9 @@ export default function ProfessionalProfile() {
           <GlassCard hover={false} className="p-6 lg:col-span-3">
             <CompletenessBreakdown items={breakdown} />
             <p className="text-[11px] text-white/30 mt-5 leading-relaxed">
-              Percentages reflect actual evidence on file. Components without a data source show
-              "Not available" rather than a zero — no number is estimated.
+              Percentages are the share of recorded identity evidence — name and email, plus a
+              linked GitHub account — not a weighted score. Components without a data source show
+              "Not available" rather than a zero; no percentage is estimated.
             </p>
           </GlassCard>
         </div>

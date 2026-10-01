@@ -29,7 +29,6 @@ import Skills from "./pages/dashboard/Skills";
 import ProblemSolving from "./pages/dashboard/ProblemSolving";
 import ProfessionalProfile from "./pages/dashboard/ProfessionalProfile";
 import LearningAchievements from "./pages/dashboard/LearningAchievements";
-import Credentials from "./pages/dashboard/Credentials";
 import Growth from "./pages/dashboard/Growth";
 import CareerReadiness from "./pages/dashboard/CareerReadiness";
 import AiInsights from "./pages/dashboard/AiInsights";
@@ -85,7 +84,6 @@ export default function App() {
               <Route path="developer-360" element={<Developer360 />} />
               <Route path="skills" element={<Skills />} />
               <Route path="problem-solving" element={<ProblemSolving />} />
-              <Route path="credentials" element={<Credentials />} />
               <Route path="professional-profile" element={<ProfessionalProfile />} />
               <Route path="learning" element={<LearningAchievements />} />
               <Route path="growth" element={<Growth />} />

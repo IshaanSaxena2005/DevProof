@@ -203,7 +203,7 @@ const DIFFICULTY_BADGE: Record<string, string> = {
 
 const PLATFORM_BADGE: Record<string, string> = {
   LeetCode: "text-amber-200/90 bg-amber-500/[0.08] border-amber-500/20",
-  GFG: "text-emerald-200/90 bg-emerald-500/[0.08] border-emerald-500/20",
+  GeeksforGeeks: "text-emerald-200/90 bg-emerald-500/[0.08] border-emerald-500/20",
 };
 
 /* ──────────────────────────────────────────────────────────── */
@@ -218,7 +218,7 @@ export default function ProblemSolving() {
 
   const [busy, setBusy] = useState<CodingPlatform | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [handleDraft, setHandleDraft] = useState("");
+  const [handleDrafts, setHandleDrafts] = useState<Record<string, string>>({});
 
   const profiles: CodingProfile[] = data?.profiles ?? [];
   const leetcode = profiles.find((p) => p.platform === "LEETCODE");
@@ -230,7 +230,7 @@ export default function ProblemSolving() {
     setActionError(null);
     try {
       await codingProfilesService.connect(platform, handle.trim());
-      setHandleDraft("");
+      setHandleDrafts((d) => ({ ...d, [platform]: "" }));
       reload();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not connect that profile.");
@@ -272,6 +272,31 @@ export default function ProblemSolving() {
     toPlatformCard("GEEKSFORGEEKS", gfg),
   ];
 
+  /** Wire the unconnected cards' CTAs: functional where connect is live,
+      pointing at that input where it exists but is empty, inert where no
+      integration exists yet. The display-only mirror (id prefixed `mirror-`)
+      never gets a CTA — it only reflects state. */
+  const connectProps = (card: PlatformProfile, mirror: boolean) => {
+    if (mirror) return {};
+    if (card.platform === "LeetCode" && !leetcode) {
+      const draft = (handleDrafts["LEETCODE"] ?? "").trim();
+      return {
+        onConnect: () => void runConnect("LEETCODE", handleDrafts["LEETCODE"] ?? ""),
+        connectDisabled: draft === "",
+        connectHint: draft === "" ? "Enter your LeetCode username above first" : undefined,
+      };
+    }
+    if (card.platform === "GeeksforGeeks" && !gfg) {
+      const draft = (handleDrafts["GEEKSFORGEEKS"] ?? "").trim();
+      return {
+        onConnect: () => void runConnect("GEEKSFORGEEKS", handleDrafts["GEEKSFORGEEKS"] ?? ""),
+        connectDisabled: draft === "",
+        connectHint: draft === "" ? "Enter your GeeksforGeeks username above first" : undefined,
+      };
+    }
+    return {};
+  };
+
   const difficultyDistribution = [
     { label: "Easy", count: overview.easy, color: DIFFICULTY_COLORS.easy },
     { label: "Medium", count: overview.medium, color: DIFFICULTY_COLORS.medium },
@@ -279,32 +304,48 @@ export default function ProblemSolving() {
   ];
 
   /**
-   * Topics carry a solve count but no accuracy: LeetCode reports problems
-   * solved per tag and nothing about attempts, so per-topic accuracy cannot be
-   * derived. It stays absent rather than being approximated.
+   * Topics carry a solve count but no accuracy: platforms report problems
+   * solved per tag and nothing about attempts, so per-topic accuracy cannot
+   * be derived. It stays absent rather than being approximated.
+   *
+   * Merged across every connected platform by tag, so a future GeeksforGeeks
+   * profile with topic data contributes here without any UI change.
    */
-  const topics = (leetcode?.rawStats?.topics ?? []).slice(0, 12).map((t) => ({
-    topic: t.tag,
-    solved: t.solved,
-    accuracy: null as number | null,
-  }));
+  const topicTotals = new Map<string, number>();
+  for (const profile of profiles) {
+    for (const t of profile.rawStats?.topics ?? []) {
+      topicTotals.set(t.tag, (topicTotals.get(t.tag) ?? 0) + t.solved);
+    }
+  }
+  const topics = [...topicTotals.entries()]
+    .map(([topic, solved]) => ({ topic, solved, accuracy: null as number | null }))
+    .sort((a, b) => b.solved - a.solved)
+    .slice(0, 12);
 
   /**
-   * Most recent solves, one row per problem.
+   * Most recent solves, one row per problem, merged across every connected
+   * platform and sorted newest-first so a future GeeksforGeeks feed
+   * interleaves with LeetCode's instead of being appended.
    *
    * The feed can contain the same problem more than once — re-solving it is a
    * real event — but two identical rows read as a rendering fault, and the
-   * table keys on problem and date. The first occurrence is the most recent.
+   * table keys on platform, problem and date. The first occurrence is the
+   * most recent.
    */
   const recentActivity = [
     ...new Map(
-      (leetcode?.rawStats?.recentSolves ?? []).map((solve) => [solve.title, solve])
+      profiles
+        .flatMap((p) =>
+          (p.rawStats?.recentSolves ?? []).map((solve) => ({ solve, platform: p.platform }))
+        )
+        .sort((a, b) => new Date(b.solve.solvedAt).getTime() - new Date(a.solve.solvedAt).getTime())
+        .map(({ solve, platform }) => [`${platform}:${solve.title}`, { solve, platform }] as const)
     ).values(),
-  ].map((solve) => ({
-    platform: "LeetCode" as const,
+  ].map(({ solve, platform }) => ({
+    platform: PLATFORM_LABEL[platform],
     problem: solve.title,
     // Every entry comes from the accepted-submissions feed, so there is no
-    // "Attempted" state to represent — LeetCode publishes no failed attempts.
+    // "Attempted" state to represent — these platforms publish no failed attempts.
     difficulty: solve.difficulty ?? "—",
     topic: solve.topic ?? "—",
     status: "Solved",
@@ -344,7 +385,7 @@ export default function ProblemSolving() {
                 .map((t) => t.topic)
                 .join(", ")} — ${strongest.reduce((sum, t) => sum + t.solved, 0)} problems across those topics. ` +
               `Medium problems are ${mediumShare}% of everything you have solved and Hard ${hardShare}%. ` +
-              `Per-topic accuracy is not published by LeetCode, so these are counts rather than success rates.`
+              `Per-topic accuracy is not published by these platforms, so these are counts rather than success rates.`
             : `You have ${overview.total.toLocaleString()} solved problems recorded. Topic-level detail will appear once the platform reports it.`,
         focusTitle: thinnest ? thinnest.topic : "Hard problems",
         focusDetail: thinnest
@@ -451,7 +492,7 @@ export default function ProblemSolving() {
         </SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
           {platforms.map((p) => (
-            <PlatformCard key={p.platform} profile={p} />
+            <PlatformCard key={p.platform} profile={p} {...connectProps(p, false)} />
           ))}
         </div>
       </Reveal>
@@ -532,7 +573,7 @@ export default function ProblemSolving() {
 
               <p className="text-[11px] text-white/30 pt-1 leading-relaxed">
                 {anyConnected
-                  ? `Counts come from ${profiles.map((p) => (p.platform === "LEETCODE" ? "LeetCode" : "GeeksforGeeks")).join(" and ")}.`
+                  ? `Counts come from ${profiles.map((p) => PLATFORM_LABEL[p.platform]).join(" and ")}.`
                   : "No platform connected yet."}
               </p>
             </div>
@@ -708,9 +749,10 @@ export default function ProblemSolving() {
                 <h3 className="text-base font-bold text-white tracking-tight">Connect your coding platforms</h3>
               </div>
               <p className="text-[13px] leading-relaxed max-w-xl" style={{ color: "var(--text-secondary)" }}>
-                Connect LeetCode to turn your coding activity into measurable problem-solving
-                evidence. Nothing on this page is simulated — sections render their muted,
-                unconnected variants until a platform is connected.
+                Connect your competitive-programming accounts to turn problem-solving activity
+                into measurable evidence. LeetCode connection and sync are live today;
+                GeeksforGeeks activates once its integration ships. Nothing here is simulated —
+                sections render their muted, unconnected variants until a platform is connected.
               </p>
               <div className="flex flex-wrap gap-3 mt-5">
                 {leetcode ? (
@@ -725,14 +767,14 @@ export default function ProblemSolving() {
                 ) : (
                   <>
                     <input
-                      value={handleDraft}
-                      onChange={(e) => setHandleDraft(e.target.value)}
+                      value={handleDrafts["LEETCODE"] ?? ""}
+                      onChange={(e) => setHandleDrafts((d) => ({ ...d, LEETCODE: e.target.value }))}
                       placeholder="LeetCode username"
                       className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
                     />
                     <button
-                      onClick={() => void runConnect("LEETCODE", handleDraft)}
-                      disabled={busy !== null || !handleDraft.trim()}
+                      onClick={() => void runConnect("LEETCODE", handleDrafts["LEETCODE"] ?? "")}
+                      disabled={busy !== null || !(handleDrafts["LEETCODE"] ?? "").trim()}
                       className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
                     >
@@ -740,20 +782,40 @@ export default function ProblemSolving() {
                     </button>
                   </>
                 )}
-                <button
-                  className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/12 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/25 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                  disabled
-                  title="GeeksforGeeks integration is not built yet"
-                >
-                  Connect GeeksforGeeks
-                </button>
+                {gfg ? (
+                  <button
+                    onClick={() => void runSync("GEEKSFORGEEKS")}
+                    disabled={busy !== null}
+                    className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                  >
+                    {busy === "GEEKSFORGEEKS" ? "Syncing…" : "Sync GeeksforGeeks"}
+                  </button>
+                ) : (
+                  <>
+                    <input
+                      value={handleDrafts["GEEKSFORGEEKS"] ?? ""}
+                      onChange={(e) => setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: e.target.value }))}
+                      placeholder="GeeksforGeeks username"
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
+                    />
+                    <button
+                      onClick={() => void runConnect("GEEKSFORGEEKS", handleDrafts["GEEKSFORGEEKS"] ?? "")}
+                      disabled={busy !== null || !(handleDrafts["GEEKSFORGEEKS"] ?? "").trim()}
+                      className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                    >
+                      {busy === "GEEKSFORGEEKS" ? "Connecting…" : "Connect GeeksforGeeks"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Inline mirror of the platform cards in their real state */}
+            {/* Inline mirror of the platform cards in their real state — display only, no CTAs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-[420px] shrink-0">
               {platforms.map((p) => (
-                <PlatformCard key={`pc-${p.platform}`} profile={p} />
+                <PlatformCard key={`pc-${p.platform}`} profile={p} {...connectProps(p, true)} />
               ))}
             </div>
           </div>
@@ -761,8 +823,9 @@ export default function ProblemSolving() {
       </Reveal>
 
       <PendingNotice>
-        <span className="font-semibold text-amber-200/90">GeeksforGeeks integration pending.</span> LeetCode
-        connection and sync are live; the GeeksforGeeks button activates once its backend integration ships.
+        <span className="font-semibold text-amber-200/90">GeeksforGeeks integration pending.</span> The connect
+        input below is wired and will work the moment the backend ships; until then it returns the
+        API's "not available yet" response. LeetCode connection and sync are live.
       </PendingNotice>
     </PageContainer>
   );

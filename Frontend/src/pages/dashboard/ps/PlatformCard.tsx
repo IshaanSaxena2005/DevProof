@@ -46,8 +46,24 @@ const BRAND: Record<PlatformProfile["platform"], { name: string; icon: React.Rea
 /**
  * Large platform profile card. When `connected` is false, renders muted
  * placeholder shapes and a connect CTA instead of fabricated numbers.
+ *
+ * `onConnect` makes the unconnected CTA functional for platforms whose
+ * backend integration is live; when it is absent the button stays visible
+ * but disabled — a placeholder the user can act on would lie about the
+ * integration state.
  */
-export default function PlatformCard({ profile }: { profile: PlatformProfile }) {
+export default function PlatformCard({
+  profile,
+  onConnect,
+  connectDisabled = false,
+  connectHint,
+}: {
+  profile: PlatformProfile;
+  onConnect?: () => void;
+  connectDisabled?: boolean;
+  /** Tooltip override for the disabled state — points at the working control or explains why none exists. */
+  connectHint?: string;
+}) {
   const brand = BRAND[profile.platform];
 
   return (
@@ -161,20 +177,30 @@ export default function PlatformCard({ profile }: { profile: PlatformProfile }) 
               </div>
             )}
 
-            {/* Footer: view profile */}
+            {/* Footer: sync recency + view profile. "Just synced" can only
+                appear immediately after a successful sync — a null
+                lastSyncedAt with a profile row renders honestly as a dash. */}
             <div className="flex items-center justify-between gap-3 pt-1">
               <span className="text-[10px] text-white/25">
-                {profile.lastSyncedAt ? `Synced ${profile.lastSyncedAt}` : "Just synced"}
+                {profile.lastSyncedAt ? `Synced ${profile.lastSyncedAt}` : "—"}
               </span>
-              <a
-                href={profile.profileUrl ?? "#"}
-                target={profile.profileUrl ? "_blank" : undefined}
-                rel="noreferrer"
-                onClick={(e) => !profile.profileUrl && e.preventDefault()}
-                className="flex items-center gap-1 text-[11px] font-bold text-white/50 hover:text-primary transition-colors cursor-pointer"
-              >
-                View Profile <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
+              {profile.profileUrl ? (
+                <a
+                  href={profile.profileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-[11px] font-bold text-white/50 hover:text-primary transition-colors cursor-pointer"
+                >
+                  View Profile <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <span
+                  title="Profile URL not available yet — reconnect to refresh it"
+                  className="flex items-center gap-1 text-[11px] font-bold text-white/25"
+                >
+                  View Profile <ArrowUpRight className="w-3.5 h-3.5" />
+                </span>
+              )}
             </div>
           </>
         ) : (
@@ -204,8 +230,19 @@ export default function PlatformCard({ profile }: { profile: PlatformProfile }) 
             </div>
 
             <button
-              className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-0.5"
-              title={`Connect ${brand.name} (integration coming soon)`}
+              onClick={onConnect}
+              disabled={onConnect === undefined || connectDisabled}
+              title={
+                onConnect !== undefined && !connectDisabled
+                  ? `Connect ${brand.name}`
+                  : connectHint ?? `Connect ${brand.name} once its integration is available`
+              }
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer"
+              style={
+                onConnect !== undefined && !connectDisabled
+                  ? { borderColor: "rgba(119,252,117,0.3)", background: "rgba(119,252,117,0.1)", color: "hsl(var(--primary))" }
+                  : undefined
+              }
             >
               Connect {brand.name}
             </button>

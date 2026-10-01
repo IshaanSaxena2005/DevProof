@@ -24,7 +24,20 @@ export default function Footer() {
               {["Product", "Repository Intelligence", "Developer 360", "Growth", "Career Readiness"].map(
                 (l) => (
                   <li key={l}>
-                    <a href="#" className="hover:text-primary transition-colors duration-200">
+                    {/* Platform column: section anchors on this page — these are
+                        the product's proof sections, not routes that don't exist. */}
+                    <a
+                      href={
+                        l === "Repository Intelligence"
+                          ? "#intelligence"
+                          : l === "Developer 360"
+                            ? "#developer360"
+                            : l === "Growth" || l === "Career Readiness"
+                              ? "#growth"
+                              : "#"
+                      }
+                      className="hover:text-primary transition-colors duration-200"
+                    >
                       {l}
                     </a>
                   </li>

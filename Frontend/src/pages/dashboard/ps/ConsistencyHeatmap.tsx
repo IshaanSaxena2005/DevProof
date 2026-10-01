@@ -37,8 +37,6 @@ export default function ConsistencyHeatmap({
 }) {
   const today = new Date();
   const totalDays = weeks * 7;
-  // Grid starts (weeks*7 - 1) days ago, aligned so the last column is the current week.
-  const dayOffset = (today.getDay() + 6) % 7; // Monday-first column index of today
   const cells: (number | null)[] = [];
 
   for (let i = 0; i < totalDays; i++) {
@@ -153,9 +151,7 @@ export default function ConsistencyHeatmap({
                 </div>
               ))}
 
-              {/* "future" tail: fold dayOffset into right edge by leaving nulls (already handled) */}
-              <span className="sr-only">{dayOffset /* keeps Mon-first alignment intent explicit */}</span>
-            </div>
+              </div>
 
             {/* Legend */}
             <div className="flex items-center justify-end gap-1.5 mt-3">

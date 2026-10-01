@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -27,7 +27,6 @@ const TITLE_MAP: Record<string, string> = {
   "/dashboard/developer-360": "Developer 360",
   "/dashboard/skills": "Skills",
   "/dashboard/problem-solving": "Problem Solving",
-  "/dashboard/credentials": "Learning & Credentials",
   "/dashboard/learning": "Learning & Achievements",
   "/dashboard/professional-profile": "Professional Profile",
   "/dashboard/growth": "Growth",
@@ -91,10 +90,13 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
           </div>
         )}
 
-        {/* Profile avatar — real avatar when we have one, initials otherwise */}
-        <div
-          title={user?.email ?? undefined}
-          className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/[0.08] flex items-center justify-center cursor-pointer hover:border-white/30 transition-all shrink-0"
+        {/* Profile avatar — real avatar when we have one, initials otherwise.
+            Links to Settings: profile management lives there, so the control
+            is never a dead end. */}
+        <Link
+          to="/dashboard/settings"
+          title={user?.email ?? "Your profile"}
+          className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/[0.08] flex items-center justify-center hover:border-white/30 transition-all shrink-0"
         >
           {user?.avatarUrl ?? github?.avatarUrl ? (
             <img
@@ -107,7 +109,7 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
               {initialsFor(user?.name, user?.email)}
             </span>
           )}
-        </div>
+        </Link>
       </div>
     </header>
   );

@@ -70,16 +70,6 @@ export function StatLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** The muted "shape of a number" used in unconnected placeholder blocks. */
-export function GhostValue({ className = "h-7" }: { className?: string }) {
-  return (
-    <div
-      className={`${className} w-16 rounded-md bg-white/[0.05] border border-white/[0.04] mt-1.5`}
-      aria-hidden="true"
-    />
-  );
-}
-
 /** Bordered amber callout, matching Developer360/Overview notice styling. */
 export function PendingNotice({ children }: { children: React.ReactNode }) {
   return (
