@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
-import { SampleDataNotice } from "../../components/StateBlocks";
+import { NotConnectedNotice } from "../../components/StateBlocks";
 import { Reveal, SectionLabel, StatLabel, PendingNotice } from "./ps/shared";
 import { DIFFICULTY_COLORS } from "./ps/shared";
 import PlatformCard, { type PlatformProfile } from "./ps/PlatformCard";
@@ -410,7 +410,7 @@ export default function ProblemSolving() {
       </div>
 
       {!anyConnected && (
-        <SampleDataNotice what="No coding platform is connected yet, so there is nothing to measure. Connect LeetCode below and these sections fill with your real solve history." />
+        <NotConnectedNotice what="No coding platform is connected yet, so there is nothing to measure. Connect LeetCode below and these sections fill with your real solve history." />
       )}
 
       {actionError && (
@@ -651,7 +651,6 @@ export default function ProblemSolving() {
             <ConsistencyHeatmap
               active={anyConnected}
               activity={calendar}
-              seed={11}
               weeks={26}
               footerNote="Cells represent days with problem-solving activity across connected platforms — this is practice evidence, not GitHub commit activity."
             />
@@ -696,11 +695,9 @@ export default function ProblemSolving() {
         </GlassCard>
       </Reveal>
 
-      {/* ── Unconnected state reference ──
-          No integration ships yet, so the live render path is the connected
-          preview above. This block documents (and previews) the unconnected
-          experience: when the real integration lands, `PLATFORMS.connected`
-          flips to false and every section renders its muted variant. */}
+      {/* ── Platform connection ──
+          LeetCode connect/sync are live against /coding-profiles. The cards on
+          the right mirror the real connection state of each platform. */}
       <Reveal delay={0.45}>
         <SectionLabel>Platform Connection</SectionLabel>
         <GlassCard hover={false} className="p-6 md:p-8 relative overflow-hidden mb-4">
@@ -711,9 +708,9 @@ export default function ProblemSolving() {
                 <h3 className="text-base font-bold text-white tracking-tight">Connect your coding platforms</h3>
               </div>
               <p className="text-[13px] leading-relaxed max-w-xl" style={{ color: "var(--text-secondary)" }}>
-                Connect LeetCode and GeeksforGeeks to turn your coding activity into measurable problem-solving
-                evidence. Until connected, the sections above show illustrative preview data — nothing is synced
-                from your accounts yet.
+                Connect LeetCode to turn your coding activity into measurable problem-solving
+                evidence. Nothing on this page is simulated — sections render their muted,
+                unconnected variants until a platform is connected.
               </p>
               <div className="flex flex-wrap gap-3 mt-5">
                 {leetcode ? (
@@ -753,10 +750,10 @@ export default function ProblemSolving() {
               </div>
             </div>
 
-            {/* Small inline preview of the unconnected platform cards */}
+            {/* Inline mirror of the platform cards in their real state */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-[420px] shrink-0">
               {platforms.map((p) => (
-                <PlatformCard key={`nc-${p.platform}`} profile={{ ...p, connected: false }} />
+                <PlatformCard key={`pc-${p.platform}`} profile={p} />
               ))}
             </div>
           </div>
@@ -764,10 +761,8 @@ export default function ProblemSolving() {
       </Reveal>
 
       <PendingNotice>
-        <span className="font-semibold text-amber-200/90">Integrations pending.</span> The connect buttons stay
-        disabled until the LeetCode / GeeksforGeeks integrations ship. Platform cards, charts, topics, the activity
-        table, and the heatmap above render their muted, unconnected variants automatically once the page is driven
-        by real platform state instead of preview data.
+        <span className="font-semibold text-amber-200/90">GeeksforGeeks integration pending.</span> LeetCode
+        connection and sync are live; the GeeksforGeeks button activates once its backend integration ships.
       </PendingNotice>
     </PageContainer>
   );

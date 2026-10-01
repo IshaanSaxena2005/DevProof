@@ -276,10 +276,10 @@ export default function Developer360() {
           <div className="flex flex-col gap-4">
             {/* Account stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {[
-                { icon: FolderGit2, label: "Public repos", value: o.github.publicRepos ?? 0 },
-                { icon: Users, label: "Followers", value: o.github.followers ?? 0 },
-                { icon: Users, label: "Following", value: o.github.following ?? 0 },
+              {              [
+                { icon: FolderGit2, label: "Public repos", value: o.github.publicRepos },
+                { icon: Users, label: "Followers", value: o.github.followers },
+                { icon: Users, label: "Following", value: o.github.following },
                 { icon: Star, label: "Total stars", value: o.github.totalStars },
                 { icon: GitFork, label: "Total forks", value: o.github.totalForks },
                 { icon: FolderGit2, label: "Tracked", value: o.github.repositoriesTracked },
@@ -289,7 +289,8 @@ export default function Developer360() {
                     <s.icon className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-semibold uppercase tracking-widest">{s.label}</span>
                   </div>
-                  <p className="text-lg font-bold text-white tabular-nums">{s.value}</p>
+                  {/* null = GitHub never reported this figure — an em-dash, not a 0. */}
+                  <p className="text-lg font-bold text-white tabular-nums">{s.value ?? "—"}</p>
                 </div>
               ))}
             </div>

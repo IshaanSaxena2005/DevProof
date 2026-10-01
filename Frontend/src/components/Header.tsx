@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { Menu, Search, Bell } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 /** "Ada Lovelace" -> "AL"; falls back to the email's first two characters. */
@@ -60,18 +60,10 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
         </h2>
       </div>
 
-      {/* Right: Search, notifications, status, profile */}
+      {/* Right: status, profile. A dashboard search field and a notifications
+          bell were removed: they had no backing behavior, and non-functional
+          controls (a bell with a fake unread dot) read as broken or dishonest. */}
       <div className="flex items-center gap-4 md:gap-5">
-        {/* Search Bar */}
-        <div className="relative hidden md:block">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-          <input
-             type="text"
-             placeholder="Search dashboard..."
-             className="w-52 lg:w-64 pl-10 pr-4 py-1.5 rounded-full text-xs font-medium border border-white/10 bg-white/[0.03] text-white placeholder-white/30 transition-all focus:border-primary/40 focus:bg-white/[0.05]"
-           />
-        </div>
-
         {/* GitHub link status — reflects the real linked account, if any */}
         {github ? (
           <a
@@ -98,12 +90,6 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
             </span>
           </div>
         )}
-
-        {/* Notifications Icon */}
-        <button className="p-2 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white transition-all relative shrink-0">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
-        </button>
 
         {/* Profile avatar — real avatar when we have one, initials otherwise */}
         <div

@@ -60,7 +60,7 @@ export default function Settings() {
   return (
     <PageContainer
       title="Settings"
-      description="Your profile, connected accounts, and analysis preferences."
+      description="Your profile and connected accounts."
     >
       <div className="flex flex-col gap-6">
         {/* Account */}

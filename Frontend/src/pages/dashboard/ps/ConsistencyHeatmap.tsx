@@ -4,21 +4,6 @@ import GlassCard from "../../../components/GlassCard";
 import { Reveal } from "./shared";
 import { ACTIVITY_RAMP } from "./shared";
 
-/** Deterministic pseudo-random from a seed, so previews don't reshuffle per render. */
-function seeded(n: number, seed: number) {
-  const x = Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-function levelFor(n: number, seed: number, max: number) {
-  const r = seeded(n, seed);
-  if (r > 0.72) return max;
-  if (r > 0.5) return max - 1;
-  if (r > 0.28) return max - 2;
-  if (r > 0.1) return 1;
-  return 0;
-}
-
 /**
  * GitHub-style heatmap of problem-solving activity (days solved problems), NOT
  * commits. Trailing weeks of the current month render as empty cells, like
@@ -34,24 +19,21 @@ function levelForCount(count: number) {
 }
 
 export default function ConsistencyHeatmap({
-  seed,
   weeks = 26,
   active = true,
   footerNote,
   activity,
 }: {
-  seed: number;
   weeks?: number;
   /** False renders an all-empty grid — no platform connected yet. */
   active?: boolean;
   footerNote?: string;
   /**
-   * Real activity as ISO date -> submissions that day.
-   *
-   * When supplied, every cell comes from it and `seed` is ignored; the seeded
-   * generator below is only the preview used before a platform is connected.
+   * Real activity as ISO date -> submissions that day. Always supplied by the
+   * page (an unconnected user renders an all-empty grid); there is no seeded
+   * preview fallback — cells only ever reflect real submission data.
    */
-  activity?: Record<string, number>;
+  activity: Record<string, number>;
 }) {
   const today = new Date();
   const totalDays = weeks * 7;
@@ -68,19 +50,12 @@ export default function ConsistencyHeatmap({
       cells.push(null);
       continue;
     }
-    if (activity) {
-      // Local date parts, not toISOString(): that converts to UTC and would
-      // shift every cell by a day for anyone west of Greenwich.
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-        date.getDate()
-      ).padStart(2, "0")}`;
-      cells.push(active ? levelForCount(activity[key] ?? 0) : 0);
-      continue;
-    }
-
-    // Weekends trend quieter, like real practice patterns
-    const weekend = date.getDay() === 0 || date.getDay() === 6;
-    cells.push(active ? levelFor(i, seed, weekend ? 3 : 4) : 0);
+    // Local date parts, not toISOString(): that converts to UTC and would
+    // shift every cell by a day for anyone west of Greenwich.
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate()
+    ).padStart(2, "0")}`;
+    cells.push(active ? levelForCount(activity[key] ?? 0) : 0);
   }
 
   // Group into weeks of 7 for column layout
@@ -214,7 +189,9 @@ export function ConsistencyStats({
     { icon: Zap, label: "Longest Streak", value: active ? `${stats.longestStreak} days` : "—" },
     { icon: CalendarDays, label: "This Week", value: active ? `${stats.thisWeek} problems` : "—" },
     { icon: CalendarRange, label: "This Month", value: active ? `${stats.thisMonth} problems` : "—" },
-    { icon: Activity, label: "Active Days", value: active ? `${stats.activeDays} of 90` : "—" },
+    // No platform publishes an all-time active-day window, so the raw count of
+    // recorded active days is shown without an invented "of N" denominator.
+    { icon: Activity, label: "Active Days", value: active ? `${stats.activeDays}` : "—" },
   ];
 
   return (

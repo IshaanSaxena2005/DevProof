@@ -41,16 +41,16 @@ export function ErrorBlock({ message, onRetry }: { message: string; onRetry?: ()
 }
 
 /**
- * Marks a panel whose numbers are illustrative because no endpoint backs it yet.
- * Prevents sample figures from reading as real analysis output.
+ * Marks a panel that renders its muted, unconnected variant because no data
+ * source is linked yet. Never shown alongside real figures — the page shows
+ * empty states instead, so the copy must not claim placeholder numbers exist.
  */
-export function SampleDataNotice({ what }: { what: string }) {
+export function NotConnectedNotice({ what }: { what: string }) {
   return (
     <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-5 py-3.5">
       <AlertCircle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
       <p className="text-[12px] leading-relaxed text-amber-100/70">
-        <span className="font-semibold text-amber-200/90">Sample data.</span> {what} These figures
-        are placeholders for layout purposes and are not derived from your repositories.
+        <span className="font-semibold text-amber-200/90">Not connected.</span> {what}
       </p>
     </div>
   );
