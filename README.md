@@ -42,7 +42,9 @@ what is still scaffolding.
 | Dashboard: Growth, Career Readiness, Problem Solving | ⚠️ Sample data in the UI |
 | Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
-| Course / coding-profile endpoints | ❌ Models exist in the schema, nothing exposes them |
+| Course endpoints (with LEARNED promotion) | ✅ Built |
+| LeetCode coding-profile sync | ✅ Built |
+| GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
 | LeetCode / GeeksforGeeks integration | ❌ Not built |
 
 The three sample-data pages render a `SampleDataNotice` banner in the UI naming exactly what
@@ -451,6 +453,28 @@ GET    /api/v1/certifications
 POST   /api/v1/certifications
 PATCH  /api/v1/certifications/:id
 DELETE /api/v1/certifications/:id
+```
+
+### Courses 🔒
+
+```text
+GET    /api/v1/courses
+POST   /api/v1/courses
+PATCH  /api/v1/courses/:id
+DELETE /api/v1/courses/:id
+```
+
+A **completed** course promotes the skills it names to `LEARNED`; one still in
+progress promotes nothing. Reopening or deleting it drops those skills back to
+`CLAIMED`, unless a certification or repository evidence still holds them higher.
+
+### Coding profiles 🔒
+
+```text
+GET    /api/v1/coding-profiles
+POST   /api/v1/coding-profiles
+POST   /api/v1/coding-profiles/:platform/sync
+DELETE /api/v1/coding-profiles/:platform
 ```
 
 Adding a certification promotes any skill it names to `CREDENTIAL_VERIFIED`,

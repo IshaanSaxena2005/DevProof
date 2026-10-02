@@ -240,18 +240,27 @@ model SkillEvidence {
   @@map("skill_evidences")
 }
 
+/// A course the user has taken or is taking.
+///
+/// Only a completed course moves a skill onto the LEARNED rung: being partway
+/// through something is not yet evidence of having learned it.
 model Course {
   id             String    @id @default(uuid())
   userId         String
   title          String
   platform       String
   isCompleted    Boolean   @default(false)
+  /// Null while in progress, and cleared again if the course is reopened.
+  completedAt    DateTime?
   certificateUrl String?
+  /// Skill names this course taught, as recorded by the user.
   learnedSkills  Json?
   createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("courses")
 }
 
