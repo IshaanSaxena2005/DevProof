@@ -9,6 +9,7 @@ import certificationRoutes from './certification.routes';
 import codingProfileRoutes from './codingProfile.routes';
 import courseRoutes from './course.routes';
 import hackathonRoutes from './hackathon.routes';
+import growthRoutes from './growth.routes';
 import aiRoutes from './ai.routes';
 import githubWebhookRoutes from './githubWebhook.routes';
 
@@ -24,6 +25,7 @@ router.use('/certifications', certificationRoutes);
 router.use('/coding-profiles', codingProfileRoutes);
 router.use('/courses', courseRoutes);
 router.use('/hackathons', hackathonRoutes);
+router.use('/growth', growthRoutes);
 router.use('/ai', aiRoutes);
 router.use('/webhooks', githubWebhookRoutes);
 

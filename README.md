@@ -44,6 +44,7 @@ what is still scaffolding.
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
 | Course endpoints (with LEARNED promotion) | ✅ Built |
 | Hackathon endpoints | ✅ Built |
+| Growth history endpoint | ✅ Built |
 | LeetCode coding-profile sync | ✅ Built |
 | GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
 | LeetCode / GeeksforGeeks integration | ❌ Not built |
@@ -473,6 +474,17 @@ POST   /api/v1/hackathons
 PATCH  /api/v1/hackathons/:id
 DELETE /api/v1/hackathons/:id
 ```
+
+### Growth 🔒
+
+```text
+GET    /api/v1/growth/history
+```
+
+Reconstructed from stored timestamps — nothing is interpolated or back-filled.
+Months with no measurement are omitted rather than returned as zero, and
+improvement is only reported per repository across repeated analyses: comparing
+one repository against another measures two codebases, not progress.
 
 A hackathon is entirely self-reported, so it never promotes a skill. Listed
 technologies are created at `CLAIMED` if they do not already exist, and an
