@@ -82,6 +82,7 @@ model User {
   certifications  Certification[]
   codingProfiles  CodingProfile[]
   hackathons      Hackathon[]
+  resume          Resume?
   targetRoles     TargetRole[]
   analysisHistory AnalysisHistory[]
 
@@ -293,6 +294,35 @@ model Hackathon {
 
   @@index([userId])
   @@map("hackathons")
+}
+
+/// An uploaded resume, one per account.
+///
+/// A resume is self-reported prose. Nothing extracted from it is treated as
+/// evidence: detected technologies are reported for the user to confirm, never
+/// written as skills automatically. The file is the record; the parsed text is
+/// a convenience derived from it and can be regenerated.
+model Resume {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  fileName    String
+  fileSize    Int
+  mimeType    String
+  /// Path on disk, relative to the configured upload root.
+  storagePath String
+  pageCount   Int?
+  /// Full extracted text. Null when extraction failed - see parseError.
+  extractedText String?
+  /// Sections and detected technologies, as produced by the parser.
+  parsed      Json?
+  /// Why parsing failed, when it did. A failed parse still keeps the file.
+  parseError  String?
+  uploadedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("resumes")
 }
 
 model Certification {

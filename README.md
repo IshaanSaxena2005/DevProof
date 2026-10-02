@@ -46,6 +46,7 @@ what is still scaffolding.
 | Hackathon endpoints | ✅ Built |
 | Growth history endpoint | ✅ Built |
 | Career readiness scoring | ✅ Built |
+| Resume upload + parsing | ✅ Built |
 | LeetCode coding-profile sync | ✅ Built |
 | GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
 | LeetCode / GeeksforGeeks integration | ❌ Not built |
@@ -487,6 +488,27 @@ GET    /api/v1/growth/history
 ```text
 GET    /api/v1/career/readiness
 ```
+
+### Resume 🔒
+
+```text
+GET    /api/v1/resume
+POST   /api/v1/resume            (multipart, field name "resume")
+GET    /api/v1/resume/download
+DELETE /api/v1/resume
+```
+
+PDF only, 5MB maximum, validated on its bytes rather than its declared type.
+Text is extracted locally with `pdfjs-dist` — no external service and no API
+key. Scanned PDFs have no text layer and are reported as such rather than
+stored as empty.
+
+Technologies found in the text are **reported, never written as skills**. A
+resume mentions tools in passing, often describing a team’s stack rather than
+the author’s own work, so the user confirms them.
+
+Files are stored under `Backend/uploads/` (gitignored) with generated names —
+an uploaded filename is user input and never reaches the filesystem.
 
 Roles are sets of explicit requirements checked against stored evidence. Each
 requirement reports whether it was met and names what satisfied it, so every

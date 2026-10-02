@@ -11,6 +11,7 @@ import courseRoutes from './course.routes';
 import hackathonRoutes from './hackathon.routes';
 import growthRoutes from './growth.routes';
 import careerRoutes from './careerReadiness.routes';
+import resumeRoutes from './resume.routes';
 import aiRoutes from './ai.routes';
 import githubWebhookRoutes from './githubWebhook.routes';
 
@@ -28,6 +29,7 @@ router.use('/courses', courseRoutes);
 router.use('/hackathons', hackathonRoutes);
 router.use('/growth', growthRoutes);
 router.use('/career', careerRoutes);
+router.use('/resume', resumeRoutes);
 router.use('/ai', aiRoutes);
 router.use('/webhooks', githubWebhookRoutes);
 
