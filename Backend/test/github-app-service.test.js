@@ -50,3 +50,48 @@ test('verifyWebhookSignature rejects an invalid GitHub signature', () => {
 
   assert.equal(GitHubAppService.verifyWebhookSignature(payload, 'sha256=deadbeef'), false);
 });
+
+test('verifyWebhookSignature rejects a payload with no signature header at all', () => {
+  const payload = Buffer.from(JSON.stringify({ hello: 'world' }));
+
+  assert.equal(GitHubAppService.verifyWebhookSignature(payload, undefined), false);
+});
+
+/**
+ * The regression this guards against: an unset secret used to return true,
+ * so a server that had simply not been configured accepted forged payloads
+ * from anyone. Verification must fail closed.
+ *
+ * `env` is parsed once at module load, so the unconfigured case needs a fresh
+ * copy of both modules rather than just mutating process.env.
+ */
+test('an unset webhook secret rejects every payload instead of accepting them', () => {
+  const envPath = require.resolve('../dist/config/env.js');
+  const servicePath = require.resolve('../dist/services/githubApp.service.js');
+  const saved = process.env.GITHUB_WEBHOOK_SECRET;
+
+  delete require.cache[envPath];
+  delete require.cache[servicePath];
+  process.env.GITHUB_WEBHOOK_SECRET = '';
+
+  try {
+    const { GitHubAppService: Unconfigured } = require(servicePath);
+    const payload = Buffer.from(JSON.stringify({ hello: 'world' }));
+
+    assert.equal(Unconfigured.isWebhookVerificationConfigured(), false);
+
+    // Correctly signed against *some* secret, and still refused: with no secret
+    // configured there is nothing to verify against, so nothing is trusted.
+    const signature = `sha256=${crypto
+      .createHmac('sha256', 'any-secret-at-all')
+      .update(payload)
+      .digest('hex')}`;
+
+    assert.equal(Unconfigured.verifyWebhookSignature(payload, signature), false);
+    assert.equal(Unconfigured.verifyWebhookSignature(payload, undefined), false);
+  } finally {
+    process.env.GITHUB_WEBHOOK_SECRET = saved;
+    delete require.cache[envPath];
+    delete require.cache[servicePath];
+  }
+});

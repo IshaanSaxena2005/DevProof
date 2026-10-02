@@ -26,6 +26,16 @@ export class GitHubWebhookController {
       const event = (req.header('x-github-event') || 'unknown').toLowerCase();
       const signature = req.header('x-hub-signature-256') || undefined;
 
+      // Distinguish "this server cannot check" from "this payload failed the
+      // check". The first is our fault and a 503; the second is the caller's
+      // and a 401. Both refuse the payload — neither is ever processed.
+      if (!GitHubAppService.isWebhookVerificationConfigured()) {
+        throw AppError.serviceUnavailable(
+          'GitHub webhook verification is not configured on this server. ' +
+            'Set GITHUB_WEBHOOK_SECRET to the same value configured on the GitHub App.'
+        );
+      }
+
       if (!GitHubAppService.verifyWebhookSignature(req.body as Buffer | string, signature)) {
         throw AppError.unauthorized('Invalid GitHub webhook signature.');
       }
