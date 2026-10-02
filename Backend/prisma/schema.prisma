@@ -81,6 +81,7 @@ model User {
   courses         Course[]
   certifications  Certification[]
   codingProfiles  CodingProfile[]
+  hackathons      Hackathon[]
   targetRoles     TargetRole[]
   analysisHistory AnalysisHistory[]
 
@@ -262,6 +263,36 @@ model Course {
 
   @@index([userId])
   @@map("courses")
+}
+
+/// A hackathon or competition the user took part in.
+///
+/// Entirely self-reported: nothing here is verified, so a hackathon never
+/// promotes a skill above CLAIMED. A project link is a pointer for a human to
+/// follow, not proof that the code is theirs — treating it as evidence would
+/// put an unearned claim on the dashboard.
+model Hackathon {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  organizer   String
+  /// Free text: "Participant", "Team Lead", "Backend" — varies too much to enum.
+  role        String?
+  projectName String?
+  projectUrl  String?
+  /// Placement or award as written by the user: "Winner", "Top 10", "Best UI".
+  result      String?
+  teamSize    Int?
+  /// Technologies the user says they used. Creates skills at CLAIMED only.
+  technologies Json?
+  heldAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("hackathons")
 }
 
 model Certification {

@@ -43,6 +43,7 @@ what is still scaffolding.
 | Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
 | Course endpoints (with LEARNED promotion) | ✅ Built |
+| Hackathon endpoints | ✅ Built |
 | LeetCode coding-profile sync | ✅ Built |
 | GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
 | LeetCode / GeeksforGeeks integration | ❌ Not built |
@@ -463,6 +464,19 @@ POST   /api/v1/courses
 PATCH  /api/v1/courses/:id
 DELETE /api/v1/courses/:id
 ```
+
+### Hackathons 🔒
+
+```text
+GET    /api/v1/hackathons
+POST   /api/v1/hackathons
+PATCH  /api/v1/hackathons/:id
+DELETE /api/v1/hackathons/:id
+```
+
+A hackathon is entirely self-reported, so it never promotes a skill. Listed
+technologies are created at `CLAIMED` if they do not already exist, and an
+existing skill is left on whatever rung it already occupies.
 
 A **completed** course promotes the skills it names to `LEARNED`; one still in
 progress promotes nothing. Reopening or deleting it drops those skills back to
