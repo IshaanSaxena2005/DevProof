@@ -45,6 +45,7 @@ what is still scaffolding.
 | Course endpoints (with LEARNED promotion) | ✅ Built |
 | Hackathon endpoints | ✅ Built |
 | Growth history endpoint | ✅ Built |
+| Career readiness scoring | ✅ Built |
 | LeetCode coding-profile sync | ✅ Built |
 | GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
 | LeetCode / GeeksforGeeks integration | ❌ Not built |
@@ -480,6 +481,20 @@ DELETE /api/v1/hackathons/:id
 ```text
 GET    /api/v1/growth/history
 ```
+
+### Career readiness 🔒
+
+```text
+GET    /api/v1/career/readiness
+```
+
+Roles are sets of explicit requirements checked against stored evidence. Each
+requirement reports whether it was met and names what satisfied it, so every
+point in a score traces back to one sentence. Weights are 1–3 — supporting,
+important, core — and a score is the share of requirement weight met.
+
+Computed on read rather than stored: a saved score goes stale the moment the
+next analysis completes.
 
 Reconstructed from stored timestamps — nothing is interpolated or back-filled.
 Months with no measurement are omitted rather than returned as zero, and
