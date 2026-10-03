@@ -476,3 +476,39 @@ export interface CodingProfilesResponse {
 export interface CodingProfileResponse {
   profile: CodingProfile;
 }
+
+/* ── Resume (GET/POST /resume) ────────────────────────── */
+
+/** Text found under each recognised heading. Absent keys were not found. */
+export interface ResumeParsed {
+  sections: Record<string, string>;
+  /**
+   * Technologies mentioned in the resume text.
+   *
+   * Reported for the user to confirm — never written as skills. A resume
+   * mentions tools in passing, often describing a team's stack.
+   */
+  detectedSkills: string[];
+  wordCount: number;
+}
+
+export interface ResumeSummary {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  pageCount: number | null;
+  parsed: ResumeParsed | null;
+  /** Set when the PDF could not be read — a scan, usually. File is still kept. */
+  parseError: string | null;
+  uploadedAt: string;
+}
+
+export interface ResumeResponse {
+  resume: ResumeSummary | null;
+}
+
+export interface ResumeUploadResponse {
+  resume: ResumeSummary;
+  parsed: ResumeParsed | null;
+  parseError: string | null;
+}
