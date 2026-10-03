@@ -7,6 +7,11 @@ import developer360Routes from './developer360.routes';
 import skillRoutes from './skill.routes';
 import certificationRoutes from './certification.routes';
 import codingProfileRoutes from './codingProfile.routes';
+import courseRoutes from './course.routes';
+import hackathonRoutes from './hackathon.routes';
+import growthRoutes from './growth.routes';
+import careerRoutes from './careerReadiness.routes';
+import resumeRoutes from './resume.routes';
 import aiRoutes from './ai.routes';
 import githubWebhookRoutes from './githubWebhook.routes';
 
@@ -20,6 +25,11 @@ router.use('/developer360', developer360Routes);
 router.use('/skills', skillRoutes);
 router.use('/certifications', certificationRoutes);
 router.use('/coding-profiles', codingProfileRoutes);
+router.use('/courses', courseRoutes);
+router.use('/hackathons', hackathonRoutes);
+router.use('/growth', growthRoutes);
+router.use('/career', careerRoutes);
+router.use('/resume', resumeRoutes);
 router.use('/ai', aiRoutes);
 router.use('/webhooks', githubWebhookRoutes);
 

@@ -1,7 +1,7 @@
 import { EvidenceLevel, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/appError';
-import { skillsCertifiedBy } from './skill.service';
+import { skillsNamedIn } from './skill.service';
 
 // ==========================================
 // CERTIFICATION SERVICE
@@ -98,7 +98,7 @@ export class CertificationService {
 
     const names = new Set<string>();
     for (const certification of certifications) {
-      for (const skill of skillsCertifiedBy(certification.name)) {
+      for (const skill of skillsNamedIn(certification.name)) {
         names.add(skill.name);
       }
     }
@@ -113,7 +113,7 @@ export class CertificationService {
    * the ladder must not move backwards because a credential was added.
    */
   private static async promoteSkillsFor(userId: string, certificationName: string): Promise<string[]> {
-    const candidates = skillsCertifiedBy(certificationName);
+    const candidates = skillsNamedIn(certificationName);
     const promoted: string[] = [];
 
     for (const candidate of candidates) {
@@ -158,7 +158,7 @@ export class CertificationService {
    * remove the code.
    */
   private static async demoteSkillsFor(userId: string, certificationName: string): Promise<void> {
-    const affected = skillsCertifiedBy(certificationName);
+    const affected = skillsNamedIn(certificationName);
     if (affected.length === 0) return;
 
     const stillCertified = new Set(await CertificationService.certifiedSkillNames(userId));

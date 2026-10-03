@@ -22,3 +22,5 @@ Thumbs.db
 # Local AI/tool files
 .claude/
 .freebuff/
+# Uploaded files are user data, never committed
+uploads/

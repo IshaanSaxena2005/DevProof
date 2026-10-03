@@ -139,18 +139,18 @@ export const TOKEN_SKILLS: Record<string, SkillSeed> = {
 };
 
 /**
- * Skills a certification's title vouches for.
+ * Skills named in a free-text title.
  *
- * Certification names are marketing copy ("AWS Certified Solutions Architect –
- * Associate"), so the technology is matched as a whole word inside the title
- * rather than by exact equality. Word boundaries matter: without them "Java"
+ * Certification and course titles are marketing copy ("AWS Certified Solutions
+ * Architect – Associate", "The Complete Docker Course"), so the technology is
+ * matched as a whole word inside the title rather than by exact equality. Word boundaries matter: without them "Java"
  * would match "JavaScript" and a Java certificate would credit the wrong skill.
  *
  * A title that matches nothing recognised still stores fine — it simply does not
  * promote any skill, which is the honest outcome for a certification whose
  * subject we cannot identify.
  */
-export function skillsCertifiedBy(certificationName: string): { name: string; category: SkillCategory }[] {
+export function skillsNamedIn(certificationName: string): { name: string; category: SkillCategory }[] {
   const haystack = certificationName.toLowerCase();
   const matched = new Map<string, SkillCategory>();
 
@@ -391,7 +391,7 @@ export class SkillService {
       select: { name: true }
     });
     const certifiedNames = [
-      ...new Set(certifications.flatMap((c) => skillsCertifiedBy(c.name).map((s) => s.name)))
+      ...new Set(certifications.flatMap((c) => skillsNamedIn(c.name).map((s) => s.name)))
     ];
 
     return prisma.$transaction(async (tx) => {

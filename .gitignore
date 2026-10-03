@@ -29,3 +29,6 @@ Backend/.env
 Frontend/node_modules/
 Frontend/dist/
 Frontend/.env
+
+# Claude Code: per-machine settings, not shared
+.claude/settings.local.json

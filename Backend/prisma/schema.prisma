@@ -81,6 +81,8 @@ model User {
   courses         Course[]
   certifications  Certification[]
   codingProfiles  CodingProfile[]
+  hackathons      Hackathon[]
+  resume          Resume?
   targetRoles     TargetRole[]
   analysisHistory AnalysisHistory[]
 
@@ -240,19 +242,87 @@ model SkillEvidence {
   @@map("skill_evidences")
 }
 
+/// A course the user has taken or is taking.
+///
+/// Only a completed course moves a skill onto the LEARNED rung: being partway
+/// through something is not yet evidence of having learned it.
 model Course {
   id             String    @id @default(uuid())
   userId         String
   title          String
   platform       String
   isCompleted    Boolean   @default(false)
+  /// Null while in progress, and cleared again if the course is reopened.
+  completedAt    DateTime?
   certificateUrl String?
+  /// Skill names this course taught, as recorded by the user.
   learnedSkills  Json?
   createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("courses")
+}
+
+/// A hackathon or competition the user took part in.
+///
+/// Entirely self-reported: nothing here is verified, so a hackathon never
+/// promotes a skill above CLAIMED. A project link is a pointer for a human to
+/// follow, not proof that the code is theirs — treating it as evidence would
+/// put an unearned claim on the dashboard.
+model Hackathon {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  organizer   String
+  /// Free text: "Participant", "Team Lead", "Backend" — varies too much to enum.
+  role        String?
+  projectName String?
+  projectUrl  String?
+  /// Placement or award as written by the user: "Winner", "Top 10", "Best UI".
+  result      String?
+  teamSize    Int?
+  /// Technologies the user says they used. Creates skills at CLAIMED only.
+  technologies Json?
+  heldAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("hackathons")
+}
+
+/// An uploaded resume, one per account.
+///
+/// A resume is self-reported prose. Nothing extracted from it is treated as
+/// evidence: detected technologies are reported for the user to confirm, never
+/// written as skills automatically. The file is the record; the parsed text is
+/// a convenience derived from it and can be regenerated.
+model Resume {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  fileName    String
+  fileSize    Int
+  mimeType    String
+  /// Path on disk, relative to the configured upload root.
+  storagePath String
+  pageCount   Int?
+  /// Full extracted text. Null when extraction failed - see parseError.
+  extractedText String?
+  /// Sections and detected technologies, as produced by the parser.
+  parsed      Json?
+  /// Why parsing failed, when it did. A failed parse still keeps the file.
+  parseError  String?
+  uploadedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("resumes")
 }
 
 model Certification {

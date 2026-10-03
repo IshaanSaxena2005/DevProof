@@ -42,7 +42,13 @@ what is still scaffolding.
 | Dashboard: Growth, Career Readiness, Problem Solving | ⚠️ Sample data in the UI |
 | Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
-| Course / coding-profile endpoints | ❌ Models exist in the schema, nothing exposes them |
+| Course endpoints (with LEARNED promotion) | ✅ Built |
+| Hackathon endpoints | ✅ Built |
+| Growth history endpoint | ✅ Built |
+| Career readiness scoring | ✅ Built |
+| Resume upload + parsing | ✅ Built |
+| LeetCode coding-profile sync | ✅ Built |
+| GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
 | LeetCode / GeeksforGeeks integration | ❌ Not built |
 
 The three sample-data pages render a `SampleDataNotice` banner in the UI naming exactly what
@@ -451,6 +457,87 @@ GET    /api/v1/certifications
 POST   /api/v1/certifications
 PATCH  /api/v1/certifications/:id
 DELETE /api/v1/certifications/:id
+```
+
+### Courses 🔒
+
+```text
+GET    /api/v1/courses
+POST   /api/v1/courses
+PATCH  /api/v1/courses/:id
+DELETE /api/v1/courses/:id
+```
+
+### Hackathons 🔒
+
+```text
+GET    /api/v1/hackathons
+POST   /api/v1/hackathons
+PATCH  /api/v1/hackathons/:id
+DELETE /api/v1/hackathons/:id
+```
+
+### Growth 🔒
+
+```text
+GET    /api/v1/growth/history
+```
+
+### Career readiness 🔒
+
+```text
+GET    /api/v1/career/readiness
+```
+
+### Resume 🔒
+
+```text
+GET    /api/v1/resume
+POST   /api/v1/resume            (multipart, field name "resume")
+GET    /api/v1/resume/download
+DELETE /api/v1/resume
+```
+
+PDF only, 5MB maximum, validated on its bytes rather than its declared type.
+Text is extracted locally with `pdfjs-dist` — no external service and no API
+key. Scanned PDFs have no text layer and are reported as such rather than
+stored as empty.
+
+Technologies found in the text are **reported, never written as skills**. A
+resume mentions tools in passing, often describing a team’s stack rather than
+the author’s own work, so the user confirms them.
+
+Files are stored under `Backend/uploads/` (gitignored) with generated names —
+an uploaded filename is user input and never reaches the filesystem.
+
+Roles are sets of explicit requirements checked against stored evidence. Each
+requirement reports whether it was met and names what satisfied it, so every
+point in a score traces back to one sentence. Weights are 1–3 — supporting,
+important, core — and a score is the share of requirement weight met.
+
+Computed on read rather than stored: a saved score goes stale the moment the
+next analysis completes.
+
+Reconstructed from stored timestamps — nothing is interpolated or back-filled.
+Months with no measurement are omitted rather than returned as zero, and
+improvement is only reported per repository across repeated analyses: comparing
+one repository against another measures two codebases, not progress.
+
+A hackathon is entirely self-reported, so it never promotes a skill. Listed
+technologies are created at `CLAIMED` if they do not already exist, and an
+existing skill is left on whatever rung it already occupies.
+
+A **completed** course promotes the skills it names to `LEARNED`; one still in
+progress promotes nothing. Reopening or deleting it drops those skills back to
+`CLAIMED`, unless a certification or repository evidence still holds them higher.
+
+### Coding profiles 🔒
+
+```text
+GET    /api/v1/coding-profiles
+POST   /api/v1/coding-profiles
+POST   /api/v1/coding-profiles/:platform/sync
+DELETE /api/v1/coding-profiles/:platform
 ```
 
 Adding a certification promotes any skill it names to `CREDENTIAL_VERIFIED`,

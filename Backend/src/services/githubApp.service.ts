@@ -42,9 +42,24 @@ export class GitHubAppService {
     );
   }
 
+  /** Whether this server can verify webhook payloads at all. */
+  static isWebhookVerificationConfigured(): boolean {
+    return Boolean(env.GITHUB_WEBHOOK_SECRET);
+  }
+
+  /**
+   * Verify a webhook payload against GITHUB_WEBHOOK_SECRET.
+   *
+   * Fails closed. An unset secret used to return true here, which meant the
+   * endpoint accepted *any* payload from *anyone* — the signature check was
+   * effectively disabled by the absence of configuration, which is the one
+   * situation where it most needed to hold. Callers should surface the
+   * unconfigured case separately (see isWebhookVerificationConfigured), because
+   * it is a server misconfiguration rather than a bad request.
+   */
   static verifyWebhookSignature(rawBody: Buffer | string, signatureHeader?: string | string[]): boolean {
     if (!env.GITHUB_WEBHOOK_SECRET) {
-      return true;
+      return false;
     }
 
     if (!signatureHeader || Array.isArray(signatureHeader)) {
