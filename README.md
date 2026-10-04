@@ -327,6 +327,21 @@ Frontend: `http://localhost:5173`
 > PostgreSQL is published on host port **5434** (not 5432), because 5432 and 5433 are
 > commonly already taken by other local Postgres instances.
 
+### After pulling
+
+Three things can arrive with a pull, and each fails at runtime with an error
+that does not name its cause. Run all three after every pull:
+
+```bash
+cd Backend
+npm install              # new dependencies
+npx prisma migrate deploy  # new migrations
+npx prisma generate        # regenerate the client
+```
+
+Skipping them produces, respectively: `Cannot find module …`, a missing table,
+and type errors about columns that plainly exist in `schema.prisma`.
+
 ### Root scripts
 
 From the repository root:
@@ -582,16 +597,46 @@ POST   /api/v1/webhooks/github
 
 ---
 
+## ⚙️ Continuous Integration
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main`:
+
+| Job | Checks |
+|---|---|
+| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 88 tests |
+| **Frontend** | `npm ci`, typecheck, production build |
+| **Docker** | Both images build |
+
+Migrations run against a fresh PostgreSQL service container, so one that only
+works on an already-populated schema fails in CI rather than on a teammate’s
+machine. The drift check fails when the committed migrations no longer
+reproduce `schema.prisma`.
+
+---
+
 ## 🧪 Testing
 
-The backend test suite runs on the built output via `node --test`, so `npm test` compiles first:
+Both suites run on the built output via `node --test`, so `npm test` compiles first:
 
 ```bash
 cd Backend
-npm test
+npm test              # 88 tests: service + integration
+npm run test:unit     # 73 service tests, database stubbed
+npm run test:integration  # 15 tests over real HTTP, Prisma and PostgreSQL
 ```
 
-Covers the analysis routes, GitHub service, GitHub App service, webhook routes and AI service.
+**Service tests** stub Prisma and cover the rules: skill derivation and its
+confidence ceilings, certification and course matching, LeetCode mapping,
+growth arithmetic, readiness scoring, resume validation.
+
+**Integration tests** start the app on an ephemeral port and drive it over HTTP
+against a real database, covering the things only visible end to end: that every
+protected route rejects an anonymous caller, that validation returns field-level
+errors, that a completed course promotes a skill through the whole stack, and
+that one user can neither list, modify nor delete another user’s records.
+
+They use a separate `<database>_test` database, created and migrated on first
+run, so a test run can never touch development data.
 
 Production builds:
 

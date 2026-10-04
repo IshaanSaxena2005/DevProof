@@ -1,0 +1,132 @@
+name: CI
+
+# Runs on every push and pull request to main. The three jobs below each catch
+# a failure class that has reached a teammate's machine before: an uninstalled
+# dependency, an unapplied migration, and a stale Prisma client.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — migrate, typecheck, test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: devproof
+          POSTGRES_PASSWORD: devproof_ci
+          POSTGRES_DB: devproof_ci
+        ports:
+          - 5432:5432
+        # Without this the first migration can race the server's startup.
+        options: >-
+          --health-cmd "pg_isready -U devproof -d devproof_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # CI uses the default port; only local dev needs 5434.
+      DATABASE_URL: postgresql://devproof:devproof_ci@localhost:5432/devproof_ci?schema=public
+      # Required by config/env.ts at import, which every test transitively loads.
+      # Not a secret: no token signed here is ever accepted anywhere.
+      JWT_SECRET: ci-placeholder-secret-not-used-for-real-tokens
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      # `npm ci` installs exactly the lockfile and fails if package.json and the
+      # lockfile disagree — which is what catches a dependency added in code but
+      # never committed.
+      - name: Install dependencies
+        working-directory: Backend
+        run: npm ci
+
+      # Applies every migration to an empty database, so a migration that only
+      # works against an already-populated schema fails here rather than on a
+      # teammate's machine or in production.
+      - name: Apply migrations
+        working-directory: Backend
+        run: npx prisma migrate deploy
+
+      - name: Generate Prisma client
+        working-directory: Backend
+        run: npx prisma generate
+
+      # Fails when the committed migrations do not reproduce schema.prisma —
+      # the drift that appears when a schema change is hand-applied without a
+      # matching migration.
+      - name: Check schema and migrations agree
+        working-directory: Backend
+        run: |
+          DRIFT=$(npx prisma migrate diff \
+            --from-schema-datasource prisma/schema.prisma \
+            --to-schema-datamodel prisma/schema.prisma \
+            --script | grep -v '^--' | grep -v '^$' || true)
+          if [ -n "$DRIFT" ]; then
+            echo "Schema drift detected — migrations do not reproduce schema.prisma:"
+            echo "$DRIFT"
+            exit 1
+          fi
+          echo "No drift."
+
+      # `npm test` builds first, so this covers typechecking too. The
+      # integration suite reuses the service container above: CI is set, so the
+      # harness treats this database as disposable rather than deriving a
+      # separate one the way it does locally.
+      - name: Build and test
+        working-directory: Backend
+        run: npm test
+
+  frontend:
+    name: Frontend — typecheck and build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      # `npm run build` is `tsc && vite build`, so a type error fails here.
+      - name: Typecheck and build
+        working-directory: Frontend
+        run: npm run build
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Dockerfiles are the deployment path and nothing else exercises them,
+      # so a broken one would otherwise only surface at deploy time.
+      - name: Build backend image
+        run: docker build -t devproof-backend:ci ./Backend
+
+      - name: Build frontend image
+        run: docker build -t devproof-frontend:ci --build-arg VITE_API_URL=http://localhost:5000/api/v1 ./Frontend
