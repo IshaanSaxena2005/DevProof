@@ -327,6 +327,21 @@ Frontend: `http://localhost:5173`
 > PostgreSQL is published on host port **5434** (not 5432), because 5432 and 5433 are
 > commonly already taken by other local Postgres instances.
 
+### After pulling
+
+Three things can arrive with a pull, and each fails at runtime with an error
+that does not name its cause. Run all three after every pull:
+
+```bash
+cd Backend
+npm install              # new dependencies
+npx prisma migrate deploy  # new migrations
+npx prisma generate        # regenerate the client
+```
+
+Skipping them produces, respectively: `Cannot find module …`, a missing table,
+and type errors about columns that plainly exist in `schema.prisma`.
+
 ### Root scripts
 
 From the repository root:
@@ -579,6 +594,23 @@ POST   /api/v1/webhooks/github
 /dashboard/ai-insights         🔒 live data
 /dashboard/settings            🔒
 ```
+
+---
+
+## ⚙️ Continuous Integration
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main`:
+
+| Job | Checks |
+|---|---|
+| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 73 tests |
+| **Frontend** | `npm ci`, typecheck, production build |
+| **Docker** | Both images build |
+
+Migrations run against a fresh PostgreSQL service container, so one that only
+works on an already-populated schema fails in CI rather than on a teammate’s
+machine. The drift check fails when the committed migrations no longer
+reproduce `schema.prisma`.
 
 ---
 
