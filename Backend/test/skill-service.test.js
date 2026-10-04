@@ -13,10 +13,15 @@ const { prisma } = require('../dist/config/database.js');
 function stubPrisma(t, repositories) {
   const originalFindMany = prisma.repository.findMany;
   const originalTransaction = prisma.$transaction;
+  // deriveSkills also reads certifications, to spare any skill a certificate
+  // still backs. Unstubbed it reached the real database, which made these
+  // tests quietly depend on Postgres being up.
+  const originalCertifications = prisma.certification.findMany;
 
   const written = [];
 
   prisma.repository.findMany = async () => repositories;
+  prisma.certification.findMany = async () => [];
   prisma.$transaction = async (fn) =>
     fn({
       skill: {
@@ -40,6 +45,7 @@ function stubPrisma(t, repositories) {
   t.after(() => {
     prisma.repository.findMany = originalFindMany;
     prisma.$transaction = originalTransaction;
+    prisma.certification.findMany = originalCertifications;
   });
 
   return written;

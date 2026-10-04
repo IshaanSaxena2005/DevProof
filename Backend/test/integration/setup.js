@@ -15,6 +15,10 @@ const path = require('node:path');
 
 const BACKEND_ROOT = path.resolve(__dirname, '../..');
 
+// Prisma's CLI entry point, run with node directly rather than through npx:
+// spawning a shell concatenates arguments unescaped and triggers DEP0190.
+const PRISMA_CLI = path.resolve(BACKEND_ROOT, 'node_modules/prisma/build/index.js');
+
 // config/env.ts loads .env, but that happens when the app is required — which is
 // after this module needs DATABASE_URL to decide which database to point at. CI
 // sets the variable directly and has no .env, so a missing file is fine here.
@@ -60,20 +64,24 @@ function prepareDatabase() {
 
     try {
       execFileSync(
-        'npx',
-        ['prisma', 'db', 'execute', '--url', adminUrl.toString(), '--stdin'],
-        { input: `CREATE DATABASE "${databaseName}";`, cwd: BACKEND_ROOT, stdio: 'pipe', shell: true }
+        process.execPath,
+        [PRISMA_CLI, 'db', 'execute', '--url', adminUrl.toString(), '--stdin'],
+        {
+          // databaseName comes from our own derived URL, never user input.
+          input: `CREATE DATABASE "${databaseName}";`,
+          cwd: BACKEND_ROOT,
+          stdio: 'pipe'
+        }
       );
     } catch {
       // Almost always "database already exists", which is the normal case.
     }
   }
 
-  execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
+  execFileSync(process.execPath, [PRISMA_CLI, 'migrate', 'deploy'], {
     cwd: BACKEND_ROOT,
     env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
-    stdio: 'pipe',
-    shell: true
+    stdio: 'pipe'
   });
 }
 
