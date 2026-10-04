@@ -7,10 +7,12 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "npm run build && node --test test/analysis-routes.test.js test/github-service.test.js test/github-webhook-routes.test.js test/github-app-service.test.js test/ai-service.test.js test/skill-service.test.js test/certification-service.test.js test/leetcode-service.test.js test/course-service.test.js test/hackathon-service.test.js test/growth-service.test.js test/career-readiness-service.test.js test/resume-service.test.js",
+    "test": "npm run test:unit && node --test test/integration/api.test.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test:unit": "npm run build && node --test test/analysis-routes.test.js test/github-service.test.js test/github-webhook-routes.test.js test/github-app-service.test.js test/ai-service.test.js test/skill-service.test.js test/certification-service.test.js test/leetcode-service.test.js test/course-service.test.js test/hackathon-service.test.js test/growth-service.test.js test/career-readiness-service.test.js test/resume-service.test.js",
+    "test:integration": "npm run build && node --test test/integration/api.test.js"
   },
   "keywords": [
     "devproof",

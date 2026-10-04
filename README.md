@@ -603,7 +603,7 @@ POST   /api/v1/webhooks/github
 
 | Job | Checks |
 |---|---|
-| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 73 tests |
+| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 88 tests |
 | **Frontend** | `npm ci`, typecheck, production build |
 | **Docker** | Both images build |
 
@@ -616,14 +616,27 @@ reproduce `schema.prisma`.
 
 ## 🧪 Testing
 
-The backend test suite runs on the built output via `node --test`, so `npm test` compiles first:
+Both suites run on the built output via `node --test`, so `npm test` compiles first:
 
 ```bash
 cd Backend
-npm test
+npm test              # 88 tests: service + integration
+npm run test:unit     # 73 service tests, database stubbed
+npm run test:integration  # 15 tests over real HTTP, Prisma and PostgreSQL
 ```
 
-Covers the analysis routes, GitHub service, GitHub App service, webhook routes and AI service.
+**Service tests** stub Prisma and cover the rules: skill derivation and its
+confidence ceilings, certification and course matching, LeetCode mapping,
+growth arithmetic, readiness scoring, resume validation.
+
+**Integration tests** start the app on an ephemeral port and drive it over HTTP
+against a real database, covering the things only visible end to end: that every
+protected route rejects an anonymous caller, that validation returns field-level
+errors, that a completed course promotes a skill through the whole stack, and
+that one user can neither list, modify nor delete another user’s records.
+
+They use a separate `<database>_test` database, created and migrated on first
+run, so a test run can never touch development data.
 
 Production builds:
 

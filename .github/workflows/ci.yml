@@ -86,7 +86,10 @@ jobs:
           fi
           echo "No drift."
 
-      # `npm test` builds first, so this covers typechecking too.
+      # `npm test` builds first, so this covers typechecking too. The
+      # integration suite reuses the service container above: CI is set, so the
+      # harness treats this database as disposable rather than deriving a
+      # separate one the way it does locally.
       - name: Build and test
         working-directory: Backend
         run: npm test

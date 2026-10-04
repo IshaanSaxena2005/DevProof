@@ -40,8 +40,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// HTTP Request Logging
-if (env.NODE_ENV === 'development') {
+// HTTP Request Logging. Silent under test: integration tests make hundreds of
+// requests, and a log line each buries the assertion failures they exist to show.
+if (env.NODE_ENV === 'test') {
+  // no request logging
+} else if (env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined'));

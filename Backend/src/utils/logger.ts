@@ -12,6 +12,11 @@ const logFormat = winston.format.combine(
 
 export const logger = winston.createLogger({
   level: env.NODE_ENV === 'development' ? 'debug' : 'info',
+  // Tests deliberately provoke handled errors — an unauthenticated request, a
+  // foreign id — and logging each one makes a passing run look like a failing
+  // one. Silenced rather than removed so a real crash still surfaces via the
+  // test runner itself.
+  silent: env.NODE_ENV === 'test',
   format: logFormat,
   transports: [
     new winston.transports.Console({
