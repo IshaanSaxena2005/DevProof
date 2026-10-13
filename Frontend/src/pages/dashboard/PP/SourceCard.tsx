@@ -14,18 +14,24 @@ export default function SourceCard({
   stateLabel,
   bullets,
   cta,
+  disabledNote,
   onCta,
   footer,
 }: {
   kind: "linkedin" | "resume";
   title: string;
   purpose: string;
-  /** connected = real data exists; empty = awaiting user action; pending = backend not built. */
-  state: "connected" | "empty" | "pending";
+  /**
+   * connected = real data exists; empty = awaiting user action;
+   * pending = being built; unavailable = cannot be built, so nothing is promised.
+   */
+  state: "connected" | "empty" | "pending" | "unavailable";
   stateLabel: string;
   /** What this source will contribute once available. */
   bullets: string[];
   cta: string;
+  /** Why a disabled CTA is disabled. Shown on hover; required when it is. */
+  disabledNote?: string;
   onCta?: () => void;
   footer?: React.ReactNode;
 }) {
@@ -36,12 +42,17 @@ export default function SourceCard({
     connected: "border-primary/25 bg-primary/10 text-primary",
     empty: "border-white/10 bg-white/[0.04] text-white/40",
     pending: "border-amber-400/25 bg-amber-400/10 text-amber-300",
+    // No pulse: nothing is in progress, so nothing should look like it is.
+    unavailable: "border-white/10 bg-white/[0.03] text-white/35",
   };
   const statusDot: Record<typeof state, string> = {
     connected: "bg-primary",
     empty: "bg-white/25",
     pending: "bg-amber-400 animate-pulse",
+    unavailable: "bg-white/20",
   };
+
+  const disabled = state === "pending" || state === "unavailable";
 
   return (
     <GlassCard className="p-6 md:p-7 relative overflow-hidden h-full flex flex-col">
@@ -101,20 +112,18 @@ export default function SourceCard({
 
             <button
               onClick={onCta}
-              disabled={state === "pending"}
-              title={state === "pending" ? "Integration coming soon" : undefined}
+              disabled={disabled}
+              title={disabled ? disabledNote : undefined}
               className={
-                state === "pending"
+                disabled
                   ? "w-full text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border border-white/10 bg-white/[0.03] text-white/35 cursor-not-allowed"
                   : "w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all cursor-pointer hover:-translate-y-0.5"
               }
               style={
-                state === "pending"
-                  ? undefined
-                  : { borderColor: `${tint}44`, background: `${tint}14`, color: tint }
+                disabled ? undefined : { borderColor: `${tint}44`, background: `${tint}14`, color: tint }
               }
             >
-              {state === "pending" ? `${cta} — coming soon` : cta}
+              {cta}
             </button>
           </>
         )}
