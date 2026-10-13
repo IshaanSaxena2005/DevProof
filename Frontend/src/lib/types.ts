@@ -600,3 +600,53 @@ export interface GrowthTotals {
 export interface GrowthHistoryResponse {
   history: GrowthHistory;
 }
+
+/* ── Career readiness (GET /career/readiness) ─────────── */
+
+/**
+ * One checkable requirement within a role.
+ *
+ * `evidence` is always populated — with what satisfied the requirement, or with
+ * what is missing — so every point in a score can be read back as a sentence.
+ */
+export interface RequirementResult {
+  id: string;
+  label: string;
+  /** Relative importance within the role, 1–3: core / important / supporting. */
+  weight: number;
+  met: boolean;
+  evidence: string;
+}
+
+export interface RoleReadiness {
+  roleId: string;
+  role: string;
+  summary: string;
+  /** 0–100: the share of requirement weight met, not a model output. */
+  score: number;
+  requirementsMet: number;
+  requirementsTotal: number;
+  requirements: RequirementResult[];
+}
+
+/**
+ * Readiness against every defined role, computed on read.
+ *
+ * Nothing is stored: a persisted score would go stale the moment the next
+ * analysis completes, and a stale score shown as current is the kind of
+ * unearned claim this product avoids.
+ */
+export interface CareerReadiness {
+  /**
+   * False when there is no evidence at all. The roles are still returned, every
+   * requirement unmet — "nothing demonstrated yet" is a truthful answer.
+   */
+  hasEvidence: boolean;
+  bestMatch: string | null;
+  /** Highest score first. */
+  roles: RoleReadiness[];
+}
+
+export interface CareerReadinessResponse {
+  readiness: CareerReadiness;
+}

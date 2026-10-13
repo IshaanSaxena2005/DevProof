@@ -39,8 +39,7 @@ what is still scaffolding.
 | AI insights endpoint (Groq) | ✅ Built |
 | GitHub App JWT + webhook signature verification | ✅ Built |
 | Dashboard: Overview, Repositories, Repository Details, Developer 360, AI Insights, Skills | ✅ Live backend data |
-| Dashboard: Problem Solving, Growth | ✅ Live backend data |
-| Dashboard: Career Readiness | ⚠️ Backend built, UI not wired yet |
+| Dashboard: Problem Solving, Growth, Career Readiness | ✅ Live backend data |
 | Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
 | Course endpoints (with LEARNED promotion) | ✅ Built |
@@ -83,9 +82,9 @@ plus the measured average score; no projected career trajectory or invented sub-
 
 ### Planned
 
-Every area in the status table above is served by the API. What remains is UI wiring for the
-Career Readiness page, and deployment: the Dockerfiles and CI exist, but the resume upload
-directory still needs persistent storage in whatever environment hosts it.
+Every area in the status table above is served by the API and read by the dashboard. What
+remains is deployment: the Dockerfiles and CI exist, but the resume upload directory still needs
+persistent storage in whatever environment hosts it.
 
 ---
 
