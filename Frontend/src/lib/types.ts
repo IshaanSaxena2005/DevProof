@@ -230,6 +230,13 @@ export interface Developer360Overview {
   /** null when no repository analysis has completed yet — not a measured score. */
   developer360Score: number | null;
   totalRepositories: number;
+  /**
+   * Repositories with a completed analysis — *not* a count of analyses.
+   *
+   * The endpoint takes the latest analysis per repository, so a repository
+   * analyzed five times counts once. `GET /growth/history` is where the count
+   * of analyses themselves lives (`totals.analyses`).
+   */
   totalAnalyzed: number;
   evidenceTiers: EvidenceTierCounts;
   categoryBreakdown: CategoryBreakdown[];
@@ -513,4 +520,83 @@ export interface ResumeUploadResponse {
   resume: ResumeSummary;
   parsed: ResumeParsed | null;
   parseError: string | null;
+}
+
+/* ── Growth history (GET /growth/history) ─────────────── */
+
+/**
+ * The developer's measured history, reconstructed from stored timestamps.
+ *
+ * Nothing here is interpolated or back-filled. A month with no measurement is
+ * absent from `months` rather than present with a zero, so a gap in the data
+ * must render as a gap and never as a dip to zero.
+ */
+export interface GrowthHistory {
+  /** Every completed analysis, oldest first. */
+  points: GrowthPoint[];
+  /** Only months that contain at least one analysis. */
+  months: GrowthMonth[];
+  milestones: GrowthMilestone[];
+  /** Only repositories analyzed more than once — see RepositoryTrend. */
+  trends: RepositoryTrend[];
+  totals: GrowthTotals;
+}
+
+export interface GrowthPoint {
+  date: string;
+  score: number;
+  repository: string;
+}
+
+export interface GrowthMonth {
+  /** YYYY-MM. */
+  month: string;
+  analyses: number;
+  averageScore: number;
+  bestScore: number;
+}
+
+export interface GrowthMilestone {
+  date: string;
+  label: string;
+  detail: string;
+}
+
+/**
+ * How one repository's score moved across repeated analyses.
+ *
+ * The only honest improvement measure available: comparing the first analysis
+ * of one repository against the latest of another measures the difference
+ * between two codebases, not progress by the developer.
+ */
+export interface RepositoryTrend {
+  repository: string;
+  analyses: number;
+  firstScore: number;
+  latestScore: number;
+  change: number;
+  firstAt: string;
+  latestAt: string;
+}
+
+export interface GrowthTotals {
+  analyses: number;
+  repositories: number;
+  skills: number;
+  firstMeasuredAt: string | null;
+  lastMeasuredAt: string | null;
+  bestScore: number | null;
+  averageScore: number | null;
+  /**
+   * Whether any repository has been analyzed more than once.
+   *
+   * False means no improvement can be stated yet, however many analyses exist:
+   * a trend needs the same repository measured twice. The UI says so rather
+   * than drawing a line through unrelated scores.
+   */
+  trendAvailable: boolean;
+}
+
+export interface GrowthHistoryResponse {
+  history: GrowthHistory;
 }

@@ -7,16 +7,26 @@ import {
   BadgeCheck,
   History,
   Info,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Flag,
 } from "lucide-react";
 import { api } from "../../lib/api";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { useResource } from "../../lib/useResource";
+import { useResource, type Resource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
 import { relativeTime } from "../../lib/utils";
-import type { Developer360Response, EvidenceLevel } from "../../lib/types";
+import { growthService } from "../../services/growth";
+import type {
+  Developer360Response,
+  EvidenceLevel,
+  GrowthHistory,
+  GrowthHistoryResponse,
+} from "../../lib/types";
 
 /* ── presentation helpers ────────────────────────────── */
 
@@ -65,6 +75,57 @@ function SLabel({ children, className = "" }: { children: React.ReactNode; class
   return <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
 }
 
+/** "2026-10" -> "Oct 2026". */
+function monthLabel(month: string): string {
+  const [year, index] = month.split("-");
+  const date = new Date(Date.UTC(Number(year), Number(index) - 1, 1));
+  return date.toLocaleDateString(undefined, { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+/** Calendar months between two YYYY-MM keys, exclusive of both. */
+function monthsBetween(earlier: string, later: string): number {
+  const [y1, m1] = earlier.split("-").map(Number);
+  const [y2, m2] = later.split("-").map(Number);
+  return (y2 - y1) * 12 + (m2 - m1) - 1;
+}
+
+/**
+ * Months with no analysis, across the measured window.
+ *
+ * Named rather than drawn: the backend omits empty months because nothing was
+ * measured in them, so they must not appear on a chart as a dip to zero. The
+ * count is stated in words instead.
+ */
+function unmeasuredMonths(months: { month: string }[]): number {
+  let gap = 0;
+  for (let i = 1; i < months.length; i++) {
+    gap += monthsBetween(months[i - 1].month, months[i].month);
+  }
+  return gap;
+}
+
+/**
+ * The measured window, or null when there is nothing to describe.
+ *
+ * Two analyses minutes apart fall on one date, so the comparison is between the
+ * rendered labels: printing "between Jul 30 and Jul 30" would look like a bug.
+ */
+function measuredWindow(first: string | null, last: string | null): string | null {
+  if (!first) return null;
+  const from = dateLabel(first);
+  const to = last ? dateLabel(last) : from;
+  return from === to ? `on ${from}` : `between ${from} and ${to}`;
+}
+
+/** Date only — these are dated facts, not timestamps. */
+function dateLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 /** Overview stat card — GlassCard anatomy shared with Overview.tsx. */
 function StatCard({
   icon: Icon,
@@ -103,6 +164,177 @@ function UnavailableNote({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ── growth over time ────────────────────────────────── */
+
+/** Inner block heading, matching the small labels used on the cards above. */
+function BlockLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-3">{children}</p>
+  );
+}
+
+/**
+ * The measured history from GET /growth/history.
+ *
+ * Every figure comes from a stored analysis timestamp. Months without an
+ * analysis are absent from the data and stay absent here: they are counted and
+ * named in a sentence rather than drawn, because a plotted zero would assert a
+ * measurement of "nothing" that was never taken.
+ */
+function GrowthOverTime({ resource }: { resource: Resource<GrowthHistoryResponse> }) {
+  if (resource.loading) return <LoadingBlock label="Loading your measured history…" />;
+  if (resource.error || !resource.data?.history) {
+    return (
+      <ErrorBlock
+        message={resource.error ?? "No growth history returned."}
+        onRetry={resource.reload}
+      />
+    );
+  }
+
+  const history: GrowthHistory = resource.data.history;
+  const { months, trends, milestones, totals } = history;
+
+  if (totals.analyses === 0) {
+    return (
+      <EmptyState
+        icon={History}
+        title="No measured history yet"
+        description="Your history is reconstructed from completed repository analyses, so it begins with your first one. Nothing is back-filled or estimated — analyze a repository and this timeline starts from that date."
+      />
+    );
+  }
+
+  const gap = unmeasuredMonths(months);
+  const window = measuredWindow(totals.firstMeasuredAt, totals.lastMeasuredAt);
+
+  return (
+    <GlassCard hover={false} className="p-6 flex flex-col gap-7">
+      {/* Measured window */}
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+        <span className="text-[13px] text-white/70">
+          {totals.analyses} {totals.analyses === 1 ? "analysis" : "analyses"} measured
+          {window && <span className="text-white/35"> {window}</span>}
+        </span>
+        {totals.averageScore !== null && (
+          <span className="text-[12px] text-white/35 tabular-nums">
+            avg {totals.averageScore}/100
+          </span>
+        )}
+        {totals.bestScore !== null && (
+          <span className="text-[12px] text-white/35 tabular-nums">best {totals.bestScore}/100</span>
+        )}
+      </div>
+
+      {/* Monthly measured scores */}
+      <div>
+        <BlockLabel>Average score by month</BlockLabel>
+        <div className="flex flex-col divide-y divide-white/[0.05]">
+          {months.map((m) => (
+            <div key={m.month} className="flex items-center gap-4 py-2.5 first:pt-0 last:pb-0">
+              <span className="text-[12px] text-white/50 w-20 shrink-0">{monthLabel(m.month)}</span>
+              <span className="flex-1 min-w-0">
+                <Bar score={m.averageScore} color={scoreColor(m.averageScore)} />
+              </span>
+              <span
+                className="text-[12px] font-semibold tabular-nums w-10 text-right shrink-0"
+                style={{ color: scoreColor(m.averageScore) }}
+              >
+                {m.averageScore}
+              </span>
+              <span className="text-[11px] text-white/25 w-24 text-right shrink-0 tabular-nums">
+                {m.analyses} {m.analyses === 1 ? "analysis" : "analyses"}
+              </span>
+            </div>
+          ))}
+        </div>
+        {gap > 0 && (
+          <p className="text-[11px] text-white/25 mt-3">
+            {gap} {gap === 1 ? "month" : "months"} in this window had no analyses and{" "}
+            {gap === 1 ? "is" : "are"} left out rather than shown as zero.
+          </p>
+        )}
+        {months.length === 1 && (
+          <p className="text-[11px] text-white/25 mt-3">
+            One month of measurements so far — a month-over-month comparison needs a second.
+          </p>
+        )}
+      </div>
+
+      {/* Per-repository improvement */}
+      <div>
+        <BlockLabel>Improvement by repository</BlockLabel>
+        {totals.trendAvailable ? (
+          <div className="flex flex-col divide-y divide-white/[0.05]">
+            {trends.map((t) => {
+              const flat = t.change === 0;
+              const rising = t.change > 0;
+              const color = flat ? "rgba(255,255,255,0.35)" : rising ? "#77fc75" : "#ef4444";
+              const Icon = flat ? Minus : rising ? TrendingUp : TrendingDown;
+              return (
+                <div
+                  key={t.repository}
+                  className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                >
+                  <span className="min-w-0">
+                    <span className="text-[13px] text-white/70 truncate block" title={t.repository}>
+                      {t.repository}
+                    </span>
+                    <span className="text-[10px] text-white/25">
+                      {t.analyses} analyses · latest {relativeTime(t.latestAt)}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-3 shrink-0">
+                    <span className="text-[12px] text-white/35 tabular-nums">
+                      {t.firstScore} → {t.latestScore}
+                    </span>
+                    <span
+                      className="flex items-center gap-1 text-[12px] font-semibold tabular-nums"
+                      style={{ color }}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {flat ? "no change" : `${rising ? "+" : ""}${t.change}`}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <UnavailableNote>
+            Improvement is only measurable where the same repository has been analyzed more than
+            once — comparing one repository's first score against another's latest would measure the
+            difference between two codebases, not your progress. Re-analyze a repository to see its
+            trend here.
+          </UnavailableNote>
+        )}
+      </div>
+
+      {/* Dated milestones */}
+      {milestones.length > 0 && (
+        <div>
+          <BlockLabel>Milestones</BlockLabel>
+          <div className="flex flex-col gap-3">
+            {milestones.map((m) => (
+              <div key={`${m.date}-${m.label}`} className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-lg border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0 mt-0.5">
+                  <Flag className="w-3 h-3 text-white/40" />
+                </span>
+                <span className="min-w-0">
+                  <span className="text-[12px] text-white/70 block">{m.label}</span>
+                  <span className="text-[11px] text-white/30 block truncate" title={m.detail}>
+                    {m.detail} · {dateLabel(m.date)}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </GlassCard>
+  );
+}
+
 /* ── page ────────────────────────────────────────────── */
 
 export default function Growth() {
@@ -110,6 +342,10 @@ export default function Growth() {
   const { data, loading, error, reload } = useResource<Developer360Response>(
     () => api.get<Developer360Response>("/developer360/overview")
   );
+
+  // Loaded separately from the overview so a failure here costs the history
+  // panel rather than the whole page — the two endpoints are independent.
+  const history = useResource<GrowthHistoryResponse>(() => growthService.history());
 
   if (loading) {
     return (
@@ -149,7 +385,7 @@ export default function Growth() {
       {/* Overview — every figure measured from live data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={FolderGit2} label="Repositories" value={`${o.totalRepositories}`} sub="connected to DevProof" />
-        <StatCard icon={Activity} label="Analyses Completed" value={`${o.totalAnalyzed}`} sub={score !== null ? `avg score ${score}/100` : "no scores yet"} />
+        <StatCard icon={Activity} label="Repositories Analyzed" value={`${o.totalAnalyzed}`} sub={score !== null ? `avg score ${score}/100` : "no scores yet"} />
         <StatCard icon={Code2} label="Skills Recorded" value={`${o.skillsList.length}`} sub={`${tiers[3].count} practically evidenced`} />
         <StatCard
           icon={Gauge}
@@ -181,7 +417,7 @@ export default function Growth() {
             <div className="flex-1 min-w-0">
               <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {score !== null
-                  ? `${firstName ? `${firstName}, y` : "Y"}our average engineering quality across ${o.totalAnalyzed} completed ${o.totalAnalyzed === 1 ? "analysis" : "analyses"}. Scores move as you connect and analyze more repositories — this is your current standing, not a projection.`
+                  ? `${firstName ? `${firstName}, y` : "Y"}our average engineering quality across ${o.totalAnalyzed} analyzed ${o.totalAnalyzed === 1 ? "repository" : "repositories"}, each counted at its most recent analysis. Scores move as you connect and analyze more repositories — this is your current standing, not a projection.`
                   : "No repository analyses have completed yet, so there is no score to chart. Analyze a repository to start your measured baseline."}
               </p>
               {score !== null && (
@@ -285,14 +521,10 @@ export default function Growth() {
         </GlassCard>
       </motion.div>
 
-      {/* Historical growth — honestly unavailable, no fabricated timeline */}
+      {/* Historical growth — reconstructed from stored analysis timestamps */}
       <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.2 }} className="mb-6">
         <SLabel>Growth Over Time</SLabel>
-        <EmptyState
-          icon={History}
-          title="Historical trends not available yet"
-          description="DevProof records your repository analyses, skills, and scores as they happen — but the backend does not yet store point-in-time snapshots, so month-over-month trends cannot be shown honestly. Your timeline will begin accumulating as you keep using the dashboard."
-        />
+        <GrowthOverTime resource={history} />
       </motion.div>
 
       {/* Footnote on measurement scope */}
