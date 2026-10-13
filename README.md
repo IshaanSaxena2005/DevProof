@@ -603,14 +603,19 @@ POST   /api/v1/webhooks/github
 
 | Job | Checks |
 |---|---|
-| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 88 tests |
-| **Frontend** | `npm ci`, typecheck, production build |
+| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 88 tests, dependency audit |
+| **Frontend** | `npm ci`, typecheck, production build, dependency audit |
 | **Docker** | Both images build |
 
 Migrations run against a fresh PostgreSQL service container, so one that only
 works on an already-populated schema fails in CI rather than on a teammate’s
 machine. The drift check fails when the committed migrations no longer
 reproduce `schema.prisma`.
+
+The audit step fails only on a high or critical advisory in a **production**
+dependency. Dev tooling is reported but never blocks: a ReDoS in the hot-reload
+file watcher is a different risk from one in a request path, and failing every
+push on it would only teach everyone to ignore the step.
 
 ---
 

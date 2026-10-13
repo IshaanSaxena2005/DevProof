@@ -94,6 +94,21 @@ jobs:
         working-directory: Backend
         run: npm test
 
+      # Fails on a high or critical advisory in anything that actually ships.
+      # devDependencies are excluded deliberately: a ReDoS in the hot-reload
+      # file watcher is a different risk class from one in a request path, and
+      # blocking every push on it would train everyone to ignore this step.
+      - name: Audit production dependencies
+        working-directory: Backend
+        run: npm audit --omit=dev --audit-level=high
+
+      # Everything else, including dev tooling, reported but never blocking so
+      # it stays visible without becoming noise.
+      - name: Report all advisories
+        working-directory: Backend
+        continue-on-error: true
+        run: npm audit
+
   frontend:
     name: Frontend — typecheck and build
     runs-on: ubuntu-latest
@@ -115,6 +130,21 @@ jobs:
       - name: Typecheck and build
         working-directory: Frontend
         run: npm run build
+
+      # Fails on a high or critical advisory in anything that actually ships.
+      # devDependencies are excluded deliberately: a ReDoS in the hot-reload
+      # file watcher is a different risk class from one in a request path, and
+      # blocking every push on it would train everyone to ignore this step.
+      - name: Audit production dependencies
+        working-directory: Frontend
+        run: npm audit --omit=dev --audit-level=high
+
+      # Everything else, including dev tooling, reported but never blocking so
+      # it stays visible without becoming noise.
+      - name: Report all advisories
+        working-directory: Frontend
+        continue-on-error: true
+        run: npm audit
 
   docker:
     name: Docker images build
