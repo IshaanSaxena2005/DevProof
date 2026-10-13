@@ -444,9 +444,11 @@ export interface CodingProfileRawStats {
 /**
  * A linked competitive-programming profile.
  *
- * Solve counts are always numbers because "solved nothing" is measurable.
+ * totalSolved is always a number because "solved nothing" is measurable.
  * Everything else is nullable: platforms differ in what they expose, and null
- * means "not reported", which must never render as a zero.
+ * means "not reported", which must never render as a zero. The difficulty
+ * counts are null together — GeeksforGeeks publishes no split at all, so a 0
+ * there would read as "no hard problems solved", a claim it never made.
  */
 export interface CodingProfile {
   id: string;
@@ -454,9 +456,9 @@ export interface CodingProfile {
   handle: string;
   profileUrl: string | null;
   totalSolved: number;
-  easySolved: number;
-  mediumSolved: number;
-  hardSolved: number;
+  easySolved: number | null;
+  mediumSolved: number | null;
+  hardSolved: number | null;
   acceptanceRate: number | null;
   ranking: number | null;
   rating: number | null;
