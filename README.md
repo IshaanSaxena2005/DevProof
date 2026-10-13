@@ -39,7 +39,8 @@ what is still scaffolding.
 | AI insights endpoint (Groq) | ✅ Built |
 | GitHub App JWT + webhook signature verification | ✅ Built |
 | Dashboard: Overview, Repositories, Repository Details, Developer 360, AI Insights, Skills | ✅ Live backend data |
-| Dashboard: Growth, Career Readiness, Problem Solving | ⚠️ Sample data in the UI |
+| Dashboard: Problem Solving, Growth, Career Readiness | ✅ Live backend data |
+| Dashboard: Learning & Achievements | ⚠️ Certifications live; courses and hackathons not wired |
 | Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
 | Course endpoints (with LEARNED promotion) | ✅ Built |
@@ -48,11 +49,18 @@ what is still scaffolding.
 | Career readiness scoring | ✅ Built |
 | Resume upload + parsing | ✅ Built |
 | LeetCode coding-profile sync | ✅ Built |
-| GeeksforGeeks / LinkedIn / resume ingestion | ❌ Not built |
-| LeetCode / GeeksforGeeks integration | ❌ Not built |
+| GeeksforGeeks coding-profile sync | ✅ Built |
+| LinkedIn ingestion | ❌ Not built — see below |
 
-The three sample-data pages render a `SampleDataNotice` banner in the UI naming exactly what
-is not real, rather than passing mock numbers off as measurements.
+GeeksforGeeks publishes no API, so its profile is read from the page's own server-rendered
+payload. It reports a solve count, a coding score, a monthly score and a Problem-of-the-Day
+streak — and nothing else: no difficulty split, no acceptance rate, no contest rating and no
+daily activity calendar. Those are stored as null and render as absent, never as zero.
+
+LinkedIn is not a missing feature so much as an unavailable one. Its self-serve OIDC product
+returns only name, picture, locale and email; experience, education, skills and certifications
+are not exposed at any self-serve tier, so there is nothing to ingest. Certifications are
+entered through the certification endpoints instead.
 
 The AI Insights page reads `GET /api/v1/ai/insights` directly, so it shows a real Groq-generated
 summary of your stored analyses — or an empty state when nothing has been analyzed yet. It renders
@@ -75,9 +83,10 @@ plus the measured average score; no projected career trajectory or invented sub-
 
 ### Planned
 
-Skill intelligence endpoints, competitive-programming ingestion, growth analytics and career
-readiness scoring are designed in the schema (`Skill`, `SkillEvidence`, `CodingProfile`,
-`TargetRole`, `Recommendation`) but are not yet served by the API.
+Every area in the status table above is served by the API. The course and hackathon endpoints
+are the last ones with no UI reading them — Learning & Achievements still offers both as "coming
+soon". After that it is deployment: the Dockerfiles and CI exist, but the resume upload directory
+still needs persistent storage in whatever environment hosts it.
 
 ---
 
@@ -555,9 +564,15 @@ POST   /api/v1/coding-profiles/:platform/sync
 DELETE /api/v1/coding-profiles/:platform
 ```
 
-Adding a certification promotes any skill it names to `CREDENTIAL_VERIFIED`,
-unless repository evidence already places it higher. Removing the last
-certification backing a skill drops it back to `CLAIMED`.
+`platform` is `LEETCODE` or `GEEKSFORGEEKS`. Connecting fetches the profile
+before anything is written, so an invalid or private username leaves no row
+behind. A sync re-fetches using the *stored* username rather than one supplied
+by the caller, so it can never quietly repoint a profile at another account.
+
+Neither platform is an authenticated API — LeetCode's own GraphQL endpoint and
+GeeksforGeeks' page payload are both undocumented and unversioned — so a shape
+change upstream costs statistics rather than failing the sync, and an unreachable
+platform returns 503 rather than 500.
 
 ### AI 🔒
 
@@ -625,13 +640,14 @@ Both suites run on the built output via `node --test`, so `npm test` compiles fi
 
 ```bash
 cd Backend
-npm test              # 88 tests: service + integration
-npm run test:unit     # 73 service tests, database stubbed
+npm test              # 100 tests: service + integration
+npm run test:unit     # 85 service tests, database stubbed
 npm run test:integration  # 15 tests over real HTTP, Prisma and PostgreSQL
 ```
 
 **Service tests** stub Prisma and cover the rules: skill derivation and its
-confidence ceilings, certification and course matching, LeetCode mapping,
+confidence ceilings, certification and course matching, LeetCode and
+GeeksforGeeks mapping,
 growth arithmetic, readiness scoring, resume validation.
 
 **Integration tests** start the app on an ephemeral port and drive it over HTTP

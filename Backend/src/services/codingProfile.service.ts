@@ -1,7 +1,8 @@
 import { CodingProfile, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/appError';
-import { LeetCodeService, LeetCodeProfile } from './leetcode.service';
+import { LeetCodeService } from './leetcode.service';
+import { GeeksforGeeksService } from './geeksforgeeks.service';
 
 // ==========================================
 // CODING PROFILE SERVICE
@@ -25,24 +26,49 @@ const PLATFORM_LABEL: Record<SupportedPlatform, string> = {
 /**
  * The normalized shape every platform fetcher must return.
  *
- * Deliberately the same as LeetCodeProfile: it is the superset of what any
- * platform reports, and a platform that cannot supply a field returns null for
- * it rather than omitting it or substituting a zero.
+ * The union of what any platform reports. A platform that cannot supply a field
+ * returns null for it rather than omitting it or substituting a zero — only
+ * totalSolved is required, because "solved nothing" is a real measurement while
+ * "has no difficulty split" is not a zero.
+ *
+ * rawStats is intentionally untyped here: its shape is per-platform and is read
+ * only by the serializer for that platform, so this service stores it without
+ * inspecting it.
  */
-export type FetchedProfile = LeetCodeProfile;
+export interface FetchedProfile {
+  handle: string;
+  profileUrl: string;
+  totalSolved: number;
+  easySolved: number | null;
+  mediumSolved: number | null;
+  hardSolved: number | null;
+  acceptanceRate: number | null;
+  ranking: number | null;
+  rating: number | null;
+  contestsAttended: number | null;
+  globalRanking: number | null;
+  topPercentage: number | null;
+  streakDays: number | null;
+  totalActiveDays: number | null;
+  rawStats: unknown;
+}
 
 type PlatformFetcher = (handle: string) => Promise<FetchedProfile>;
 
 const FETCHERS: Partial<Record<SupportedPlatform, PlatformFetcher>> = {
-  LEETCODE: (handle) => LeetCodeService.fetchProfile(handle)
+  LEETCODE: (handle) => LeetCodeService.fetchProfile(handle),
+  GEEKSFORGEEKS: (handle) => GeeksforGeeksService.fetchProfile(handle)
 };
 
 function fetcherFor(platform: SupportedPlatform): PlatformFetcher {
   const fetcher = FETCHERS[platform];
   if (!fetcher) {
     // 501 rather than 400: the request is valid, the capability is missing.
+    const available = Object.keys(FETCHERS)
+      .map((key) => PLATFORM_LABEL[key as SupportedPlatform])
+      .join(', ');
     throw AppError.notImplemented(
-      `${PLATFORM_LABEL[platform]} integration is not available yet. Only LeetCode can be connected right now.`
+      `${PLATFORM_LABEL[platform]} integration is not available yet. Currently connectable: ${available}.`
     );
   }
   return fetcher;

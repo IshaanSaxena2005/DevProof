@@ -230,6 +230,13 @@ export interface Developer360Overview {
   /** null when no repository analysis has completed yet — not a measured score. */
   developer360Score: number | null;
   totalRepositories: number;
+  /**
+   * Repositories with a completed analysis — *not* a count of analyses.
+   *
+   * The endpoint takes the latest analysis per repository, so a repository
+   * analyzed five times counts once. `GET /growth/history` is where the count
+   * of analyses themselves lives (`totals.analyses`).
+   */
   totalAnalyzed: number;
   evidenceTiers: EvidenceTierCounts;
   categoryBreakdown: CategoryBreakdown[];
@@ -444,9 +451,11 @@ export interface CodingProfileRawStats {
 /**
  * A linked competitive-programming profile.
  *
- * Solve counts are always numbers because "solved nothing" is measurable.
+ * totalSolved is always a number because "solved nothing" is measurable.
  * Everything else is nullable: platforms differ in what they expose, and null
- * means "not reported", which must never render as a zero.
+ * means "not reported", which must never render as a zero. The difficulty
+ * counts are null together — GeeksforGeeks publishes no split at all, so a 0
+ * there would read as "no hard problems solved", a claim it never made.
  */
 export interface CodingProfile {
   id: string;
@@ -454,9 +463,9 @@ export interface CodingProfile {
   handle: string;
   profileUrl: string | null;
   totalSolved: number;
-  easySolved: number;
-  mediumSolved: number;
-  hardSolved: number;
+  easySolved: number | null;
+  mediumSolved: number | null;
+  hardSolved: number | null;
   acceptanceRate: number | null;
   ranking: number | null;
   rating: number | null;
@@ -511,4 +520,133 @@ export interface ResumeUploadResponse {
   resume: ResumeSummary;
   parsed: ResumeParsed | null;
   parseError: string | null;
+}
+
+/* ── Growth history (GET /growth/history) ─────────────── */
+
+/**
+ * The developer's measured history, reconstructed from stored timestamps.
+ *
+ * Nothing here is interpolated or back-filled. A month with no measurement is
+ * absent from `months` rather than present with a zero, so a gap in the data
+ * must render as a gap and never as a dip to zero.
+ */
+export interface GrowthHistory {
+  /** Every completed analysis, oldest first. */
+  points: GrowthPoint[];
+  /** Only months that contain at least one analysis. */
+  months: GrowthMonth[];
+  milestones: GrowthMilestone[];
+  /** Only repositories analyzed more than once — see RepositoryTrend. */
+  trends: RepositoryTrend[];
+  totals: GrowthTotals;
+}
+
+export interface GrowthPoint {
+  date: string;
+  score: number;
+  repository: string;
+}
+
+export interface GrowthMonth {
+  /** YYYY-MM. */
+  month: string;
+  analyses: number;
+  averageScore: number;
+  bestScore: number;
+}
+
+export interface GrowthMilestone {
+  date: string;
+  label: string;
+  detail: string;
+}
+
+/**
+ * How one repository's score moved across repeated analyses.
+ *
+ * The only honest improvement measure available: comparing the first analysis
+ * of one repository against the latest of another measures the difference
+ * between two codebases, not progress by the developer.
+ */
+export interface RepositoryTrend {
+  repository: string;
+  analyses: number;
+  firstScore: number;
+  latestScore: number;
+  change: number;
+  firstAt: string;
+  latestAt: string;
+}
+
+export interface GrowthTotals {
+  analyses: number;
+  repositories: number;
+  skills: number;
+  firstMeasuredAt: string | null;
+  lastMeasuredAt: string | null;
+  bestScore: number | null;
+  averageScore: number | null;
+  /**
+   * Whether any repository has been analyzed more than once.
+   *
+   * False means no improvement can be stated yet, however many analyses exist:
+   * a trend needs the same repository measured twice. The UI says so rather
+   * than drawing a line through unrelated scores.
+   */
+  trendAvailable: boolean;
+}
+
+export interface GrowthHistoryResponse {
+  history: GrowthHistory;
+}
+
+/* ── Career readiness (GET /career/readiness) ─────────── */
+
+/**
+ * One checkable requirement within a role.
+ *
+ * `evidence` is always populated — with what satisfied the requirement, or with
+ * what is missing — so every point in a score can be read back as a sentence.
+ */
+export interface RequirementResult {
+  id: string;
+  label: string;
+  /** Relative importance within the role, 1–3: core / important / supporting. */
+  weight: number;
+  met: boolean;
+  evidence: string;
+}
+
+export interface RoleReadiness {
+  roleId: string;
+  role: string;
+  summary: string;
+  /** 0–100: the share of requirement weight met, not a model output. */
+  score: number;
+  requirementsMet: number;
+  requirementsTotal: number;
+  requirements: RequirementResult[];
+}
+
+/**
+ * Readiness against every defined role, computed on read.
+ *
+ * Nothing is stored: a persisted score would go stale the moment the next
+ * analysis completes, and a stale score shown as current is the kind of
+ * unearned claim this product avoids.
+ */
+export interface CareerReadiness {
+  /**
+   * False when there is no evidence at all. The roles are still returned, every
+   * requirement unmet — "nothing demonstrated yet" is a truthful answer.
+   */
+  hasEvidence: boolean;
+  bestMatch: string | null;
+  /** Highest score first. */
+  roles: RoleReadiness[];
+}
+
+export interface CareerReadinessResponse {
+  readiness: CareerReadiness;
 }

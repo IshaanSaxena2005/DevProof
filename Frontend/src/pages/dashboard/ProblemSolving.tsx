@@ -128,6 +128,16 @@ function submissionsWithin(calendar: Record<string, number>, days: number): numb
 }
 
 /**
+ * Does this platform report how many of the solves were easy/medium/hard?
+ *
+ * LeetCode does; GeeksforGeeks publishes no split whatsoever, and sends null
+ * for all three rather than a zero that would look like a measurement.
+ */
+function hasDifficultySplit(profile: CodingProfile): boolean {
+  return profile.easySolved !== null || profile.mediumSolved !== null || profile.hardSolved !== null;
+}
+
+/**
  * One platform's card.
  *
  * `stats` only carries entries the platform actually reported: a null rating
@@ -165,14 +175,16 @@ function toPlatformCard(
   }
 
   // Medium coverage is the one progress figure both sides of the ratio exist
-  // for; without the site-wide total there is nothing honest to show.
+  // for; without the site-wide total — or without a difficulty split, as on
+  // GeeksforGeeks — there is nothing honest to show.
   const mediumTotal = profile.rawStats?.totalAvailable?.medium ?? null;
+  const mediumSolved = profile.mediumSolved;
   const progress =
-    mediumTotal && mediumTotal > 0
+    mediumTotal && mediumTotal > 0 && mediumSolved !== null
       ? {
           label: "Medium difficulty coverage",
-          percent: Math.round((profile.mediumSolved / mediumTotal) * 100),
-          caption: `${profile.mediumSolved} of ${mediumTotal.toLocaleString()} medium problems solved`,
+          percent: Math.round((mediumSolved / mediumTotal) * 100),
+          caption: `${mediumSolved} of ${mediumTotal.toLocaleString()} medium problems solved`,
         }
       : undefined;
 
@@ -183,11 +195,15 @@ function toPlatformCard(
     lastSyncedAt: relativeTime(profile.lastSyncedAt),
     profileUrl: profile.profileUrl ?? undefined,
     headline: { label: "Solved", value: profile.totalSolved },
-    breakdown: [
-      { label: "Easy", count: profile.easySolved, color: DIFFICULTY_COLORS.easy },
-      { label: "Medium", count: profile.mediumSolved, color: DIFFICULTY_COLORS.medium },
-      { label: "Hard", count: profile.hardSolved, color: DIFFICULTY_COLORS.hard },
-    ],
+    // Omitted entirely when the platform publishes no difficulty split, which
+    // leaves the bars out rather than drawing three empty ones.
+    breakdown: hasDifficultySplit(profile)
+      ? [
+          { label: "Easy", count: profile.easySolved ?? 0, color: DIFFICULTY_COLORS.easy },
+          { label: "Medium", count: profile.mediumSolved ?? 0, color: DIFFICULTY_COLORS.medium },
+          { label: "Hard", count: profile.hardSolved ?? 0, color: DIFFICULTY_COLORS.hard },
+        ]
+      : undefined,
     stats,
     progress,
   };
@@ -256,11 +272,19 @@ export default function ProblemSolving() {
   const calendar = mergeCalendars(profiles);
   const series = seriesFrom(calendar, period);
 
+  // Only platforms that publish a difficulty split can contribute to the
+  // per-difficulty figures, and only their solves can be the denominator for
+  // them: dividing by every solve would silently understate each share by
+  // whatever GeeksforGeeks contributed.
+  const split = profiles.filter(hasDifficultySplit);
+
   const overview = {
     total: profiles.reduce((sum, p) => sum + p.totalSolved, 0),
-    easy: profiles.reduce((sum, p) => sum + p.easySolved, 0),
-    medium: profiles.reduce((sum, p) => sum + p.mediumSolved, 0),
-    hard: profiles.reduce((sum, p) => sum + p.hardSolved, 0),
+    /** Solves on platforms that report a difficulty split. The right denominator. */
+    classified: split.reduce((sum, p) => sum + p.totalSolved, 0),
+    easy: split.reduce((sum, p) => sum + (p.easySolved ?? 0), 0),
+    medium: split.reduce((sum, p) => sum + (p.mediumSolved ?? 0), 0),
+    hard: split.reduce((sum, p) => sum + (p.hardSolved ?? 0), 0),
     // Each platform publishes its own streak under its own definition. Taking
     // the best one keeps the overview consistent with the platform cards;
     // recomputing it here produced a second, different number for the same word.
@@ -372,8 +396,10 @@ export default function ProblemSolving() {
    * counted. Hard-problem share is the one judgement here, and the threshold it
    * uses is stated in the sentence rather than hidden behind an adjective.
    */
-  const hardShare = overview.total > 0 ? Math.round((overview.hard / overview.total) * 100) : 0;
-  const mediumShare = overview.total > 0 ? Math.round((overview.medium / overview.total) * 100) : 0;
+  const hardShare =
+    overview.classified > 0 ? Math.round((overview.hard / overview.classified) * 100) : 0;
+  const mediumShare =
+    overview.classified > 0 ? Math.round((overview.medium / overview.classified) * 100) : 0;
   const strongest = topics.slice(0, 3);
   const thinnest = topics.length > 3 ? topics[topics.length - 1] : null;
 
@@ -384,13 +410,13 @@ export default function ProblemSolving() {
             ? `Your solve volume is concentrated in ${strongest
                 .map((t) => t.topic)
                 .join(", ")} — ${strongest.reduce((sum, t) => sum + t.solved, 0)} problems across those topics. ` +
-              `Medium problems are ${mediumShare}% of everything you have solved and Hard ${hardShare}%. ` +
+              `Medium problems are ${mediumShare}% of your solves with a reported difficulty and Hard ${hardShare}%. ` +
               `Per-topic accuracy is not published by these platforms, so these are counts rather than success rates.`
             : `You have ${overview.total.toLocaleString()} solved problems recorded. Topic-level detail will appear once the platform reports it.`,
         focusTitle: thinnest ? thinnest.topic : "Hard problems",
         focusDetail: thinnest
           ? `${thinnest.solved} problems — the thinnest coverage among the topics you have touched.`
-          : `${overview.hard} of ${overview.total} solves are Hard.`,
+          : `${overview.hard} of ${overview.classified} solves with a reported difficulty are Hard.`,
         recommendationTitle: hardShare < 15 ? "Increase hard-problem volume" : "Keep the difficulty mix",
         recommendationDetail:
           hardShare < 15
@@ -403,14 +429,21 @@ export default function ProblemSolving() {
         focusTitle: "No data",
         focusDetail: "Connect a coding platform to see where your coverage is thinnest.",
         recommendationTitle: "Connect a platform",
-        recommendationDetail: "LeetCode can be connected below using your public username.",
+        recommendationDetail:
+          "LeetCode and GeeksforGeeks can be connected below using your public username.",
       };
+
+  /** Names the denominator, so the percentages are never read against the wrong one. */
+  const shareBasis =
+    overview.classified === overview.total
+      ? "of all solves"
+      : "of solves with a reported difficulty";
 
   const overviewCards = [
     { icon: Target, label: "Total Problems Solved", value: overview.total, sub: `Across ${profiles.length} platform${profiles.length === 1 ? "" : "s"}`, color: "text-primary", border: "border-primary/25", bg: "bg-primary/10" },
-    { icon: CheckCircle2, label: "Easy", value: overview.easy, sub: `${difficultyPercent(overview.easy, overview.total)}% of all solves`, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
-    { icon: AlertTriangle, label: "Medium", value: overview.medium, sub: `${difficultyPercent(overview.medium, overview.total)}% of all solves`, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
-    { icon: Braces, label: "Hard", value: overview.hard, sub: `${difficultyPercent(overview.hard, overview.total)}% of all solves`, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
+    { icon: CheckCircle2, label: "Easy", value: overview.easy, sub: `${difficultyPercent(overview.easy, overview.classified)}% ${shareBasis}`, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
+    { icon: AlertTriangle, label: "Medium", value: overview.medium, sub: `${difficultyPercent(overview.medium, overview.classified)}% ${shareBasis}`, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
+    { icon: Braces, label: "Hard", value: overview.hard, sub: `${difficultyPercent(overview.hard, overview.classified)}% ${shareBasis}`, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
     { icon: Flame, label: "Current Streak", value: overview.streak, sub: "Days in a row", color: "text-orange-300", border: "border-orange-500/25", bg: "bg-orange-500/10" },
   ];
 
@@ -556,13 +589,13 @@ export default function ProblemSolving() {
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-bold text-white tabular-nums">{d.count}</span>
-                      <span className="text-[11px] text-white/35 tabular-nums">{difficultyPercent(d.count, overview.total)}%</span>
+                      <span className="text-[11px] text-white/35 tabular-nums">{difficultyPercent(d.count, overview.classified)}%</span>
                     </div>
                   </div>
                   <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${difficultyPercent(d.count, overview.total)}%` }}
+                      animate={{ width: `${difficultyPercent(d.count, overview.classified)}%` }}
                       transition={{ duration: 0.9, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                       className="h-full rounded-full"
                       style={{ background: d.color, boxShadow: `0 0 6px ${d.color}55` }}
@@ -823,9 +856,10 @@ export default function ProblemSolving() {
       </Reveal>
 
       <PendingNotice>
-        <span className="font-semibold text-amber-200/90">GeeksforGeeks integration pending.</span> The connect
-        input below is wired and will work the moment the backend ships; until then it returns the
-        API's "not available yet" response. LeetCode connection and sync are live.
+        <span className="font-semibold text-amber-200/90">GeeksforGeeks reports less than LeetCode.</span>{" "}
+        Connection and sync are live for both. GeeksforGeeks publishes a solve count, a coding score
+        and a streak, but no difficulty split, no acceptance rate, no contest rating and no daily
+        activity — so those stay empty on its card rather than showing a zero it never measured.
       </PendingNotice>
     </PageContainer>
   );
