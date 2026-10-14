@@ -41,9 +41,8 @@ export default function HeroSection() {
           </h1>
 
           <p
-            className="opacity-0 animate-fade-up font-medium mb-3 max-w-2xl"
+            className="opacity-0 animate-fade-up font-medium mb-3 max-w-2xl text-lg md:text-xl"
             style={{
-              fontSize: "clamp(1.15rem, 2.5vw, 1.6rem)",
               color: "var(--text-primary)",
               animationDelay: "0.35s",
               lineHeight: 1.3,
@@ -53,9 +52,8 @@ export default function HeroSection() {
           </p>
 
           <p
-            className="opacity-0 animate-fade-up text-body mb-6 md:mb-8 max-w-xl"
+            className="opacity-0 animate-fade-up text-body mb-6 md:mb-8 max-w-xl text-sm md:text-base"
             style={{
-              fontSize: "clamp(0.875rem, 1.4vw, 1.025rem)",
               color: "var(--text-secondary)",
               animationDelay: "0.5s",
               lineHeight: 1.6,

@@ -191,7 +191,7 @@ export default function GrowthCareerSection() {
                 key={trend.label}
                 className="glass-inset flex items-center justify-between px-4 py-2.5 hover:border-white/15 transition-all duration-300"
               >
-                <span className="text-sm font-medium text-white/95">{trend.label}</span>
+                <span className="text-sm font-medium text-white/90">{trend.label}</span>
                 <div
                   className={cn(
                     "flex items-center gap-1.5 text-sm font-bold font-mono tabular-nums",
@@ -325,8 +325,7 @@ export default function GrowthCareerSection() {
               <div className="p-5 flex flex-col gap-3 relative z-10">
                 <div>
                   <div
-                    className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] mb-2"
-                    style={{ color: "rgb(248,113,113)" }}
+                    className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] mb-2 text-red-400"
                   >
                     <Zap className="w-3.5 h-3.5 animate-pulse" />
                     Largest Current Engineering Gap

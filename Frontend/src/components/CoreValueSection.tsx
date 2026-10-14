@@ -76,7 +76,7 @@ export default function CoreValueSection() {
                     "w-11 h-11 rounded-full flex items-center justify-center border font-bold text-xs shrink-0 backdrop-blur-md z-10",
                     step.isHighlight
                       ? "border-primary text-primary shadow-[0_0_20px_rgba(119,252,117,0.25)] bg-primary/10"
-                      : "border-white/10 text-white/55 bg-white/[0.02]"
+                      : "border-white/10 text-white/50 bg-white/[0.02]"
                   )}
                 >
                   {idx + 1}
@@ -107,7 +107,7 @@ export default function CoreValueSection() {
               <h3 className="font-bold text-white tracking-wide text-xs ml-2">React</h3>
               <div className="ml-auto flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_6px_rgba(119,252,117,0.8)]" />
-                <span className="text-[11px] font-bold tracking-widest text-primary">LIVE</span>
+                <span className="text-[10px] font-bold tracking-widest text-primary">LIVE</span>
               </div>
             </PanelHeader>
             <div className="p-4.5 md:p-5 flex flex-col flex-1 justify-between gap-4">
@@ -120,7 +120,7 @@ export default function CoreValueSection() {
               <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
                 <span className="text-xs font-semibold text-white/70">Practical Evidence</span>
                 <span
-                  className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-widest border bg-primary/10 text-primary border-primary/20"
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest border bg-primary/10 text-primary border-primary/20"
                 >
                   STRONG
                 </span>
@@ -135,7 +135,7 @@ export default function CoreValueSection() {
               <h3 className="font-bold text-white tracking-wide text-xs ml-2">Docker</h3>
               <div className="ml-auto flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-                <span className="text-[11px] font-bold tracking-widest text-yellow-500">GAP</span>
+                <span className="text-[10px] font-bold tracking-widest text-yellow-500">GAP</span>
               </div>
             </PanelHeader>
             <div className="p-4.5 md:p-5 flex flex-col flex-1 justify-between gap-4">
@@ -148,7 +148,7 @@ export default function CoreValueSection() {
               <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
                 <span className="text-xs font-semibold text-white/70">Practical Evidence</span>
                 <span
-                  className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-widest border flex items-center gap-1 bg-white/[0.02] text-white/50 border-white/10"
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest border flex items-center gap-1 bg-white/[0.02] text-white/50 border-white/10"
                 >
                   <AlertTriangle className="w-3 h-3 text-yellow-500" />
                   LIMITED

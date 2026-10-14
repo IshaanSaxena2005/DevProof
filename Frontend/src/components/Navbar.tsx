@@ -59,7 +59,7 @@ export default function Navbar() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-[13px] font-medium px-4 py-1.5 rounded-full text-white/65 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap"
+                  className="text-sm font-medium px-4 py-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap"
                   style={{ transitionDuration: "0.2s" }}
                 >
                   {link.label}
@@ -72,14 +72,14 @@ export default function Navbar() {
               {isAuthenticated ? (
                 <Link
                   to="/dashboard/overview"
-                  className="text-[13px] font-medium text-white/60 hover:text-white transition-colors py-1"
+                  className="text-sm font-medium text-white/60 hover:text-white transition-colors py-1"
                 >
                   Dashboard
                 </Link>
               ) : (
                 <Link
                   to="/login"
-                  className="text-[13px] font-medium text-white/60 hover:text-white transition-colors py-1"
+                  className="text-sm font-medium text-white/60 hover:text-white transition-colors py-1"
                 >
                   Sign In
                 </Link>
@@ -87,7 +87,7 @@ export default function Navbar() {
               {isAuthenticated && user?.githubAccount ? (
                 <Link
                   to="/dashboard/repositories"
-                  className="flex items-center gap-2 text-[13px] font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20"
+                  className="flex items-center gap-2 text-sm font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20"
                 >
                   <GithubIcon className="w-4 h-4 text-primary" />
                   @{user.githubAccount.username}
@@ -95,7 +95,7 @@ export default function Navbar() {
               ) : (
                 <a
                   href={`${BASE_URL}/auth/github`}
-                  className="flex items-center gap-2 text-[13px] font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(119,252,117,0.25)] hover:shadow-[0_0_24px_rgba(119,252,117,0.45)] hover:brightness-115"
+                  className="flex items-center gap-2 text-sm font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(119,252,117,0.25)] hover:shadow-[0_0_24px_rgba(119,252,117,0.45)] hover:brightness-115"
                   style={{
                     backgroundColor: "hsl(var(--primary))",
                     color: "hsl(var(--primary-foreground))",
@@ -134,7 +134,7 @@ export default function Navbar() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-xl font-medium text-white/75 hover:text-white transition-colors py-3.5 border-b border-white/[0.06]"
+                  className="text-lg font-medium text-white/70 hover:text-white transition-colors py-3.5 border-b border-white/[0.06]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
@@ -146,7 +146,7 @@ export default function Navbar() {
               {isAuthenticated ? (
                 <Link
                   to="/dashboard/overview"
-                  className="text-base font-medium text-white/65 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                  className="text-base font-medium text-white/60 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Dashboard
@@ -154,7 +154,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className="text-base font-medium text-white/65 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                  className="text-base font-medium text-white/60 hover:text-white transition-colors text-center py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In

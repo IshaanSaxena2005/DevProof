@@ -193,7 +193,7 @@ export default function RepositoryIntelligenceSection() {
                 style={{ background: "rgba(220,38,38,0.05)", borderColor: "rgba(220,38,38,0.15)" }}
               >
                 <div className="flex flex-col gap-0.5 md:w-28 shrink-0">
-                  <span className="text-[10px] font-bold tracking-widest" style={{ color: "rgb(248,113,113)" }}>
+                  <span className="text-[10px] font-bold tracking-widest text-red-400">
                     HIGH
                   </span>
                   <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>

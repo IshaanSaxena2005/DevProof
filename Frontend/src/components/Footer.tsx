@@ -20,7 +20,7 @@ export default function Footer() {
 
           <div className="flex flex-col gap-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-white/90">Platform</h3>
-            <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+            <ul className="flex flex-col gap-3 text-sm" style={{ color: "var(--text-tertiary)" }}>
               {["Product", "Repository Intelligence", "Developer 360", "Growth", "Career Readiness"].map(
                 (l) => (
                   <li key={l}>
@@ -49,7 +49,7 @@ export default function Footer() {
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-white/90">Resources</h3>
-              <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+              <ul className="flex flex-col gap-3 text-sm" style={{ color: "var(--text-tertiary)" }}>
                 {["Documentation", "GitHub"].map((l) => (
                   <li key={l}>
                     <a href="#" className="hover:text-primary transition-colors duration-200">
@@ -61,7 +61,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col gap-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-white/90">Legal</h3>
-              <ul className="flex flex-col gap-3 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+              <ul className="flex flex-col gap-3 text-sm" style={{ color: "var(--text-tertiary)" }}>
                 {["Privacy", "Terms"].map((l) => (
                   <li key={l}>
                     <a href="#" className="hover:text-primary transition-colors duration-200">

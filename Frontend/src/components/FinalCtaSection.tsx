@@ -35,7 +35,7 @@ export default function FinalCtaSection() {
             <div className="relative z-10 flex flex-col items-center">
               <h2
                 className="text-display mb-4 tracking-tight"
-                style={{ fontSize: "clamp(2.2rem, 5.5vw, 3.75rem)", lineHeight: 1.05 }}
+                style={{ fontSize: "clamp(1.85rem, 3.8vw, 2.75rem)", lineHeight: 1.1 }}
               >
                 Your work already
                 <br />

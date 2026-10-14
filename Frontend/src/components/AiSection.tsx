@@ -130,7 +130,7 @@ export default function AiSection() {
               {/* User message */}
               <div className="flex gap-3.5 items-start justify-end">
                 <div
-                  className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[80%] text-sm text-white/95 border border-white/[0.08] shadow-md"
+                  className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[80%] text-sm text-white/90 border border-white/[0.08] shadow-md"
                   style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)" }}
                 >
                   Why is my testing score low?
