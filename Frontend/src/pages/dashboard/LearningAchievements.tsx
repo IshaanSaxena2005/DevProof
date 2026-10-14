@@ -19,6 +19,7 @@ import ResumeSection from "./LA/ResumeSection";
 import CourseSection from "./LA/CourseSection";
 import { AchievementEvidence, DevProofInsight } from "./LA/AchievementEvidence";
 import { certificationsService } from "../../services/certifications";
+import { coursesService } from "../../services/courses";
 import { useResource } from "../../lib/useResource";
 import type { Certification, CertificationInput } from "../../lib/types";
 
@@ -27,18 +28,27 @@ import type { Certification, CertificationInput } from "../../lib/types";
  * hackathons, and the timeline that ties them together.
  *
  * Data reality in this build:
- *  - Certifications: real backend (list/add/update/remove) — fully interactive.
- *  - Courses, hackathons, learning hours: no backend — polished empty states
- *    with "coming soon" CTAs, never fabricated records.
+ *  - Certifications and courses: real backend CRUD — fully interactive.
+ *  - Resume: real /resume backend for upload, parse and management.
+ *  - Hackathons and learning hours: no backend — polished empty states with
+ *    "coming soon" CTAs, never fabricated records.
  */
 export default function LearningAchievements() {
   const { data, loading, error, reload } = useResource(() => certificationsService.list());
+  const {
+    data: courseData,
+    loading: coursesLoading,
+    error: coursesError,
+    reload: reloadCourses,
+  } = useResource(() => coursesService.list());
 
   const [showForm, setShowForm] = useState(false);
   const [showCourseForm, setShowCourseForm] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const certifications: Certification[] = data?.certifications ?? [];
+  const courses = courseData?.courses ?? [];
+  const completedCourses = courses.filter((c) => c.isCompleted).length;
 
   async function handleAdd(input: CertificationInput) {
     setActionError(null);
@@ -61,20 +71,42 @@ export default function LearningAchievements() {
     }
   }
 
-  // Overview metrics: certifications are real; everything without a backend
-  // source renders an em-dash — absence, not a measured zero.
+  // Overview metrics: certifications and courses are real; hackathons and
+  // learning activity have no backend source and render an em-dash — absence,
+  // not a measured zero.
   const metrics: OverviewMetric[] = [
-    { icon: "courses", label: "Courses", value: null, sub: "No tracking connected" },
+    { icon: "courses", label: "Courses", value: coursesLoading ? null : courses.length, sub: "Recorded coursework" },
     { icon: "certifications", label: "Certifications", value: loading ? null : certifications.length, sub: "Recorded credentials" },
     { icon: "hackathons", label: "Hackathons", value: null, sub: "No records yet" },
     { icon: "activity", label: "Learning Activity", value: null, sub: "Awaiting course data" },
   ];
 
-  // Timeline is fed exclusively by real records (certifications today).
-  const timelineEvents: TimelineEvent[] = certifications.map((c) => ({
-    date: c.issueDate ?? c.createdAt,
-    context: c.issuer,
-    title: c.name,
+  // Timeline is fed exclusively by real records (certifications + courses).
+  const timelineEvents: TimelineEvent[] = [
+    ...certifications.map((c) => ({
+      date: c.issueDate ?? c.createdAt,
+      context: c.issuer,
+      title: c.name,
+    })),
+    ...courses.map((c) => ({
+      date: c.completedAt ?? c.createdAt,
+      context: c.platform,
+      title: c.title,
+    })),
+  ];
+
+  // Skills from learning, computed only from recorded courses: how many
+  // recorded courses taught each listed skill name.
+  const learnedSkillMap = new Map<string, number>();
+  for (const course of courses) {
+    for (const skill of course.learnedSkills ?? []) {
+      learnedSkillMap.set(skill, (learnedSkillMap.get(skill) ?? 0) + 1);
+    }
+  }
+  const learnedSkills = [...learnedSkillMap.entries()].map(([name, sources], i) => ({
+    id: `learned-${i}`,
+    name,
+    sources,
   }));
 
   return (
@@ -117,7 +149,11 @@ export default function LearningAchievements() {
       <div className="mt-8">
         <LAReveal delay={0.05}>
           <LALabel>Learning Overview</LALabel>
-          <LearningOverviewPanel onAddCourse={() => setShowCourseForm(true)} />
+          <LearningOverviewPanel
+            onAddCourse={() => setShowCourseForm(true)}
+            completedCount={coursesLoading ? null : completedCourses}
+            inProgressCount={coursesLoading ? null : courses.length - completedCourses}
+          />
         </LAReveal>
       </div>
 
@@ -182,7 +218,14 @@ export default function LearningAchievements() {
               {showCourseForm ? "Close" : "Add course"}
             </button>
           </div>
-          <CourseSection formOpen={showCourseForm} onToggleForm={() => setShowCourseForm((v) => !v)} />
+          <CourseSection
+            formOpen={showCourseForm}
+            onToggleForm={() => setShowCourseForm((v) => !v)}
+            courses={courses}
+            loading={coursesLoading}
+            error={coursesError}
+            reload={reloadCourses}
+          />
         </LAReveal>
       </div>
 
@@ -206,9 +249,10 @@ export default function LearningAchievements() {
       <div className="mt-8">
         <LAReveal delay={0.3}>
           <LALabel>Skills Developed</LALabel>
-          {/* No learning-source attribution exists yet, so the panel explains
-              the Learning → Skills → Evidence flow rather than listing chips. */}
-          <SkillsFromLearning skills={[]} loading={false} />
+          {/* Chips render only from skills the recorded courses actually
+              listed; the empty state explains the Learning → Skills → Evidence
+              flow until then. */}
+          <SkillsFromLearning skills={learnedSkills} loading={coursesLoading} />
         </LAReveal>
       </div>
 
@@ -219,7 +263,7 @@ export default function LearningAchievements() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <AchievementEvidence
               sources={[
-                { name: "Course", available: false, note: "Course tracking not connected" },
+                { name: "Course", available: courses.length > 0, note: courses.length > 0 ? `${courses.length} recorded — live backend` : "None recorded yet" },
                 { name: "Certification", available: certifications.length > 0, note: certifications.length > 0 ? `${certifications.length} recorded — live backend` : "None recorded yet" },
                 { name: "Hackathon", available: false, note: "No records can be added yet" },
               ]}
@@ -227,7 +271,7 @@ export default function LearningAchievements() {
             <AchievementEvidence
               sources={[
                 { name: "Credential Link", available: certifications.some((c) => c.credentialUrl), note: "Attach a URL when recording a certification" },
-                { name: "Project Repository", available: false, note: "Link repositories from the Repositories page" },
+                { name: "Certificate Link", available: courses.some((c) => c.certificateUrl), note: "Attach a URL when recording a completed course" },
               ]}
             />
           </div>
@@ -237,7 +281,10 @@ export default function LearningAchievements() {
       {/* ── 9. DevProof insight ── */}
       <div className="mt-8">
         <LAReveal delay={0.4}>
-          <DevProofInsight certificationCount={certifications.length} />
+          <DevProofInsight
+            certificationCount={certifications.length}
+            courseCount={courses.length}
+          />
         </LAReveal>
       </div>
 
@@ -246,9 +293,9 @@ export default function LearningAchievements() {
         <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-4 flex items-start gap-3">
           <Award className="w-4 h-4 text-white/30 shrink-0 mt-0.5" />
           <p className="text-[12px] text-white/35 leading-relaxed">
-            Certification records and your uploaded resume are stored in your DevProof account.
-            Courses, hackathons, and learning-hour tracking are on the roadmap — those sections
-            stay empty until their integrations exist, so nothing here is assumed or invented.
+            Certification records, your uploaded resume, and recorded courses are stored in your
+            DevProof account. Hackathons and learning-hour tracking are on the roadmap — those
+            sections stay empty until their integrations exist, so nothing here is assumed or invented.
           </p>
         </div>
       </LAReveal>

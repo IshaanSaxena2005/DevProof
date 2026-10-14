@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { BookOpen, ExternalLink, Loader2, Trash2, CalendarDays, Globe, ChevronDown } from "lucide-react";
-import { useResource } from "../../../lib/useResource";
+import { BookOpen, ExternalLink, Loader2, Pencil, Trash2, CalendarDays, Globe, ChevronDown } from "lucide-react";
 import { ApiError } from "../../../lib/api";
 import { coursesService } from "../../../services/courses";
 import { LAStatLabel } from "./shared";
@@ -16,23 +15,35 @@ import type { Course, CourseInput } from "../../../lib/types";
  * each mutation, not assumed here.
  */
 export default function CourseSection({
-  formOpen,
+  formOpen: formOpenProp,
   onToggleForm,
+  courses,
+  loading,
+  error,
+  reload,
 }: {
   /** Controlled so the Learning Overview's "Add course" CTA opens this form too. */
   formOpen: boolean;
   onToggleForm: () => void;
+  /** Live data from the page-level GET /courses — one request, shared upward. */
+  courses: Course[];
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
 }) {
-  const { data, loading, error, reload } = useResource(() => coursesService.list(), []);
   const [actionError, setActionError] = useState<string | null>(null);
   const [promoted, setPromoted] = useState<string[] | null>(null);
+  /** Course being edited, or null for create mode. */
+  const [editing, setEditing] = useState<Course | null>(null);
 
-  async function handleCreate(input: CourseInput) {
+  async function handleSave(input: CourseInput) {
     setActionError(null);
     try {
-      const result = await coursesService.add(input);
-      setPromoted(result.promotedSkills);
-      // The list closes the form only after a successful create.
+      const result = editing
+        ? await coursesService.update(editing.id, input)
+        : await coursesService.add(input);
+      setPromoted(result.promotedSkills.length > 0 ? result.promotedSkills : null);
+      setEditing(null);
       reload();
       return null;
     } catch (err) {
@@ -40,6 +51,15 @@ export default function CourseSection({
       setActionError(message);
       return message;
     }
+  }
+
+  function startEdit(course: Course) {
+    setPromoted(null);
+    setEditing(course);
+  }
+
+  function cancelEdit() {
+    setEditing(null);
   }
 
   async function handleRemove(course: Course) {
@@ -53,7 +73,8 @@ export default function CourseSection({
     }
   }
 
-  const courses = data?.courses ?? [];
+  /** Edit form opens in place of the create form — one form slot, shared logic. */
+  const formOpen = formOpenProp || editing !== null;
 
   if (error) {
     return (
@@ -90,9 +111,15 @@ export default function CourseSection({
 
       {formOpen && (
         <CourseForm
+          key={editing?.id ?? "create"}
+          initial={editing ?? undefined}
           submitLabel="Save course"
-          onSubmit={handleCreate}
-          onSuccess={onToggleForm}
+          onSubmit={handleSave}
+          onCancel={cancelEdit}
+          onSuccess={() => {
+            setEditing(null);
+            onToggleForm();
+          }}
         />
       )}
 
@@ -130,7 +157,13 @@ export default function CourseSection({
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-4">
           {courses.map((course, i) => (
-            <CourseCard key={course.id} course={course} index={i} onRemove={handleRemove} />
+            <CourseCard
+              key={course.id}
+              course={course}
+              index={i}
+              onRemove={handleRemove}
+              onEdit={startEdit}
+            />
           ))}
         </div>
       )}
@@ -142,10 +175,12 @@ function CourseCard({
   course,
   index,
   onRemove,
+  onEdit,
 }: {
   course: Course;
   index: number;
   onRemove: (c: Course) => void;
+  onEdit: (c: Course) => void;
 }) {
   const [open, setOpen] = useState(false);
   const hasSkills = (course.learnedSkills?.length ?? 0) > 0;
@@ -188,6 +223,15 @@ function CourseCard({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(course)}
+              title={`Edit ${course.title}`}
+              className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all cursor-pointer"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
           {course.certificateUrl && (
             <a
               href={course.certificateUrl}
@@ -240,21 +284,31 @@ function CourseCard({
  * up to 20 skill names (≤60 chars each) that the backend may promote.
  */
 export function CourseForm({
+  initial,
   onSubmit,
   submitLabel,
   onSuccess,
+  onCancel,
 }: {
+  /** Present when editing an existing course — fields are prefilled. */
+  initial?: Course;
   onSubmit: (input: CourseInput) => Promise<string | null>;
   submitLabel: string;
-  /** Called after a successful create, so the parent can close the form. */
+  /** Called after a successful create or update, so the parent can close the form. */
   onSuccess?: () => void;
+  /** Present when the form can be dismissed (edit mode cancel). */
+  onCancel?: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [platform, setPlatform] = useState("");
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [completedAt, setCompletedAt] = useState("");
-  const [certificateUrl, setCertificateUrl] = useState("");
-  const [skillsText, setSkillsText] = useState("");
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [platform, setPlatform] = useState(initial?.platform ?? "");
+  const [isCompleted, setIsCompleted] = useState(initial?.isCompleted ?? false);
+  const [completedAt, setCompletedAt] = useState(
+    initial?.completedAt ? initial.completedAt.slice(0, 10) : ""
+  );
+  const [certificateUrl, setCertificateUrl] = useState(initial?.certificateUrl ?? "");
+  const [skillsText, setSkillsText] = useState(
+    initial?.learnedSkills?.length ? initial.learnedSkills.join(", ") : ""
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -367,8 +421,17 @@ export function CourseForm({
           {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {saving ? "Saving…" : submitLabel}
         </button>
-        <span className="text-[11px] text-white/30 hidden sm:block">
-          Submitted to /courses — nothing is tracked until your backend receives it.
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+        )}
+        <span className="text-[11px] text-white/30 ml-auto hidden sm:block">
+          {initial ? "Updating via PATCH /courses — the stored record is the source of truth." : "Submitted to /courses — nothing is tracked until your backend receives it."}
         </span>
       </div>
     </form>

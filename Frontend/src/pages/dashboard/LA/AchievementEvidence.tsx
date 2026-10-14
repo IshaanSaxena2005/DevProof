@@ -35,10 +35,13 @@ export function AchievementEvidence({ sources }: { sources: EvidenceSource[] }) 
 /** DevProof Insight — analytical next steps, disabled when unsupported. */
 export function DevProofInsight({
   certificationCount,
+  courseCount,
 }: {
   certificationCount: number;
+  courseCount: number;
 }) {
   const hasCerts = certificationCount > 0;
+  const hasCourses = courseCount > 0;
 
   return (
     <GlassCard hover={false} className="p-6 md:p-7 border-l-2 border-l-primary relative overflow-hidden">
@@ -52,14 +55,23 @@ export function DevProofInsight({
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">DevProof Insight</h3>
         </div>
 
-        {hasCerts ? (
+        {hasCerts || hasCourses ? (
           <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
-            You have recorded <span className="text-white font-semibold">
-              {certificationCount} {certificationCount === 1 ? "certification" : "certifications"}
+            You have recorded{" "}
+            <span className="text-white font-semibold">
+              {[
+                hasCourses
+                  ? `${courseCount} ${courseCount === 1 ? "course" : "courses"}`
+                  : null,
+                hasCerts
+                  ? `${certificationCount} ${certificationCount === 1 ? "certification" : "certifications"}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" and ")}
             </span>{" "}
-            as credential evidence. Courses and hackathon experiences are not connected yet, so your
-            learning profile is only partially evidenced — adding them would link your skills to the
-            knowledge behind them.
+            as learning evidence. Hackathon experiences are not connected yet, so your learning
+            profile is still partially evidenced — adding one would extend the record you have.
           </p>
         ) : (
           <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
@@ -78,13 +90,13 @@ export function DevProofInsight({
               Live today — records credential evidence and can promote related skills.
             </p>
           </div>
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+          <div className="rounded-xl border border-primary/25 bg-primary/[0.06] p-4">
             <LAStatLabel>Next</LAStatLabel>
-            <p className="text-sm font-bold text-white/60 mt-1 flex items-center gap-1.5">
-              Add course <ArrowRight className="w-3.5 h-3.5 text-white/25" />
+            <p className="text-sm font-bold text-white mt-1 flex items-center gap-1.5">
+              Add course <ArrowRight className="w-3.5 h-3.5 text-primary" />
             </p>
-            <p className="text-[11px] text-white/30 mt-1 leading-relaxed">
-              Course tracking is coming soon.
+            <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+              Live today — records coursework and can promote skills you list for it.
             </p>
           </div>
           <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
