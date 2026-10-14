@@ -16,6 +16,7 @@ import {
   LearningTimeline,
   type TimelineEvent,
 } from "./LA/EmptySections";
+import ResumeSection from "./LA/ResumeSection";
 import { AchievementEvidence, DevProofInsight } from "./LA/AchievementEvidence";
 import { certificationsService } from "../../services/certifications";
 import { useResource } from "../../lib/useResource";
@@ -103,7 +104,15 @@ export default function LearningAchievements() {
         </div>
       )}
 
-      {/* ── 2. Learning overview ── */}
+      {/* ── 2. Resume ── */}
+      <div className="mt-8">
+        <LAReveal delay={0.04}>
+          <LALabel>Resume</LALabel>
+          <ResumeSection />
+        </LAReveal>
+      </div>
+
+      {/* ── 3. Learning overview ── */}
       <div className="mt-8">
         <LAReveal delay={0.05}>
           <LALabel>Learning Overview</LALabel>
@@ -223,9 +232,9 @@ export default function LearningAchievements() {
         <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-4 flex items-start gap-3">
           <Award className="w-4 h-4 text-white/30 shrink-0 mt-0.5" />
           <p className="text-[12px] text-white/35 leading-relaxed">
-            Certification records are stored in your DevProof account. Courses, hackathons, and
-            learning-hour tracking are on the roadmap — those sections stay empty until their
-            integrations exist, so nothing here is assumed or invented.
+            Certification records and your uploaded resume are stored in your DevProof account.
+            Courses, hackathons, and learning-hour tracking are on the roadmap — those sections
+            stay empty until their integrations exist, so nothing here is assumed or invented.
           </p>
         </div>
       </LAReveal>
