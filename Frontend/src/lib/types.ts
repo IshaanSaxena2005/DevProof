@@ -420,6 +420,51 @@ export interface CertificationsResponse {
   certifications: Certification[];
 }
 
+/* ── Courses (GET/POST/PATCH/DELETE /courses) ─────────── */
+
+/**
+ * A course the user recorded. learnedSkills are names the user says the course
+ * taught — the backend may promote matching skills (reported per-mutation as
+ * promotedSkills), so these are LEARNED evidence, never repo-derived.
+ */
+export interface Course {
+  id: string;
+  title: string;
+  platform: string;
+  isCompleted: boolean;
+  /** Null while in progress — absence, not a fabricated date. */
+  completedAt: string | null;
+  certificateUrl: string | null;
+  learnedSkills: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Payload for POST/PATCH /courses. Matches the backend zod validator: optional
+ * fields are omitted (not sent as null), certificateUrl may be "" which the
+ * backend drops, and completedAt is only meaningful for completed courses.
+ */
+export interface CourseInput {
+  title: string;
+  platform: string;
+  isCompleted?: boolean;
+  certificateUrl?: string;
+  completedAt?: string;
+  learnedSkills?: string[];
+}
+
+export interface CoursesResponse {
+  courses: Course[];
+}
+
+/** Mirrors the backend create/update result. */
+export interface CourseMutationResponse {
+  course: Course;
+  /** Skill names promoted to LEARNED as a result of this course. */
+  promotedSkills: string[];
+}
+
 /* ── Coding profiles (GET /coding-profiles) ───────────── */
 
 export type CodingPlatform = "LEETCODE" | "GEEKSFORGEEKS";

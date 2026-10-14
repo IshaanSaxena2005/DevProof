@@ -24,9 +24,11 @@ export function LAReveal({
 }
 
 /** Section micro-label — matches Developer360/PP label treatment. */
-export function LALabel({ children }: { children: React.ReactNode }) {
+export function LALabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4">{children}</p>
+    <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
+      {children}
+    </p>
   );
 }
 

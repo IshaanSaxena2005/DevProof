@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Award } from "lucide-react";
+import { Award, Plus } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import { LAReveal, LALabel } from "./LA/shared";
 import { OverviewMetrics, LearningOverviewPanel, type OverviewMetric } from "./LA/LearningOverview";
@@ -10,13 +10,13 @@ import {
   AddCertificationButton,
 } from "./LA/CertificationCard";
 import {
-  CoursesEmpty,
   HackathonsEmpty,
   SkillsFromLearning,
   LearningTimeline,
   type TimelineEvent,
 } from "./LA/EmptySections";
 import ResumeSection from "./LA/ResumeSection";
+import CourseSection from "./LA/CourseSection";
 import { AchievementEvidence, DevProofInsight } from "./LA/AchievementEvidence";
 import { certificationsService } from "../../services/certifications";
 import { useResource } from "../../lib/useResource";
@@ -35,6 +35,7 @@ export default function LearningAchievements() {
   const { data, loading, error, reload } = useResource(() => certificationsService.list());
 
   const [showForm, setShowForm] = useState(false);
+  const [showCourseForm, setShowCourseForm] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const certifications: Certification[] = data?.certifications ?? [];
@@ -116,7 +117,7 @@ export default function LearningAchievements() {
       <div className="mt-8">
         <LAReveal delay={0.05}>
           <LALabel>Learning Overview</LALabel>
-          <LearningOverviewPanel />
+          <LearningOverviewPanel onAddCourse={() => setShowCourseForm(true)} />
         </LAReveal>
       </div>
 
@@ -167,8 +168,21 @@ export default function LearningAchievements() {
       {/* ── 4. Courses ── */}
       <div className="mt-8">
         <LAReveal delay={0.15}>
-          <LALabel>Courses</LALabel>
-          <CoursesEmpty />
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <LALabel className="mb-0">Courses</LALabel>
+            <button
+              onClick={() => setShowCourseForm((v) => !v)}
+              className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all cursor-pointer ${
+                showCourseForm
+                  ? "border-white/20 bg-white/[0.06] text-white/80"
+                  : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50"
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {showCourseForm ? "Close" : "Add course"}
+            </button>
+          </div>
+          <CourseSection formOpen={showCourseForm} onToggleForm={() => setShowCourseForm((v) => !v)} />
         </LAReveal>
       </div>
 

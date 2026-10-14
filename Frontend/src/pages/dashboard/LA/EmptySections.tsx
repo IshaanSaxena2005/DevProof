@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { BookOpen, Trophy, Sparkles, CircleDashed } from "lucide-react";
+import { Trophy, Sparkles, CircleDashed } from "lucide-react";
 import GlassCard from "../../../components/GlassCard";
 import { LAStatLabel } from "./shared";
 
@@ -33,17 +33,6 @@ function SectionEmpty({
         {cta} — coming soon
       </button>
     </GlassCard>
-  );
-}
-
-export function CoursesEmpty() {
-  return (
-    <SectionEmpty
-      icon={<BookOpen className="w-5 h-5" />}
-      title="No courses added yet"
-      description="Add your learning history to connect your skills with the knowledge behind them. Course records will show platform, progress, and certificate availability."
-      cta="Add course"
-    />
   );
 }
 
