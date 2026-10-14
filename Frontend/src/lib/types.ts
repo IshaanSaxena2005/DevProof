@@ -418,6 +418,53 @@ export interface CertificationMutationResponse {
 
 export interface CertificationsResponse {
   certifications: Certification[];
+}/* ── Hackathons (GET/POST/PATCH/DELETE /hackathons) ── */
+
+/**
+ * A user-recorded hackathon or competition. Unlike courses and certifications,
+ * a hackathon record does not promote skills up the evidence ladder — it records
+ * technologies the user names as CLAIMED at most, and it never touches existing
+ * skills. The project URL is a pointer for a human, not proof the code is theirs.
+ */
+export interface Hackathon {
+  id: string;
+  name: string;
+  organizer: string;
+  role: string | null;
+  projectName: string | null;
+  projectUrl: string | null;
+  result: string | null;
+  teamSize: number | null;
+  heldAt: string | null;
+  technologies: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Payload for POST/PATCH /hackathons. name and organizer are required. */
+export interface HackathonInput {
+  name: string;
+  organizer: string;
+  role?: string;
+  projectName?: string;
+  projectUrl?: string;
+  result?: string;
+  teamSize?: number;
+  heldAt?: string;
+  technologies?: string[];
+}
+
+/**
+ * Result of adding/updating a hackathon. `recordedSkills` names technologies
+ * newly created at CLAIMED — existing skills are never touched.
+ */
+export interface HackathonMutationResponse {
+  hackathon: Hackathon;
+  recordedSkills: string[];
+}
+
+export interface HackathonsResponse {
+  hackathons: Hackathon[];
 }
 
 /* ── Courses (GET/POST/PATCH/DELETE /courses) ─────────── */
@@ -453,7 +500,6 @@ export interface CourseInput {
   completedAt?: string;
   learnedSkills?: string[];
 }
-
 export interface CoursesResponse {
   courses: Course[];
 }
