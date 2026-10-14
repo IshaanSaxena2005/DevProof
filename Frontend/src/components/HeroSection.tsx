@@ -21,23 +21,23 @@ export default function HeroSection() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20 pt-28 lg:pt-32">
         <div className="max-w-3xl">
           <p
-            className="opacity-0 animate-fade-up font-bold tracking-[0.24em] mb-3 text-[10px] md:text-xs uppercase"
+            className="opacity-0 animate-fade-up font-bold tracking-[0.24em] mb-3 text-[10px] md:text-xs"
             style={{ color: "var(--text-tertiary)", animationDelay: "0.08s" }}
           >
-            DEVELOPER INTELLIGENCE • BACKED BY EVIDENCE
+            Developer Intelligence — Backed by Evidence
           </p>
 
           <h1
-            className="opacity-0 animate-fade-up text-display uppercase mb-4"
+            className="opacity-0 animate-fade-up text-display mb-4"
             style={{
               fontSize: "clamp(2.75rem, 8vw, 6rem)",
               lineHeight: 0.98,
-              letterSpacing: "-0.05em",
+              letterSpacing: "-0.03em",
               animationDelay: "0.18s",
             }}
           >
-            <span style={{ color: "hsl(var(--primary))", textShadow: "0 0 40px rgba(119,252,117,0.15)" }}>PROVE</span> WHAT
-            <br /> YOU CAN BUILD.
+            <span style={{ color: "hsl(var(--primary))", textShadow: "0 0 40px rgba(119,252,117,0.15)" }}>Prove</span> what
+            <br /> you can build.
           </h1>
 
           <p

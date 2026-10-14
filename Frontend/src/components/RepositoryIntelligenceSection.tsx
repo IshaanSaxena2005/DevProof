@@ -143,7 +143,7 @@ export default function RepositoryIntelligenceSection() {
                 SCORE: 38
               </span>
               <ChevronRight className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
-              <span className="text-xs font-bold tracking-wider text-white">TESTING ANALYSIS</span>
+              <span className="text-xs font-bold tracking-wider text-white">Testing Analysis</span>
             </div>
 
             <div className="flex flex-col gap-2">

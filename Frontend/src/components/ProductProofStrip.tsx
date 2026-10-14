@@ -22,7 +22,7 @@ export default function ProductProofStrip() {
     <div className="relative w-full py-6 border-b border-white/[0.06] bg-black/40 backdrop-blur-md z-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-4 gap-x-6 md:gap-x-8">
-          <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/50 text-center lg:text-left shrink-0">
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-white/50 text-center lg:text-left shrink-0">
             EVIDENCE INTEGRATION:
           </p>
           <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3.5">
