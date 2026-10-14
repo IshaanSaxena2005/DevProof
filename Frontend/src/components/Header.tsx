@@ -28,7 +28,6 @@ const TITLE_MAP: Record<string, string> = {
   "/dashboard/skills": "Skills",
   "/dashboard/problem-solving": "Problem Solving",
   "/dashboard/learning": "Learning & Achievements",
-  "/dashboard/professional-profile": "Professional Profile",
   "/dashboard/growth": "Growth",
   "/dashboard/career-readiness": "Career Readiness",
   "/dashboard/ai-insights": "AI Insights",

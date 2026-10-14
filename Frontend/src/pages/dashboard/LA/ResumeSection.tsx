@@ -4,8 +4,21 @@ import { ApiError } from "../../../lib/api";
 import { resumeService } from "../../../services/resume";
 import GlassCard from "../../../components/GlassCard";
 import { LAStatLabel } from "./shared";
-import { ResumeGlyph } from "../PP/icons";
 import type { ResumeSummary } from "../../../lib/types";
+
+/** Document glyph for the resume card (drawn inline; lucide version here
+ * ships none we can reuse consistently with the old page's treatment). */
+export function ResumeGlyph({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="13" y2="17" />
+      <circle cx="8.5" cy="9" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 /**
  * Resume management, relocated from the Professional Profile page.
