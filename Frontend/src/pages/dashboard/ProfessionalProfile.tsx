@@ -1,10 +1,12 @@
 import { Lightbulb, ArrowRight, User, MapPin } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
-import { PPReveal, PPLabel, PPStatLabel } from "./PP/shared";
-import SourceCard from "./PP/SourceCard";
-import CompletenessRing, { CompletenessBreakdown } from "./PP/CompletenessRing";
+import { ResumeEvidenceSourceCard } from "./PP/ResumeSourceCard";
+import ResumeIntelligencePlaceholder from "./PP/ResumeIntelligencePlaceholder";
+import LinkedInSourceCard from "./PP/LinkedInSourceCard";
 import EvidenceCoverage from "./PP/EvidenceCoverage";
+import { PPReveal, PPLabel, PPStatLabel } from "./PP/shared";
+import CompletenessRing, { CompletenessBreakdown } from "./PP/CompletenessRing";
 import { useAuth } from "../../hooks/useAuth";
 import { useRef, useState } from "react";
 import { useResource } from "../../lib/useResource";
@@ -99,7 +101,7 @@ export default function ProfessionalProfile() {
   return (
     <PageContainer
       title="Professional Profile"
-      description="Build a complete professional identity from your resume and LinkedIn profile."
+      description="Build a complete professional identity from your resume."
     >
       {/* Hidden picker driven by the resume card's CTA. */}
       <input
@@ -141,8 +143,8 @@ export default function ProfessionalProfile() {
                   </p>
                 )}
                 <p className="text-[12px] leading-relaxed text-white/35 mt-3 max-w-md">
-                  DevProof assembles your professional identity from resume, LinkedIn, and account evidence.
-                  Connect sources below to strengthen each component.
+                  DevProof assembles your professional identity from your account details and resume.
+                  Upload a resume below to strengthen each component.
                 </p>
               </div>
             </div>
@@ -159,37 +161,19 @@ export default function ProfessionalProfile() {
         </GlassCard>
       </PPReveal>
 
-      {/* ── 2. LinkedIn + Resume ── */}
+      {/* ── 2. Evidence sources ── */}
       <PPReveal delay={0.1}>
         <PPLabel>Evidence Sources</PPLabel>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-          <SourceCard
-            kind="linkedin"
-            title="LinkedIn"
-            purpose="Connect your LinkedIn profile to strengthen your professional evidence."
-            state="pending"
-            stateLabel="Coming soon"
-            bullets={[
-              "Import headline, current role, and work experience",
-              "Pull education, certifications, and licensed skills",
-              "Feed verified experience into your profile completeness",
-            ]}
-            cta="Connect LinkedIn"
-          />
+          <LinkedInSourceCard />
 
-          <SourceCard
-            kind="resume"
+          <ResumeEvidenceSourceCard
             title="Resume / CV"
             purpose="Upload your latest resume so DevProof can extract professional evidence from it."
             state={resume ? "connected" : "empty"}
             stateLabel={
               uploading ? "Uploading…" : resume ? "Uploaded" : "Not uploaded"
             }
-            bullets={[
-              "Detect experience, education, and project history",
-              "Read the technologies named in your resume",
-              "PDF only, up to 5MB — processed on this server, never sent elsewhere",
-            ]}
             cta={uploading ? "Uploading…" : resume ? "Replace Resume" : "Upload Resume"}
             onCta={() => fileInput.current?.click()}
             footer={<ResumeFooter resume={resume} error={resumeError} onRemove={removeResume} />}
@@ -200,30 +184,7 @@ export default function ProfessionalProfile() {
       {/* ── 3. Resume intelligence ── */}
       <PPReveal delay={0.15}>
         <PPLabel>Resume Intelligence</PPLabel>
-        <GlassCard hover={false} className="p-6 md:p-8 mb-8">
-          <div className="flex flex-col items-center text-center gap-3 py-6">
-            <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/35">
-              <Lightbulb className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-              Upload a resume to unlock professional intelligence
-            </h3>
-            <p className="text-[12px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Once your resume is analyzed, DevProof surfaces skills detected, projects, experience years,
-              certifications, and how much of your profile they complete.
-            </p>
-
-            {/* Muted metric shapes — the structure is real, the numbers never are */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 w-full">
-              {["Skills Detected", "Projects", "Experience", "Certifications", "Completeness"].map((label) => (
-                <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-3.5">
-                  <PPStatLabel>{label}</PPStatLabel>
-                  <div className="h-5 w-10 rounded bg-white/[0.05] mt-2" aria-hidden="true" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </GlassCard>
+        <ResumeIntelligencePlaceholder />
       </PPReveal>
 
       {/* ── 4. Evidence coverage ── */}
@@ -232,11 +193,8 @@ export default function ProfessionalProfile() {
         <div className="mb-8">
           <EvidenceCoverage
             items={[
-              { icon: "linkedin", name: "LinkedIn", state: "missing", note: "Integration not built yet — no connection can be made." },
-              { icon: "resume", name: "Resume", state: "missing", note: "No upload pipeline yet — no resume can be stored." },
-              { icon: "experience", name: "Experience", state: "awaiting", note: "Awaiting resume or LinkedIn data." },
-              { icon: "education", name: "Education", state: "awaiting", note: "Awaiting resume or LinkedIn data." },
-              { icon: "skills", name: "Professional Skills", state: "awaiting", note: "Awaiting resume or LinkedIn data." },
+              { icon: "resume", name: "Resume", state: resume ? "available" : "awaiting", note: resume ? "Uploaded and stored on this server." : "Upload a resume to store and analyze it." },
+
             ]}
           />
         </div>
@@ -274,22 +232,13 @@ export default function ProfessionalProfile() {
             </div>
 
             <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
-              Your professional profile is incomplete. Connect LinkedIn and upload your latest resume to
+              Your professional profile is incomplete. Upload your latest resume to
               strengthen the evidence behind your experience, skills, and career profile.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
                 <PPStatLabel>Next step</PPStatLabel>
-                <p className="text-sm font-bold text-white mt-1 flex items-center gap-1.5">
-                  Connect LinkedIn <ArrowRight className="w-3.5 h-3.5 text-primary" />
-                </p>
-                <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
-                  Unlocks role, experience, and education evidence automatically.
-                </p>
-              </div>
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-                <PPStatLabel>Next</PPStatLabel>
                 <p className="text-sm font-bold text-white mt-1 flex items-center gap-1.5">
                   Upload Resume <ArrowRight className="w-3.5 h-3.5 text-primary" />
                 </p>

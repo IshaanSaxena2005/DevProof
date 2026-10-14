@@ -1,13 +1,12 @@
 import GlassCard from "../../../components/GlassCard";
-import { LinkedinGlyph, ResumeGlyph } from "./icons";
+import { ResumeGlyph } from "./icons";
 
 /**
- * Large evidence-source card (LinkedIn / Resume) with connected / empty states.
+ * Large evidence-source card (Resume) with connected / empty states.
  * Reuses the Credentials.tsx card anatomy: glass panel, icon tile, top
  * hairline reflection, hover glow.
  */
 export default function SourceCard({
-  kind,
   title,
   purpose,
   state,
@@ -17,11 +16,10 @@ export default function SourceCard({
   onCta,
   footer,
 }: {
-  kind: "linkedin" | "resume";
   title: string;
   purpose: string;
-  /** connected = real data exists; empty = awaiting user action; pending = backend not built. */
-  state: "connected" | "empty" | "pending";
+  /** connected = uploaded; empty = not yet uploaded. */
+  state: "connected" | "empty";
   stateLabel: string;
   /** What this source will contribute once available. */
   bullets: string[];
@@ -29,18 +27,15 @@ export default function SourceCard({
   onCta?: () => void;
   footer?: React.ReactNode;
 }) {
-  const Glyph = kind === "linkedin" ? LinkedinGlyph : ResumeGlyph;
-  const tint = kind === "linkedin" ? "#60a5fa" : "#a78bfa";
+  const tint = "#a78bfa";
 
   const statusStyles: Record<typeof state, string> = {
     connected: "border-primary/25 bg-primary/10 text-primary",
     empty: "border-white/10 bg-white/[0.04] text-white/40",
-    pending: "border-amber-400/25 bg-amber-400/10 text-amber-300",
   };
   const statusDot: Record<typeof state, string> = {
     connected: "bg-primary",
     empty: "bg-white/25",
-    pending: "bg-amber-400 animate-pulse",
   };
 
   return (
@@ -69,7 +64,7 @@ export default function SourceCard({
                 color: state === "connected" ? tint : "rgba(255,255,255,0.35)",
               }}
             >
-              <Glyph className="w-5 h-5" />
+              <ResumeGlyph className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-white tracking-tight">{title}</h3>
@@ -101,20 +96,10 @@ export default function SourceCard({
 
             <button
               onClick={onCta}
-              disabled={state === "pending"}
-              title={state === "pending" ? "Integration coming soon" : undefined}
-              className={
-                state === "pending"
-                  ? "w-full text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border border-white/10 bg-white/[0.03] text-white/35 cursor-not-allowed"
-                  : "w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all cursor-pointer hover:-translate-y-0.5"
-              }
-              style={
-                state === "pending"
-                  ? undefined
-                  : { borderColor: `${tint}44`, background: `${tint}14`, color: tint }
-              }
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all cursor-pointer hover:-translate-y-0.5"
+              style={{ borderColor: `${tint}44`, background: `${tint}14`, color: tint }}
             >
-              {state === "pending" ? `${cta} — coming soon` : cta}
+              {cta}
             </button>
           </>
         )}

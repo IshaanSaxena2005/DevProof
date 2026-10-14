@@ -1,5 +1,4 @@
-/**
- * Brand glyphs drawn inline (Credentials.tsx pattern) — lucide-react ships no
+/** Brand glyphs drawn inline (Credentials.tsx pattern) — lucide-react ships no
  * LinkedIn icon in this version, and resume/document needs a file glyph.
  */
 

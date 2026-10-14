@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { Briefcase, GraduationCap, Braces, CheckCircle2, Minus, AlertCircle } from "lucide-react";
+import type { LucideProps } from "lucide-react";
 
 export type CoverageState = "available" | "awaiting" | "missing";
 
@@ -19,15 +20,22 @@ export default function EvidenceCoverage({
 }: {
   items: { icon: "linkedin" | "resume" | "experience" | "education" | "skills"; name: string; state: CoverageState; note: string }[];
 }) {
-  const icons = { linkedin: null, resume: null, experience: Briefcase, education: GraduationCap, skills: Braces };
-  const glyphs = { linkedin: "in", resume: "CV" };
+  type IconMap = {
+  resume: null;
+  experience: React.ComponentType<LucideProps>;
+  education: React.ComponentType<LucideProps>;
+  skills: React.ComponentType<LucideProps>;
+};
+const icons: IconMap = { resume: null, experience: Briefcase, education: GraduationCap, skills: Braces };
+type IconKind = keyof typeof icons;
+
+  const glyphs = { resume: "CV" };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {items.map((item, i) => {
-        const chip = CHIP[item.state];
-        const Icon = icons[item.icon];
-        return (
+        const chip = CHIP[item.state];  const Icon = icons[item.icon as IconKind] ?? null;
+          return (
           <motion.div
             key={item.name}
             initial={{ opacity: 0, y: 14 }}
@@ -44,7 +52,7 @@ export default function EvidenceCoverage({
                     <Icon className="w-4 h-4" />
                   ) : (
                     <span className="text-[10px] font-bold tracking-wider" aria-hidden="true">
-                      {glyphs[item.icon as "linkedin" | "resume"]}
+                      {glyphs[item.icon as "resume"]}
                     </span>
                   )}
                 </div>
