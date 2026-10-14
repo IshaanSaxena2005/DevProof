@@ -358,9 +358,12 @@ model CodingProfile {
   profileUrl   String?
 
   totalSolved  Int     @default(0)
-  easySolved   Int     @default(0)
-  mediumSolved Int     @default(0)
-  hardSolved   Int     @default(0)
+
+  /// Null when the platform does not publish a difficulty split. GeeksforGeeks
+  /// reports none at all, and storing 0 there would read as a measured zero.
+  easySolved   Int?
+  mediumSolved Int?
+  hardSolved   Int?
 
   /// Accepted submissions / total submissions, 0..1.
   acceptanceRate   Float?

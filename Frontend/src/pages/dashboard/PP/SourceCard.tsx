@@ -1,42 +1,58 @@
 import GlassCard from "../../../components/GlassCard";
-import { ResumeGlyph } from "./icons";
+import { LinkedinGlyph, ResumeGlyph } from "./icons";
 
 /**
- * Large evidence-source card (Resume) with connected / empty states.
+ * Large evidence-source card (LinkedIn / Resume) with connected / empty states.
  * Reuses the Credentials.tsx card anatomy: glass panel, icon tile, top
  * hairline reflection, hover glow.
  */
 export default function SourceCard({
+  kind,
   title,
   purpose,
   state,
   stateLabel,
   bullets,
   cta,
+  disabledNote,
   onCta,
   footer,
 }: {
+  kind: "linkedin" | "resume";
   title: string;
   purpose: string;
-  /** connected = uploaded; empty = not yet uploaded. */
-  state: "connected" | "empty";
+  /**
+   * connected = real data exists; empty = awaiting user action;
+   * pending = being built; unavailable = cannot be built, so nothing is promised.
+   */
+  state: "connected" | "empty" | "pending" | "unavailable";
   stateLabel: string;
   /** What this source will contribute once available. */
   bullets: string[];
   cta: string;
+  /** Why a disabled CTA is disabled. Shown on hover; required when it is. */
+  disabledNote?: string;
   onCta?: () => void;
   footer?: React.ReactNode;
 }) {
-  const tint = "#a78bfa";
+  const Glyph = kind === "linkedin" ? LinkedinGlyph : ResumeGlyph;
+  const tint = kind === "linkedin" ? "#60a5fa" : "#a78bfa";
 
   const statusStyles: Record<typeof state, string> = {
     connected: "border-primary/25 bg-primary/10 text-primary",
     empty: "border-white/10 bg-white/[0.04] text-white/40",
+    pending: "border-amber-400/25 bg-amber-400/10 text-amber-300",
+    // No pulse: nothing is in progress, so nothing should look like it is.
+    unavailable: "border-white/10 bg-white/[0.03] text-white/35",
   };
   const statusDot: Record<typeof state, string> = {
     connected: "bg-primary",
     empty: "bg-white/25",
+    pending: "bg-amber-400 animate-pulse",
+    unavailable: "bg-white/20",
   };
+
+  const disabled = state === "pending" || state === "unavailable";
 
   return (
     <GlassCard className="p-6 md:p-7 relative overflow-hidden h-full flex flex-col">
@@ -64,7 +80,7 @@ export default function SourceCard({
                 color: state === "connected" ? tint : "rgba(255,255,255,0.35)",
               }}
             >
-              <ResumeGlyph className="w-5 h-5" />
+              <Glyph className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-white tracking-tight">{title}</h3>
@@ -96,8 +112,16 @@ export default function SourceCard({
 
             <button
               onClick={onCta}
-              className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all cursor-pointer hover:-translate-y-0.5"
-              style={{ borderColor: `${tint}44`, background: `${tint}14`, color: tint }}
+              disabled={disabled}
+              title={disabled ? disabledNote : undefined}
+              className={
+                disabled
+                  ? "w-full text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border border-white/10 bg-white/[0.03] text-white/35 cursor-not-allowed"
+                  : "w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all cursor-pointer hover:-translate-y-0.5"
+              }
+              style={
+                disabled ? undefined : { borderColor: `${tint}44`, background: `${tint}14`, color: tint }
+              }
             >
               {cta}
             </button>

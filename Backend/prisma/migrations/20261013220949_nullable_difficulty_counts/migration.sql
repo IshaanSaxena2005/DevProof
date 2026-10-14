@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE "coding_profiles" ALTER COLUMN "easySolved" DROP NOT NULL,
+ALTER COLUMN "easySolved" DROP DEFAULT,
+ALTER COLUMN "mediumSolved" DROP NOT NULL,
+ALTER COLUMN "mediumSolved" DROP DEFAULT,
+ALTER COLUMN "hardSolved" DROP NOT NULL,
+ALTER COLUMN "hardSolved" DROP DEFAULT;
+

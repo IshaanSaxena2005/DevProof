@@ -9,7 +9,7 @@ import {
   Code2,
   Info,
   Gauge,
-  TrendingUp,
+  Circle,
 } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
@@ -17,7 +17,8 @@ import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
 import { certificationsService } from "../../services/certifications";
-import type { Developer360Response } from "../../lib/types";
+import { careerService } from "../../services/career";
+import type { Developer360Response, RoleReadiness } from "../../lib/types";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -25,6 +26,28 @@ function scoreColor(n: number) {
   if (n >= 80) return "#77fc75";
   if (n >= 60) return "#f59e0b";
   return "#ef4444";
+}
+
+/** Weight 1-3 read back as the words it encodes, rather than as a bare number. */
+const WEIGHT_LABEL: Record<number, string> = {
+  3: "core",
+  2: "important",
+  1: "supporting",
+};
+
+/** Thin progress bar, the same anatomy used by the category bars below. */
+function Bar({ score, color }: { score: number; color: string }) {
+  return (
+    <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${score}%` }}
+        transition={{ duration: 0.9, delay: 0.2 }}
+        className="h-full rounded-full"
+        style={{ background: color, boxShadow: `0 0 6px ${color}55` }}
+      />
+    </div>
+  );
 }
 
 function SLabel({ children }: { children: React.ReactNode }) {
@@ -50,6 +73,9 @@ export default function CareerReadiness() {
   // Certifications load independently; a failure here degrades to zero tiles
   // rather than failing the whole page (the overview data is the primary read).
   const { data: certData, loading: certsLoading } = useResource(() => certificationsService.list());
+  // Readiness is its own endpoint and its own failure: losing it costs the two
+  // role panels, not the measured-evidence panels that come from the overview.
+  const { data: readinessData, error: readinessError } = useResource(() => careerService.readiness());
 
   if (loading || certsLoading) {
     return (
@@ -76,7 +102,9 @@ export default function CareerReadiness() {
   // Evidence Summary — every tile measured from live endpoints.
   const evidenceTiles = [
     { icon: FolderGit2, label: "Repositories", value: String(o.totalRepositories), source: "connected" },
-    { icon: Target, label: "Analyses", value: String(o.totalAnalyzed), source: "completed" },
+    // Not a count of analyses: the overview takes the latest analysis per
+    // repository, so this is repositories that have one. See totalAnalyzed.
+    { icon: Target, label: "Repos analyzed", value: String(o.totalAnalyzed), source: "at least once" },
     { icon: Code2, label: "Skills", value: String(o.skillsList.length), source: `${practicallyEvidenced} evidenced` },
     { icon: Award, label: "Certifications", value: String(certifications.length), source: certifications.length > 0 ? "recorded" : "none yet" },
     { icon: CheckCircle, label: "Credential-Verified", value: String(credentialVerified), source: "skill tier" },
@@ -98,14 +126,19 @@ export default function CareerReadiness() {
     .sort((a, b) => (a.score as number) - (b.score as number))
     .slice(0, 2);
 
-  const hasAnyEvidence = o.totalAnalyzed > 0 || o.skillsList.length > 0 || certifications.length > 0;
+  // Sorted highest-first by the backend; `bestMatch` is null when nothing has
+  // been demonstrated yet, which is why the top role alone is not enough.
+  const roles: RoleReadiness[] = readinessData?.readiness.roles ?? [];
+  const best = readinessData?.readiness.bestMatch
+    ? roles.find((r) => r.role === readinessData.readiness.bestMatch) ?? null
+    : null;
 
   return (
     <PageContainer
       title="Career Readiness"
       description="Role readiness matching and evidence-based career signals."
     >
-      {/* ── Readiness score: honestly unavailable — no backend model exists ── */}
+      {/* ── Readiness against the best-matching role ── */}
       <GlassCard hover={false} className="p-8 mb-6 text-center relative overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none"
@@ -116,16 +149,32 @@ export default function CareerReadiness() {
             <Briefcase className="w-6 h-6" />
           </div>
           <h2 className="text-lg font-bold text-white uppercase tracking-wider">Career Readiness Score</h2>
-          <p className="text-5xl font-extrabold text-white/25 select-none">—</p>
-          <p className="text-[13px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            DevProof does not compute a readiness score yet — there is no role-matching model in the
-            backend, so no number is shown here rather than an invented one.
-          </p>
-          <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 mt-1">
-            <p className="text-[11px] text-amber-100/70 font-semibold uppercase tracking-widest">
-              Role matching — coming soon
-            </p>
-          </div>
+          {best ? (
+            <>
+              <p className="text-5xl font-extrabold tabular-nums" style={{ color: scoreColor(best.score) }}>
+                {best.score}
+                <span className="text-xl text-white/25 font-bold">/100</span>
+              </p>
+              <p className="text-[13px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                Your strongest match is <span className="text-white/80 font-semibold">{best.role}</span>, with{" "}
+                {best.requirementsMet} of {best.requirementsTotal} requirements met. The score is the share of
+                requirement weight you meet — not a model's opinion — and every requirement behind it is
+                listed below.
+              </p>
+              <div className="max-w-sm w-full mt-1">
+                <Bar score={best.score} color={scoreColor(best.score)} />
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-5xl font-extrabold text-white/25 select-none">—</p>
+              <p className="text-[13px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                Readiness is computed from evidence you have recorded, and there is none yet. Analyze a
+                repository, record a skill or add a certification and a score appears here — it is never
+                estimated in the meantime.
+              </p>
+            </>
+          )}
         </div>
       </GlassCard>
 
@@ -242,31 +291,75 @@ export default function CareerReadiness() {
         </div>
       </div>
 
-      {/* ── Readiness breakdown: unavailable until the model exists ── */}
+      {/* ── Role readiness, role by role, with the requirements behind each ── */}
       <div className="mb-6">
         <SLabel>Role Readiness Breakdown</SLabel>
         <GlassCard hover={false} className="p-6 md:p-8">
-          <div className="flex flex-col items-center text-center gap-3 py-4">
-            <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/35">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-              {hasAnyEvidence ? "Awaiting the readiness model" : "No evidence to assess yet"}
-            </h3>
-            <p className="text-[12px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              {hasAnyEvidence
-                ? "Your evidence base is growing — analyses, skills, and credentials are recorded. Role-by-role readiness percentages require the role-matching model, which is not built yet."
-                : "Analyze repositories, record skills, and add certifications — the readiness model will consume exactly this evidence when it ships."}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 w-full">
-              {["Frontend", "Backend", "Full Stack", "SDE-1"].map((role) => (
-                <div key={role} className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{role}</p>
-                  <p className="text-sm font-bold text-white/25 mt-1.5">—</p>
+          {readinessError ? (
+            <UnavailableNote>
+              Readiness could not be loaded: {readinessError}. Every other figure on this page is
+              unaffected.
+            </UnavailableNote>
+          ) : roles.length === 0 ? (
+            <UnavailableNote>No roles are defined to assess against.</UnavailableNote>
+          ) : (
+            <div className="flex flex-col gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {roles.map((role) => (
+                  <div
+                    key={role.roleId}
+                    className="rounded-xl border px-4 py-3.5"
+                    style={{
+                      borderColor: role === best ? `${scoreColor(role.score)}40` : "rgba(255,255,255,0.07)",
+                      background: role === best ? `${scoreColor(role.score)}0d` : "rgba(255,255,255,0.02)",
+                    }}
+                  >
+                    <div className="flex items-baseline justify-between gap-2 mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 truncate" title={role.role}>
+                        {role.role}
+                      </p>
+                      <p className="text-sm font-bold tabular-nums shrink-0" style={{ color: scoreColor(role.score) }}>
+                        {role.score}%
+                      </p>
+                    </div>
+                    <Bar score={role.score} color={scoreColor(role.score)} />
+                    <p className="text-[10px] text-white/25 mt-2">
+                      {role.requirementsMet} of {role.requirementsTotal} requirements met
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {best && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-1">
+                    What {best.role} asks for
+                  </p>
+                  <p className="text-[11px] text-white/25 mb-4">{best.summary}</p>
+                  <div className="flex flex-col divide-y divide-white/[0.05]">
+                    {best.requirements.map((r) => (
+                      <div key={r.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
+                        {r.met ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                        ) : (
+                          <Circle className="w-3.5 h-3.5 text-white/20 shrink-0 mt-0.5" />
+                        )}
+                        <span className="min-w-0 flex-1">
+                          <span className={`text-[12px] block ${r.met ? "text-white/70" : "text-white/45"}`}>
+                            {r.label}
+                          </span>
+                          <span className="text-[11px] text-white/25 block">{r.evidence}</span>
+                        </span>
+                        <span className="text-[10px] text-white/20 shrink-0 mt-0.5 uppercase tracking-widest">
+                          {WEIGHT_LABEL[r.weight] ?? `weight ${r.weight}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          )}
         </GlassCard>
       </div>
 
@@ -274,9 +367,9 @@ export default function CareerReadiness() {
       <GlassCard hover={false} className="p-5">
         <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
           Every count on this page is measured from your connected repositories, completed analyses,
-          recorded skills, and saved certifications. The career readiness score and role percentages
-          are hidden rather than estimated — DevProof will only show them once a real readiness model
-          produces them.
+          recorded skills, and saved certifications. The readiness percentages are arithmetic over
+          those records, not a prediction: each one is the share of requirement weight met, and every
+          requirement names the evidence that did or did not satisfy it.
         </p>
       </GlassCard>
     </PageContainer>
