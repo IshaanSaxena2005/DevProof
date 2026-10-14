@@ -30,21 +30,23 @@ export function RecordForm({
   const submitLabel = isCourse ? "Save course" : "Save certification";
   const savingLabel = isCourse ? "Saving course…" : "Saving certification…";
 
-  const [name, setName] = useState((initial as Course)?.title ?? (initial as Certification)?.name ?? "");
-  const [platform, setPlatform] = useState((initial as Course)?.platform ?? "");
-  const [issuer, setIssuer] = useState((initial as Certification)?.issuer ?? "");
-  const [isCompleted, setIsCompleted] = useState(Boolean((initial as Course)?.isCompleted));
-  const [completedAt, setCompletedAt] = useState(
-    (initial as Course)?.completedAt ? (initial as Course).completedAt.slice(0, 10) : ""
+  // One cast each rather than one per read: the dates are nullable, so a second
+  // unguarded cast of the same value is what made these reads possibly-null.
+  const course = isCourse ? (initial as Course | undefined) : undefined;
+  const certification = isCourse ? undefined : (initial as Certification | undefined);
+
+  const [name, setName] = useState(course?.title ?? certification?.name ?? "");
+  const [platform, setPlatform] = useState(course?.platform ?? "");
+  const [issuer, setIssuer] = useState(certification?.issuer ?? "");
+  const [isCompleted, setIsCompleted] = useState(Boolean(course?.isCompleted));
+  const [completedAt, setCompletedAt] = useState(course?.completedAt?.slice(0, 10) ?? "");
+  // A certification's URL is credentialUrl; certificateUrl is the course field.
+  const [certificateUrl, setCertificateUrl] = useState(
+    course?.certificateUrl ?? certification?.credentialUrl ?? ""
   );
-  const [certificateUrl, setCertificateUrl] = useState((initial as Course)?.certificateUrl ?? (initial as Certification)?.certificateUrl ?? "");
-  const [credentialId, setCredentialId] = useState((initial as Certification)?.credentialId ?? "");
-  const [issueDate, setIssueDate] = useState(
-    (initial as Certification)?.issueDate ? (initial as Certification).issueDate.slice(0, 10) : ""
-  );
-  const [skillsText, setSkillsText] = useState(
-    (initial as Course)?.learnedSkills?.length ? (initial as Course).learnedSkills.join(", ") : ""
-  );
+  const [credentialId, setCredentialId] = useState(certification?.credentialId ?? "");
+  const [issueDate, setIssueDate] = useState(certification?.issueDate?.slice(0, 10) ?? "");
+  const [skillsText, setSkillsText] = useState(course?.learnedSkills?.join(", ") ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,14 +119,14 @@ export function RecordForm({
           name: name.trim(),
           issuer: issuer.trim(),
           ...(credentialId.trim() ? { credentialId: credentialId.trim() } : {}),
-          ...(certificateUrl.trim() ? { certificateUrl: certificateUrl.trim() } : {}),
+          ...(certificateUrl.trim() ? { credentialUrl: certificateUrl.trim() } : {}),
           ...(issueDate ? { issueDate: new Date(issueDate).toISOString() } : {}),
         };
         await onSubmitProp?.(input);
       }
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : `Could not save the ${isCourse ? \"course\" : \"certification\"}.`);
+      setError(err instanceof ApiError ? err.message : `Could not save the ${isCourse ? "course" : "certification"}.`);
       setSaving(false);
     }
   }
