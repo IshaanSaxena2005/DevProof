@@ -52,6 +52,21 @@ export class ResumeController {
     }
   };
 
+  /**
+   * Re-run extraction and structured analysis over the stored file.
+   *
+   * Deterministic: it rewrites only this user's own parse fields and creates
+   * no skills, no certifications, and no duplicate records of any kind.
+   */
+  static analyseResume = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const result = await ResumeService.reanalyse(req.user!.id);
+      return successResponse(res, 200, 'Resume analysed successfully', result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   static deleteResume = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       await ResumeService.remove(req.user!.id);

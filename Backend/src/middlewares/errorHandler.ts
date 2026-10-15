@@ -26,6 +26,19 @@ export const globalErrorHandler = (
     return errorResponse(res, 400, 'Validation Error', formattedErrors);
   }
 
+  // Multer's own failures (oversized file, wrong field name, too many files)
+  // are client input problems, not server errors. Without this branch they
+  // fell through to the generic 500 below, leaking multer internals in
+  // development and reading as a crash to the user.
+  if (err instanceof Error && err.name === 'MulterError') {
+    const code = (err as NodeJS.ErrnoException & { code?: string }).code;
+    const message =
+      code === 'LIMIT_FILE_SIZE'
+        ? 'That file is too large. Keep it to 5MB or smaller.'
+        : 'Upload failed. Attach a single file in the expected field.';
+    return errorResponse(res, 400, message);
+  }
+
   // Handle Prisma Known Request Errors safely
   if (err.code && typeof err.code === 'string' && err.code.startsWith('P')) {
     if (err.code === 'P2002') {

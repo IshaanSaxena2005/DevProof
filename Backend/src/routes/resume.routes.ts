@@ -23,6 +23,7 @@ const upload = multer({
 router.get('/', ResumeController.getResume);
 router.get('/download', ResumeController.downloadResume);
 router.post('/', upload.single('resume'), ResumeController.uploadResume);
+router.post('/analyse', ResumeController.analyseResume);
 router.delete('/', ResumeController.deleteResume);
 
 export default router;

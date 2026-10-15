@@ -52,3 +52,132 @@ test('an empty file is rejected rather than stored', () => {
   const buffer = Buffer.alloc(0);
   assert.throws(() => validate(upload({ buffer, size: 0 })), /not a valid pdf/i);
 });
+
+/* ── structured analysis (deterministic, no PDF required) ─────────────── */
+
+const { ResumeAnalysisService } = require('../dist/services/resumeAnalysis.service.js');
+
+const HEADER = [
+  'Ada Example',
+  'ada.example@example.com | +1 555 010 2024 | linkedin.com/in/adaexample | github.com/adaexample'
+];
+
+const SECTIONS = {
+  summary: 'Backend engineer focused on reliable APIs.',
+  experience: [
+    'Senior Backend Engineer',
+    'Example Systems Pvt Ltd',
+    '2021 - Present',
+    '- Designed a reconciliation service',
+    'Backend Intern',
+    'Acme Analytics Pvt Ltd',
+    'Jun 2020 - Aug 2020',
+    '- Built dashboards'
+  ].join('\n'),
+  education: 'B.Tech in Computer Science, Example Institute of Technology, 2017 - 2021',
+  projects: [
+    'Reconciliation Dashboard',
+    '- Real-time views using React',
+    'https://github.com/adaexample/recon'
+  ].join('\n'),
+  certifications: [
+    'AWS Certified Solutions Architect - Associate, Amazon Web Services, 2023, ID: AWS-PCA-98213',
+    'Certified Kubernetes Application Developer, Cloud Native Computing Foundation, 2022',
+    'MongoDB Associate Developer',
+    'Certificate of Completion in Machine Learning'
+  ].join('\n'),
+  achievements: '- Winner, Example Hack 2022\n- Merged pull requests into tooling'
+};
+
+const analysis = ResumeAnalysisService.analyse(HEADER, SECTIONS);
+
+test('contact details are read from the header block only', () => {
+  assert.equal(analysis.contact.email, 'ada.example@example.com');
+  assert.equal(analysis.contact.phone, '+1 555 010 2024');
+  assert.deepEqual(
+    analysis.contact.links.map((l) => l.label),
+    ['LinkedIn', 'GitHub']
+  );
+});
+
+test('an education line yields qualification, institution and period', () => {
+  const [entry] = analysis.education;
+  assert.equal(entry.qualification, 'B.Tech in Computer Science');
+  assert.equal(entry.institution, 'Example Institute of Technology');
+  assert.equal(entry.period, '2017 - 2021');
+});
+
+test('experience entries carry role, organisation, dates, duration and bullets', () => {
+  assert.equal(analysis.experience.length, 2);
+
+  const [senior, intern] = analysis.experience;
+  assert.equal(senior.role, 'Senior Backend Engineer');
+  assert.equal(senior.organization, 'Example Systems Pvt Ltd');
+  assert.equal(senior.period, '2021 - Present');
+  // A "Present" end counts to now, so only the shape is pinned here.
+  assert.ok(senior.durationMonths !== null && senior.durationMonths >= 60);
+  assert.deepEqual(senior.highlights, ['Designed a reconciliation service']);
+
+  assert.equal(intern.role, 'Backend Intern');
+  assert.equal(intern.period, 'Jun 2020 - Aug 2020');
+  assert.equal(intern.durationMonths, 2, 'Jun 2020 to Aug 2020 is two months');
+});
+
+test('a project entry keeps its technologies and link, URL lines join it', () => {
+  // The bare URL line belongs to the project above it, not a new entry.
+  assert.equal(analysis.projects.length, 1);
+  const [project] = analysis.projects;
+  assert.equal(project.name, 'Reconciliation Dashboard');
+  assert.deepEqual(project.technologies, ['React']);
+  assert.equal(project.link, 'https://github.com/adaexample/recon');
+});
+
+test('certification candidates carry only what the line actually contains', () => {
+  const [aws, k8s, mongo, unknown] = analysis.certifications;
+
+  assert.equal(aws.title, 'AWS Certified Solutions Architect - Associate');
+  assert.equal(aws.issuer, 'Amazon Web Services');
+  assert.equal(aws.issueDate, '2023');
+  assert.equal(aws.credentialId, 'AWS-PCA-98213');
+  assert.equal(aws.needsReview, false);
+
+  assert.equal(k8s.issuer, 'Cloud Native Computing Foundation');
+  assert.equal(k8s.credentialId, null, 'nothing ID-like must stay null');
+
+  assert.equal(mongo.issuer, 'MongoDB');
+  assert.equal(mongo.needsReview, false);
+
+  // No known issuer anywhere on the line: the parser says so rather than guessing.
+  assert.equal(unknown.title, 'Certificate of Completion in Machine Learning');
+  assert.equal(unknown.issuer, null);
+  assert.equal(unknown.needsReview, true);
+});
+
+test('a repeated heading line is not a certification candidate', () => {
+  const withHeading = ResumeAnalysisService.analyse([], {
+    certifications: 'Certifications\nAWS Solutions Architect, AWS, 2022'
+  });
+  assert.equal(withHeading.certifications.length, 1);
+  // "AWS" is the issuer's acronym, not its full name, so the title keeps it
+  // — the parser removes only text it actually matched elsewhere on the line.
+  assert.equal(withHeading.certifications[0].title, 'AWS Solutions Architect AWS');
+  assert.equal(withHeading.certifications[0].issuer, 'Amazon Web Services');
+});
+
+test('achievements are de-bulleted and the heading is dropped', () => {
+  assert.deepEqual(analysis.achievements, [
+    'Winner, Example Hack 2022',
+    'Merged pull requests into tooling'
+  ]);
+});
+
+test('an empty resume fabricates nothing', () => {
+  const empty = ResumeAnalysisService.analyse([], {});
+  assert.deepEqual(empty.contact, { email: null, phone: null, links: [] });
+  assert.equal(empty.summary, null);
+  assert.deepEqual(empty.education, []);
+  assert.deepEqual(empty.experience, []);
+  assert.deepEqual(empty.projects, []);
+  assert.deepEqual(empty.certifications, []);
+  assert.deepEqual(empty.achievements, []);
+});

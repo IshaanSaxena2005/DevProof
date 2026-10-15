@@ -5,6 +5,7 @@ import { Resume, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/appError';
 import { skillsNamedIn } from './skill.service';
+import { ResumeAnalysisService, type ResumeAnalysis } from './resumeAnalysis.service';
 
 // ==========================================
 // RESUME SERVICE
@@ -46,6 +47,13 @@ export interface ParsedResume {
    */
   detectedSkills: string[];
   wordCount: number;
+  /**
+   * Deterministic structured reading of the sections, computed at upload or
+   * re-analysis time. Absent on records parsed before this field existed —
+   * those still render from `sections` and can gain an analysis via
+   * POST /resume/analyse, which re-reads the stored file.
+   */
+  analysis?: ResumeAnalysis;
 }
 
 export interface ResumeUpload {
@@ -119,6 +127,64 @@ export class ResumeService {
     }
 
     return { resume: ResumeService.toSummary(resume), parsed, parseError };
+  }
+
+  /**
+   * Re-run extraction and analysis over the file already on disk.
+   *
+   * Deterministic and side-effect free with respect to the user's records:
+   * it rewrites only this row's parse fields, creates no skills and no
+   * certifications, and cannot duplicate anything — every derived value is
+   * recomputed from the same bytes. This is also how records uploaded before
+   * structured analysis existed gain one, without a migration.
+   */
+  static async reanalyse(userId: string) {
+    const existing = await prisma.resume.findUnique({ where: { userId } });
+    if (!existing) {
+      throw AppError.notFound('No resume has been uploaded.');
+    }
+
+    const { absolutePath } = await ResumeService.locate(userId);
+
+    let buffer: Buffer;
+    try {
+      buffer = await fs.readFile(absolutePath);
+    } catch {
+      throw AppError.notFound(
+        'The stored resume file could not be read. Upload the resume again.'
+      );
+    }
+
+    let parsed: ParsedResume | null = null;
+    let parseError: string | null = null;
+    let pageCount: number | null = null;
+
+    try {
+      const extraction = await ResumeService.extract(buffer);
+      parsed = extraction.parsed;
+      pageCount = extraction.pageCount;
+    } catch (error) {
+      // A file that used to parse but no longer does keeps its previous
+      // analysis intact rather than being silently blanked.
+      parseError = (error as Error).message;
+      const resume = await prisma.resume.update({
+        where: { userId },
+        data: { parseError }
+      });
+      return { resume: ResumeService.toSummary(resume) };
+    }
+
+    const resume = await prisma.resume.update({
+      where: { userId },
+      data: {
+        pageCount,
+        extractedText: parsed ? Object.values(parsed.sections).join('\n\n') || null : null,
+        parsed: parsed as unknown as Prisma.InputJsonValue,
+        parseError: null
+      }
+    });
+
+    return { resume: ResumeService.toSummary(resume) };
   }
 
   static async remove(userId: string): Promise<void> {
@@ -204,12 +270,15 @@ export class ResumeService {
       );
     }
 
+    const { header, sections } = ResumeService.splitSections(lines);
+
     return {
       pageCount: document.numPages,
       parsed: {
-        sections: ResumeService.splitSections(lines),
+        sections,
         detectedSkills: skillsNamedIn(text).map((skill) => skill.name),
-        wordCount: text.split(/\s+/).filter(Boolean).length
+        wordCount: text.split(/\s+/).filter(Boolean).length,
+        analysis: ResumeAnalysisService.analyse(header, sections)
       }
     };
   }
@@ -217,11 +286,16 @@ export class ResumeService {
   /**
    * Group lines under the last recognised heading.
    *
-   * Text before any heading is discarded rather than guessed at — it is usually
-   * the name and contact block, and attributing it to a section would be an
-   * invention. An unrecognised layout simply yields fewer sections.
+   * Text before any heading is returned separately as the header block rather
+   * than guessed at or thrown away — it is usually the name and contact block,
+   * which attribution to a section would invent, but the contact analyser reads
+   * it deliberately. An unrecognised layout simply yields fewer sections.
    */
-  private static splitSections(lines: string[]): Record<string, string> {
+  private static splitSections(lines: string[]): {
+    header: string[];
+    sections: Record<string, string>;
+  } {
+    const header: string[] = [];
     const sections: Record<string, string[]> = {};
     let current: string | null = null;
 
@@ -235,13 +309,16 @@ export class ResumeService {
         continue;
       }
       if (current) sections[current].push(line);
+      else header.push(line);
     }
 
-    return Object.fromEntries(
+    const compact = Object.fromEntries(
       Object.entries(sections)
         .filter(([, body]) => body.length > 0)
         .map(([key, body]) => [key, body.join('\n')])
     );
+
+    return { header, sections: compact };
   }
 
   /** Deleting a file that is already gone is not an error worth surfacing. */

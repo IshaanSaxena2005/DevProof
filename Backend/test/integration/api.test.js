@@ -332,3 +332,184 @@ test('no refresh-token endpoint exists that could establish a session', async ()
   assert.equal((await anon.get('/auth/refresh')).status, 404);
   assert.equal((await anon.get('/auth/me')).status, 401, 'no tokenless request may end up authenticated');
 });
+
+/* ── resume upload, structured analysis and certification review ──────── */
+
+const { buildSyntheticResumePdf, buildPdf } = require('../helpers/pdf.js');
+const { prisma } = require('./setup');
+
+/**
+ * Multipart upload through the same session cookie the shared client carries.
+ * Bypasses the JSON helper because multipart needs the runtime to set its own
+ * boundary header.
+ */
+async function uploadResume(baseUrl, cookie, buffer, { mime = 'application/pdf', filename = 'resume.pdf' } = {}) {
+  const form = new FormData();
+  form.append('resume', new Blob([new Uint8Array(buffer)], { type: mime }), filename);
+
+  const response = await fetch(`${baseUrl}/resume`, {
+    method: 'POST',
+    headers: cookie ? { Cookie: cookie } : {},
+    body: form
+  });
+
+  const text = await response.text();
+  let body = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text;
+  }
+  return { status: response.status, body, headers: response.headers };
+}
+
+test('a readable PDF upload produces a structured analysis', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-ok');
+
+  const uploaded = await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+  assert.equal(uploaded.status, 201);
+  assert.equal(uploaded.body.data.parseError, null);
+
+  const { status, body } = await client.get('/resume');
+  assert.equal(status, 200);
+
+  const analysis = body.data.resume.parsed.analysis;
+  assert.equal(analysis.version, 1);
+  assert.equal(analysis.contact.email, 'ada.example@example.com');
+  assert.equal(analysis.education.length, 1);
+  assert.match(analysis.education[0].qualification, /b\.tech/i);
+  assert.match(analysis.education[0].institution, /Example Institute/);
+  assert.equal(analysis.experience.length, 2);
+  assert.equal(analysis.certifications.length, 4);
+  assert.equal(analysis.certifications[0].credentialId, 'AWS-PCA-98213');
+  assert.equal(analysis.certifications[3].needsReview, true, 'an issuer-less line must flag review');
+  assert.ok(analysis.projects[0].technologies.includes('React'));
+  assert.equal(analysis.achievements.length, 2);
+});
+
+test('analysis alone creates no certifications and no skills', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-quiet');
+
+  const uploaded = await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+  assert.equal(uploaded.status, 201);
+
+  const certs = await client.get('/certifications');
+  assert.equal(certs.body.data.certifications.length, 0, 'upload must not create certification records');
+
+  const skills = await client.get('/skills');
+  assert.equal(skills.body.data.skills.length, 0, 'upload must not create skill records');
+});
+
+test('re-analysis is deterministic and creates nothing', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-re');
+  await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+
+  const first = await client.post('/resume/analyse');
+  assert.equal(first.status, 200);
+  const second = await client.post('/resume/analyse');
+  assert.equal(second.status, 200);
+
+  const { body } = await client.get('/resume');
+  assert.equal(body.data.resume.parsed.analysis.certifications.length, 4, 're-analysis must not duplicate candidates');
+  assert.equal((await client.get('/certifications')).body.data.certifications.length, 0);
+  assert.equal((await client.get('/skills')).body.data.skills.length, 0);
+});
+
+test('confirming a resume candidate uses the existing certification API without duplication', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-confirm');
+  await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+
+  // What the confirmation workflow sends after the user reviews and confirms.
+  const created = await client.post('/certifications', {
+    name: 'AWS Certified Solutions Architect - Associate',
+    issuer: 'Amazon Web Services',
+    credentialId: 'AWS-PCA-98213'
+  });
+  assert.equal(created.status, 201);
+
+  // Re-analysis must never re-add it.
+  await client.post('/resume/analyse');
+  const certs = await client.get('/certifications');
+  assert.equal(certs.body.data.certifications.length, 1);
+
+  // Replacing the resume keeps the confirmed record.
+  await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+  assert.equal((await client.get('/certifications')).body.data.certifications.length, 1);
+});
+
+test('an unsupported file type and an oversized file are client errors, not crashes', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-bad');
+
+  const wrongType = await uploadResume(server.baseUrl, client.cookie, Buffer.from('hello'), {
+    mime: 'text/plain'
+  });
+  assert.equal(wrongType.status, 400);
+  assert.match(wrongType.body.message, /only pdf/i);
+
+  const oversized = await uploadResume(
+    server.baseUrl,
+    client.cookie,
+    Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(6 * 1024 * 1024)]),
+    { filename: 'huge.pdf' }
+  );
+  assert.equal(oversized.status, 400, 'multer LIMIT_FILE_SIZE must surface as a 400');
+  assert.match(oversized.body.message, /too large|5MB/i);
+});
+
+test('a PDF with no readable text keeps the file and reports a parse error', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-notext');
+
+  const uploaded = await uploadResume(server.baseUrl, client.cookie, buildPdf([]));
+  assert.equal(uploaded.status, 201, 'the upload itself succeeded');
+  assert.match(uploaded.body.data.parseError, /no text/i);
+  assert.equal(uploaded.body.data.parsed, null);
+
+  const { body } = await client.get('/resume');
+  assert.match(body.data.resume.parseError, /no text/i);
+  assert.equal(body.data.resume.parsed, null, 'no fabricated analysis for an unreadable file');
+});
+
+test('one user cannot see, download or re-analyse another user\'s resume', async () => {
+  const alice = (await registerUser(server.baseUrl, 'resume-alice')).client;
+  const bob = (await registerUser(server.baseUrl, 'resume-bob')).client;
+
+  await uploadResume(server.baseUrl, alice.cookie, buildSyntheticResumePdf());
+  assert.ok((await alice.get('/resume')).body.data.resume, 'precondition failed: alice has a resume');
+
+  assert.equal((await bob.get('/resume')).body.data.resume, null, 'bob must not see alice\'s resume');
+  assert.equal((await bob.get('/resume/download')).status, 404);
+  assert.equal((await bob.post('/resume/analyse')).status, 404);
+
+  // Alice is untouched.
+  assert.ok((await alice.get('/resume')).body.data.resume);
+  assert.equal((await alice.get('/resume/download')).status, 200);
+});
+
+test('a record from before structured analysis stays usable and gains one on demand', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-legacy');
+  await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+
+  // Simulate a pre-analysis record: same row, legacy parsed shape.
+  const mine = (await client.get('/resume')).body.data.resume;
+  await prisma.resume.update({
+    where: { id: mine.id },
+    data: {
+      parsed: {
+        sections: mine.parsed.sections,
+        detectedSkills: mine.parsed.detectedSkills,
+        wordCount: mine.parsed.wordCount
+      }
+    }
+  });
+
+  // Still readable: sections and skills render, analysis is simply absent.
+  const legacy = (await client.get('/resume')).body.data.resume;
+  assert.ok(legacy.parsed.sections);
+  assert.equal(legacy.parsed.analysis, undefined);
+
+  // Re-analysis of the stored file fills the gap — no re-upload needed.
+  const re = await client.post('/resume/analyse');
+  assert.equal(re.status, 200);
+  const revived = (await client.get('/resume')).body.data.resume;
+  assert.equal(revived.parsed.analysis.certifications.length, 4);
+});
