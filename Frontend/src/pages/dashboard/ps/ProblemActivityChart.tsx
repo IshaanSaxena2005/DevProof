@@ -18,7 +18,7 @@ export default function ProblemActivityChart({ data }: { data: ActivityPoint[] }
   const [hovered, setHovered] = useState<number | null>(null);
 
   const W = 720;
-  const H = 220;
+  const H = 340;
   const PAD_X = 2;
   const PAD_TOP = 14;
   const PAD_BOTTOM = 26;
@@ -58,7 +58,7 @@ export default function ProblemActivityChart({ data }: { data: ActivityPoint[] }
 
   return (
     <div className="relative w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[220px]" preserveAspectRatio="none" role="img" aria-label="Problems solved over the selected period">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[340px]" preserveAspectRatio="none" role="img" aria-label="Problems solved over the selected period">
         <defs>
           <linearGradient id="ps-area-fill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="rgba(22,255,0,0.16)" />
