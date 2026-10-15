@@ -4,28 +4,15 @@ import { AuthService } from '../services/auth.service';
 import { GitHubSyncService } from '../services/githubSync.service';
 import { successResponse } from '../utils/apiResponse';
 import { env } from '../config/env';
+import { COOKIE_NAME, COOKIE_OPTIONS } from '../config/cookies';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { AppError } from '../utils/appError';
 import { prisma } from '../config/database';
-
-const COOKIE_NAME = 'token';
 
 /** Fallback cookie lifetime used only if the token carries no `exp` claim. */
 const FALLBACK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const GITHUB_OAUTH_STATE_COOKIE = 'github_oauth_state';
 const GITHUB_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
-
-/**
- * Shared between setting and clearing the cookie. `clearCookie` only removes a
- * cookie when these attributes match the ones it was set with, so they must
- * come from a single source.
- */
-const COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  path: '/'
-};
 
 const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
