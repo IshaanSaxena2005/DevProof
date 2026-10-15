@@ -292,6 +292,7 @@ export default function LearningAchievements() {
               kind={createKind}
               onSubmit={(input) => handleSave(createKind, input)}
               onCancel={() => setCreateKind(null)}
+              onSuccess={() => setCreateKind(null)}
             />
           )}
 
@@ -306,6 +307,7 @@ export default function LearningAchievements() {
               }
               onSubmit={(input) => handleSave(editTarget.kind, input, editTarget.id)}
               onCancel={() => setEditTarget(null)}
+              onSuccess={() => setEditTarget(null)}
             />
           )}
 
