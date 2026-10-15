@@ -153,7 +153,7 @@ export default function ProblemActivityChart({ data }: { data: ActivityPoint[] }
       )}
 
       {/* X labels */}
-      <div className="flex justify-between mt-2 px-0.5">
+      <div className="flex justify-between mt-3 px-0.5">
         {data.map((d, i) =>
           i % labelEvery === 0 || i === data.length - 1 ? (
             <span key={`${d.label}-${i}`} className="text-[10px] text-white/30">

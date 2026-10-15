@@ -577,8 +577,8 @@ export default function ProblemSolving() {
       {/* ── 3. Problem solving analytics ── */}
       <Reveal delay={0.15}>
         <SectionLabel>Problem Solving Analytics</SectionLabel>
-        <GlassCard hover={false} className="p-6 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <GlassCard hover={false} className="p-8 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-3.5 h-3.5 text-primary" />
               <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">Problems Solved — Last {period}</h3>
