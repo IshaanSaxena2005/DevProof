@@ -537,6 +537,18 @@ export interface CodingProfileRawStats {
   topics?: { tag: string; solved: number }[];
   languages?: { language: string; solved: number }[];
   recentSolves?: RecentSolve[];
+  /** GeeksforGeeks-specific statistics */
+  geeksforgeeks?: {
+    displayName: string | null;
+    codingScore: number | null;
+    monthlyScore: number | null;
+    instituteName: string | null;
+    instituteRank: string | null;
+    longestStreak: number | null;
+    problemOfTheDaySolved: number | null;
+    articlesPublished: number | null;
+    memberSince: string | null;
+  };
 }
 
 /**

@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, RefreshCw, LogOut } from "lucide-react";
 import GlassCard from "../../../components/GlassCard";
 import { CountUp, StatLabel } from "./shared";
 
@@ -13,6 +13,15 @@ export interface PlatformProfile {
   stats: { label: string; value: string }[];
   breakdown?: { label: string; count: number; color: string }[];
   progress?: { label: string; percent: number; caption: string };
+  /** GFG-specific metrics when available */
+  gfgStats?: {
+    codingScore: number | null;
+    monthlyScore: number | null;
+    longestStreak: number | null;
+    articlesPublished: number | null;
+  };
+  /** Whether difficulty breakdown is unavailable */
+  difficultyUnavailable?: boolean;
 }
 
 const BRAND: Record<PlatformProfile["platform"], { name: string; icon: React.ReactNode; tint: string }> = {
@@ -60,6 +69,10 @@ export default function PlatformCard({
   usernameValue,
   onUsernameChange,
   usernamePlaceholder,
+  onSync,
+  onDisconnect,
+  isSyncing = false,
+  isDisconnecting = false,
 }: {
   profile: PlatformProfile;
   onConnect?: () => void;
@@ -72,6 +85,14 @@ export default function PlatformCard({
   onUsernameChange?: (value: string) => void;
   /** Placeholder text for the username input */
   usernamePlaceholder?: string;
+  /** Handler for sync action */
+  onSync?: () => void;
+  /** Handler for disconnect action */
+  onDisconnect?: () => void;
+  /** Whether sync is in progress */
+  isSyncing?: boolean;
+  /** Whether disconnect is in progress */
+  isDisconnecting?: boolean;
 }) {
   const brand = BRAND[profile.platform];
 
@@ -134,7 +155,7 @@ export default function PlatformCard({
             </div>
 
             {/* Difficulty breakdown bars (LeetCode-style) */}
-            {profile.breakdown && (
+            {profile.breakdown ? (
               <div className="space-y-2">
                 {profile.breakdown.map((b, i) => (
                   <div key={b.label}>
@@ -154,17 +175,53 @@ export default function PlatformCard({
                   </div>
                 ))}
               </div>
+            ) : profile.difficultyUnavailable ? (
+              <div className="text-[11px] text-white/35 italic">
+                Difficulty breakdown unavailable from {profile.platform}
+              </div>
+            ) : null}
+
+            {/* GFG-specific metrics */}
+            {profile.gfgStats && (
+              <div className="grid grid-cols-2 gap-2">
+                {profile.gfgStats.codingScore !== null && (
+                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
+                    <StatLabel>Coding Score</StatLabel>
+                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.codingScore}</p>
+                  </div>
+                )}
+                {profile.gfgStats.monthlyScore !== null && (
+                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
+                    <StatLabel>Monthly Score</StatLabel>
+                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.monthlyScore}</p>
+                  </div>
+                )}
+                {profile.gfgStats.longestStreak !== null && (
+                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
+                    <StatLabel>Longest Streak</StatLabel>
+                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.longestStreak}</p>
+                  </div>
+                )}
+                {profile.gfgStats.articlesPublished !== null && (
+                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
+                    <StatLabel>Articles</StatLabel>
+                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.articlesPublished}</p>
+                  </div>
+                )}
+              </div>
             )}
 
-            {/* Secondary stats */}
-            <div className="grid grid-cols-3 gap-2.5 mt-auto">
-              {profile.stats.map((s) => (
-                <div key={s.label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
-                  <StatLabel>{s.label}</StatLabel>
-                  <p className="text-sm font-bold text-white mt-1 tabular-nums">{s.value}</p>
-                </div>
-              ))}
-            </div>
+            {/* Secondary stats (acceptance, rating, streak, etc.) */}
+            {profile.stats.length > 0 && (
+              <div className="grid grid-cols-3 gap-2.5 mt-auto">
+                {profile.stats.map((s) => (
+                  <div key={s.label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
+                    <StatLabel>{s.label}</StatLabel>
+                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{s.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Optional thin progress visualization */}
             {profile.progress && (
@@ -186,13 +243,35 @@ export default function PlatformCard({
               </div>
             )}
 
-            {/* Footer: sync recency + view profile. "Just synced" can only
-                appear immediately after a successful sync — a null
-                lastSyncedAt with a profile row renders honestly as a dash. */}
+            {/* Footer: sync/disconnect actions + view profile */}
             <div className="flex items-center justify-between gap-3 pt-1">
-              <span className="text-[10px] text-white/25">
-                {profile.lastSyncedAt ? `Synced ${profile.lastSyncedAt}` : "—"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-white/25">
+                  {profile.lastSyncedAt ? `Synced ${profile.lastSyncedAt}` : "—"}
+                </span>
+                {onSync && (
+                  <button
+                    onClick={onSync}
+                    disabled={isSyncing || isDisconnecting}
+                    className="flex items-center gap-1 text-[10px] font-bold text-white/40 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Sync profile"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`} />
+                    Sync
+                  </button>
+                )}
+                {onDisconnect && (
+                  <button
+                    onClick={onDisconnect}
+                    disabled={isSyncing || isDisconnecting}
+                    className="flex items-center gap-1 text-[10px] font-bold text-white/40 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Disconnect profile"
+                  >
+                    <LogOut className={`w-3 h-3 ${isDisconnecting ? "animate-pulse" : ""}`} />
+                    Disconnect
+                  </button>
+                )}
+              </div>
               {profile.profileUrl ? (
                 <a
                   href={profile.profileUrl}

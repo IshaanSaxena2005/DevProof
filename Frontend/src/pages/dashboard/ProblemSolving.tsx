@@ -173,6 +173,14 @@ function toPlatformCard(
     stats.push({ label: "Active days", value: String(profile.totalActiveDays) });
   }
 
+  // GFG-specific metrics
+  const gfgStats = platform === "GEEKSFORGEEKS" ? {
+    codingScore: profile.rawStats?.geeksforgeeks?.codingScore ?? null,
+    monthlyScore: profile.rawStats?.geeksforgeeks?.monthlyScore ?? null,
+    longestStreak: profile.rawStats?.geeksforgeeks?.longestStreak ?? null,
+    articlesPublished: profile.rawStats?.geeksforgeeks?.articlesPublished ?? null,
+  } : undefined;
+
   // Medium coverage is the one progress figure both sides of the ratio exist
   // for; without the site-wide total — or without a difficulty split, as on
   // GeeksforGeeks — there is nothing honest to show.
@@ -203,8 +211,10 @@ function toPlatformCard(
           { label: "Hard", count: profile.hardSolved ?? 0, color: DIFFICULTY_COLORS.hard },
         ]
       : undefined,
+    difficultyUnavailable: !hasDifficultySplit(profile),
     stats,
     progress,
+    gfgStats,
   };
 }
 
@@ -231,6 +241,7 @@ export default function ProblemSolving() {
     []
   );
 
+  const [busy, setBusy] = useState<CodingPlatform | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [handleDrafts, setHandleDrafts] = useState<Record<string, string>>({});
 
@@ -240,6 +251,7 @@ export default function ProblemSolving() {
   const anyConnected = profiles.length > 0;
 
   async function runConnect(platform: CodingPlatform, handle: string) {
+    setBusy(platform);
     setActionError(null);
     try {
       await codingProfilesService.connect(platform, handle.trim());
@@ -247,6 +259,37 @@ export default function ProblemSolving() {
       reload();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not connect that profile.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runSync(platform: CodingPlatform) {
+    setBusy(platform);
+    setActionError(null);
+    try {
+      await codingProfilesService.sync(platform);
+      reload();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Could not sync that profile.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runDisconnect(platform: CodingPlatform) {
+    if (!confirm(`Are you sure you want to disconnect your ${PLATFORM_LABEL[platform]} profile?`)) {
+      return;
+    }
+    setBusy(platform);
+    setActionError(null);
+    try {
+      await codingProfilesService.disconnect(platform);
+      reload();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Could not disconnect that profile.");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -284,6 +327,19 @@ export default function ProblemSolving() {
       never gets a CTA — it only reflects state. */
   const connectProps = (card: PlatformProfile, mirror: boolean) => {
     if (mirror) return {};
+    
+    // For connected platforms, provide sync and disconnect handlers
+    if (card.connected) {
+      const platform = card.platform === "LeetCode" ? "LEETCODE" : "GEEKSFORGEEKS";
+      return {
+        onSync: () => void runSync(platform),
+        onDisconnect: () => void runDisconnect(platform),
+        isSyncing: busy === platform,
+        isDisconnecting: busy === platform,
+      };
+    }
+    
+    // For unconnected platforms, provide connect handlers
     if (card.platform === "LeetCode" && !leetcode) {
       const draft = (handleDrafts["LEETCODE"] ?? "").trim();
       return {
@@ -418,14 +474,14 @@ export default function ProblemSolving() {
         focusDetail: "Connect a coding platform to see where your coverage is thinnest.",
         recommendationTitle: "Connect a platform",
         recommendationDetail:
-          "LeetCode and GeeksforGeeks can be connected below using your public username.",
+          "GeeksforGeeks can be connected below using your public username.",
       };
 
   /** Names the denominator, so the percentages are never read against the wrong one. */
   const shareBasis =
     overview.classified === overview.total
       ? "of all solves"
-      : "of solves with a reported difficulty";
+      : `of ${overview.classified} solves with reported difficulty (${overview.total - overview.classified} from platforms without difficulty data)`;
 
   const overviewCards = [
     { icon: Target, label: "Total Problems Solved", value: overview.total, sub: `Across ${profiles.length} platform${profiles.length === 1 ? "" : "s"}`, color: "text-primary", border: "border-primary/25", bg: "bg-primary/10" },
