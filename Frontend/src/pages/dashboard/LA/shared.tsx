@@ -139,8 +139,6 @@ export function RecordCard({
         ? `Issued ${new Date(issueDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`
         : "Not dated";
 
-  const subtitle = kind === "course" ? issuerOrPlatform : issuerOrPlatform;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -179,13 +177,13 @@ export function RecordCard({
           <p className="text-[12px] text-white/45 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             {kind === "course" ? (
               <>
-                <Globe className="w-3 h-3 text-white/25 shrink-0" /> {subtitle}
+                <Globe className="w-3 h-3 text-white/25 shrink-0" /> {issuerOrPlatform}
                 <span className="text-white/20">·</span>
                 <CalendarDays className="w-3 h-3 text-white/25 shrink-0" /> {formattedDate}
               </>
             ) : (
               <>
-                <Building2 className="w-3 h-3 text-white/25 shrink-0" /> {subtitle}
+                <Building2 className="w-3 h-3 text-white/25 shrink-0" /> {issuerOrPlatform}
                 <span className="text-white/20">·</span>
                 <CalendarDays className="w-3 h-3 text-white/25 shrink-0" /> {formattedDate}
               </>
@@ -194,23 +192,12 @@ export function RecordCard({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {kind === "course" && certificateUrl && (
+          {certificateUrl && (
             <a
               href={certificateUrl}
               target="_blank"
               rel="noreferrer"
-              title="Open certificate"
-              className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-primary hover:border-primary/40 transition-all cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
-          {kind === "certification" && certificateUrl && (
-            <a
-              href={certificateUrl}
-              target="_blank"
-              rel="noreferrer"
-              title="Open credential"
+              title={kind === "course" ? "Open certificate" : "Open credential"}
               className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-primary hover:border-primary/40 transition-all cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />

@@ -4,37 +4,45 @@ import PageContainer from "../../components/PageContainer";
 import { LAReveal, LALabel } from "./LA/shared";
 import { OverviewMetrics, LearningOverviewPanel, type OverviewMetric } from "./LA/LearningOverview";
 import {
-  CertificationCard,
-  CertificationsEmpty,
-  CertificationForm,
-  AddCertificationButton,
-} from "./LA/CertificationCard";
-import {
   HackathonsEmpty,
   SkillsFromLearning,
   LearningTimeline,
   type TimelineEvent,
 } from "./LA/EmptySections";
 import ResumeSection from "./LA/ResumeSection";
-import CourseSection from "./LA/CourseSection";
 import { AchievementEvidence, DevProofInsight } from "./LA/AchievementEvidence";
+import { RecordForm } from "./LA/RecordForm";
+import { RecordCard, type RecordKind } from "./LA/shared";
 import { certificationsService } from "../../services/certifications";
 import { coursesService } from "../../services/courses";
 import { useResource } from "../../lib/useResource";
-import type { Certification, CertificationInput } from "../../lib/types";
+import type { Certification, CertificationInput, Course, CourseInput } from "../../lib/types";
+
+/** One loaded record of the combined section — the kind discriminant keeps the
+ * two backend records separate: a course is never rendered or saved as a
+ * certification, or the other way around. */
+type CombinedRecord =
+  | { kind: "course"; record: Course }
+  | { kind: "certification"; record: Certification };
 
 /**
- * Learning & Achievements — the single page for courses, certifications,
- * hackathons, and the timeline that ties them together.
+ * Learning & Achievements — Resume, one combined Courses & Certifications
+ * section, and a separate Hackathons section.
  *
  * Data reality in this build:
- *  - Certifications and courses: real backend CRUD — fully interactive.
+ *  - Courses and certifications: real backend CRUD against /courses and
+ *    /certifications, shown together but stored and typed separately.
  *  - Resume: real /resume backend for upload, parse and management.
- *  - Hackathons and learning hours: no backend — polished empty states with
- *    "coming soon" CTAs, never fabricated records.
+ *  - Hackathons and learning hours: no backend wired yet — polished empty
+ *    states with "coming soon" CTAs, never fabricated records.
  */
 export default function LearningAchievements() {
-  const { data, loading, error, reload } = useResource(() => certificationsService.list());
+  const {
+    data: certData,
+    loading: certsLoading,
+    error: certsError,
+    reload: reloadCerts,
+  } = useResource(() => certificationsService.list());
   const {
     data: courseData,
     loading: coursesLoading,
@@ -42,41 +50,88 @@ export default function LearningAchievements() {
     reload: reloadCourses,
   } = useResource(() => coursesService.list());
 
-  const [showForm, setShowForm] = useState(false);
-  const [showCourseForm, setShowCourseForm] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<"all" | "courses" | "certifications">("all");
+  const [createKind, setCreateKind] = useState<RecordKind | null>(null);
+  const [editTarget, setEditTarget] = useState<{ kind: RecordKind; id: string } | null>(null);
+  /** Error from a delete request (create/edit errors render inside the form). */
   const [actionError, setActionError] = useState<string | null>(null);
+  /** Skill names the backend reported as promoted by the last course/cert save. */
+  const [promotedSkills, setPromotedSkills] = useState<string[]>([]);
 
-  const certifications: Certification[] = data?.certifications ?? [];
+  const certifications: Certification[] = certData?.certifications ?? [];
   const courses = courseData?.courses ?? [];
-  const completedCourses = courses.filter((c) => c.isCompleted).length;
 
-  async function handleAdd(input: CertificationInput) {
+  /** Client-side display only — records are never merged or retyped. */
+  const combined: CombinedRecord[] = [
+    ...courses.map((c): CombinedRecord => ({ kind: "course", record: c })),
+    ...certifications.map((c): CombinedRecord => ({ kind: "certification", record: c })),
+  ];
+
+  /** Filters the in-memory list; switching filters never refetches or mutates. */
+  const filtered =
+    activeFilter === "all"
+      ? combined
+      : combined.filter((item) => item.kind === (activeFilter === "courses" ? "course" : "certification"));
+
+  const loadError = certsError ?? coursesError;
+
+  async function handleRemove(item: CombinedRecord) {
     setActionError(null);
     try {
-      await certificationsService.add(input);
-      setShowForm(false);
-      reload();
+      if (item.kind === "course") {
+        await coursesService.remove(item.record.id);
+        reloadCourses();
+      } else {
+        await certificationsService.remove(item.record.id);
+        reloadCerts();
+      }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Could not save the certification.");
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : `Could not remove ${item.kind === "course" ? item.record.title : item.record.name}.`
+      );
     }
   }
 
-  async function handleRemove(cert: Certification) {
+  /** Create/edit submit for the shared form. Success closes the form and
+   * refreshes the owning list; failure rethrows so RecordForm shows the
+   * backend's message inline and re-enables its submit button. */
+  async function handleSave(kind: RecordKind, input: CourseInput | CertificationInput, id?: string) {
     setActionError(null);
-    try {
-      await certificationsService.remove(cert.id);
-      reload();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : `Could not remove ${cert.name}.`);
+    setPromotedSkills([]);
+    if (kind === "course") {
+      const result = id
+        ? await coursesService.update(id, input as CourseInput)
+        : await coursesService.add(input as CourseInput);
+      setPromotedSkills(result.promotedSkills);
+      reloadCourses();
+    } else {
+      const result = id
+        ? await certificationsService.update(id, input as CertificationInput)
+        : await certificationsService.add(input as CertificationInput);
+      setPromotedSkills(result.promotedSkills);
+      reloadCerts();
     }
   }
 
-  // Overview metrics: certifications and courses are real; hackathons and
-  // learning activity have no backend source and render an em-dash — absence,
-  // not a measured zero.
+  // Overview metrics: courses, certifications and hackathons show real counts
+  // once loaded; while loading — or after an error — they render an em-dash,
+  // which means "nothing measured", never a fabricated zero. Learning activity
+  // has no source at all.
   const metrics: OverviewMetric[] = [
-    { icon: "courses", label: "Courses", value: coursesLoading ? null : courses.length, sub: "Recorded coursework" },
-    { icon: "certifications", label: "Certifications", value: loading ? null : certifications.length, sub: "Recorded credentials" },
+    {
+      icon: "courses",
+      label: "Courses",
+      value: coursesError ? null : coursesLoading ? null : courses.length,
+      sub: "Recorded coursework",
+    },
+    {
+      icon: "certifications",
+      label: "Certifications",
+      value: certsError ? null : certsLoading ? null : certifications.length,
+      sub: "Recorded credentials",
+    },
     { icon: "hackathons", label: "Hackathons", value: null, sub: "No records yet" },
     { icon: "activity", label: "Learning Activity", value: null, sub: "Awaiting course data" },
   ];
@@ -125,15 +180,13 @@ export default function LearningAchievements() {
         </div>
       )}
 
-      {error && (
-        <div className="mt-4 rounded-2xl border border-red-500/25 bg-red-500/[0.08] px-5 py-3.5 flex items-center justify-between gap-3">
-          <p className="text-[13px] text-red-300">{error}</p>
-          <button
-            onClick={reload}
-            className="text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition-all cursor-pointer shrink-0"
-          >
-            Retry
-          </button>
+      {promotedSkills.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-primary/25 bg-primary/[0.06] px-5 py-3.5">
+          <p className="text-[12px] text-white/75">
+            <span className="text-primary font-semibold">Skills promoted</span> — recorded as{" "}
+            <span className="text-white font-medium">{promotedSkills.join(", ")}</span> on the
+            Skills page.
+          </p>
         </div>
       )}
 
@@ -150,35 +203,117 @@ export default function LearningAchievements() {
         <LAReveal delay={0.05}>
           <LALabel>Learning Overview</LALabel>
           <LearningOverviewPanel
-            onAddCourse={() => setShowCourseForm(true)}
-            completedCount={coursesLoading ? null : completedCourses}
-            inProgressCount={coursesLoading ? null : courses.length - completedCourses}
+            onAddCourse={() => setCreateKind("course")}
+            completedCount={coursesError || coursesLoading ? null : courses.filter((c) => c.isCompleted).length}
+            inProgressCount={coursesError || coursesLoading ? null : courses.length - courses.filter((c) => c.isCompleted).length}
           />
         </LAReveal>
       </div>
 
-      {/* ── 3. Certifications ── */}
+      {/* ── 4. Courses & Certifications (one combined section) ── */}
       <div className="mt-8">
         <LAReveal delay={0.1}>
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <LALabel>Certifications</LALabel>
-            <AddCertificationButton open={showForm} onClick={() => setShowForm((v) => !v)} />
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <LALabel className="mb-0">Courses & Certifications</LALabel>
+            <div
+              className="flex rounded-full border border-white/10 bg-white/[0.03] p-0.5"
+              role="group"
+              aria-label="Filter learning records"
+            >
+              {(["all", "courses", "certifications"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setActiveFilter(f)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+                    activeFilter === f
+                      ? "bg-primary/10 text-primary border border-primary/25"
+                      : "text-white/40 hover:text-white/70 border border-transparent"
+                  }`}
+                  aria-pressed={activeFilter === f}
+                >
+                  {f === "all" ? "All" : f === "courses" ? "Courses" : "Certifications"}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => setCreateKind((k) => (k === "course" ? null : "course"))}
+                className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+                  createKind === "course"
+                    ? "border-white/20 bg-white/[0.06] text-white/80"
+                    : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50"
+                }`}
+                aria-expanded={createKind === "course"}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {createKind === "course" ? "Close" : "Add course"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateKind((k) => (k === "certification" ? null : "certification"))}
+                className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+                  createKind === "certification"
+                    ? "border-white/20 bg-white/[0.06] text-white/80"
+                    : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50"
+                }`}
+                aria-expanded={createKind === "certification"}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {createKind === "certification" ? "Close" : "Add certification"}
+              </button>
+            </div>
           </div>
 
-          {showForm && (
-            <CertificationForm
-              onSubmit={handleAdd}
-              onCancel={() => setShowForm(false)}
-              submitLabel="Save certification"
+          {createKind && (
+            <RecordForm
+              key={`create-${createKind}`}
+              kind={createKind}
+              onSubmit={(input) => handleSave(createKind, input)}
+              onCancel={() => setCreateKind(null)}
             />
           )}
 
-          {loading ? (
-            /* Skeleton while /certifications is in flight — without it the
-               grid renders zero cards and reads as an empty list. */
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          {editTarget && (
+            <RecordForm
+              key={`edit-${editTarget.kind}-${editTarget.id}`}
+              kind={editTarget.kind}
+              initial={
+                editTarget.kind === "course"
+                  ? courses.find((c) => c.id === editTarget.id)
+                  : certifications.find((c) => c.id === editTarget.id)
+              }
+              onSubmit={(input) => handleSave(editTarget.kind, input, editTarget.id)}
+              onCancel={() => setEditTarget(null)}
+            />
+          )}
+
+          {loadError ? (
+            /* An API failure is not an empty dataset: say so and offer a retry. */
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <div className="w-11 h-11 rounded-2xl border border-red-500/25 bg-red-500/[0.08] flex items-center justify-center text-red-300">
+                <Award className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                Courses &amp; certifications could not be loaded
+              </h3>
+              <p className="text-[12px] max-w-md leading-relaxed text-red-300">{loadError}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (certsError) reloadCerts();
+                  if (coursesError) reloadCourses();
+                }}
+                className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition-all cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (certsLoading || coursesLoading) && filtered.length === 0 ? (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3" aria-hidden="true">
               {[0, 1].map((i) => (
-                <div key={i} className="glass-panel p-5 animate-pulse" aria-hidden="true">
+                <div key={i} className="glass-panel p-5 animate-pulse">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-white/[0.05] shrink-0" />
                     <div className="flex-1 space-y-2.5">
@@ -189,43 +324,59 @@ export default function LearningAchievements() {
                 </div>
               ))}
             </div>
-          ) : !error && certifications.length === 0 ? (
-            <CertificationsEmpty onAdd={() => setShowForm(true)} />
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40">
+                <Award className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                {activeFilter === "courses"
+                  ? "No courses added yet"
+                  : activeFilter === "certifications"
+                    ? "No certifications recorded yet"
+                    : "No courses or certifications yet"}
+              </h3>
+              <p className="text-[12px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {activeFilter === "courses"
+                  ? "Record your coursework — platform, completion, and certificate link. Skills a course taught can be listed and are promoted on the Skills page where they match recorded names."
+                  : activeFilter === "certifications"
+                    ? "Add the credentials you have earned — issuer, credential ID, and link turn each one into profile evidence."
+                    : "Add courses and certifications to build your learning record — courses support completion tracking and learned skills; certifications track issuer and credential details."}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setCreateKind(activeFilter === "certifications" ? "certification" : "course")
+                }
+                className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-0.5"
+              >
+                {activeFilter === "certifications" ? "Add certification" : "Add course"}
+              </button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-              {certifications.map((cert, i) => (
-                <CertificationCard key={cert.id} cert={cert} index={i} onRemove={handleRemove} />
+              {filtered.map((item, i) => (
+                <RecordCard
+                  key={`${item.kind}-${item.record.id}`}
+                  kind={item.kind}
+                  id={item.record.id}
+                  index={i}
+                  title={item.kind === "course" ? item.record.title : item.record.name}
+                  issuerOrPlatform={item.kind === "course" ? item.record.platform : item.record.issuer}
+                  date={item.kind === "course" ? item.record.completedAt : item.record.issueDate}
+                  certificateUrl={
+                    item.kind === "course" ? item.record.certificateUrl : item.record.credentialUrl
+                  }
+                  credentialId={item.kind === "certification" ? item.record.credentialId : undefined}
+                  issueDate={item.kind === "certification" ? item.record.issueDate : undefined}
+                  learnedSkills={item.kind === "course" ? item.record.learnedSkills : undefined}
+                  isCompleted={item.kind === "course" ? item.record.isCompleted : undefined}
+                  onRemove={() => handleRemove(item)}
+                  onEdit={(id, kind) => setEditTarget({ kind, id })}
+                />
               ))}
             </div>
           )}
-        </LAReveal>
-      </div>
-
-      {/* ── 4. Courses ── */}
-      <div className="mt-8">
-        <LAReveal delay={0.15}>
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <LALabel className="mb-0">Courses</LALabel>
-            <button
-              onClick={() => setShowCourseForm((v) => !v)}
-              className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all cursor-pointer ${
-                showCourseForm
-                  ? "border-white/20 bg-white/[0.06] text-white/80"
-                  : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50"
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {showCourseForm ? "Close" : "Add course"}
-            </button>
-          </div>
-          <CourseSection
-            formOpen={showCourseForm}
-            onToggleForm={() => setShowCourseForm((v) => !v)}
-            courses={courses}
-            loading={coursesLoading}
-            error={coursesError}
-            reload={reloadCourses}
-          />
         </LAReveal>
       </div>
 
@@ -299,7 +450,6 @@ export default function LearningAchievements() {
           </p>
         </div>
       </LAReveal>
-
     </PageContainer>
   );
 }
