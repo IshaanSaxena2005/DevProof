@@ -39,6 +39,9 @@ export default function ConsistencyHeatmap({
   const totalDays = weeks * 7;
   const cells: (number | null)[] = [];
 
+  // Check if any platform provides submission calendar data
+  const hasCalendarData = Object.keys(activity).length > 0;
+
   for (let i = 0; i < totalDays; i++) {
     const daysAgo = totalDays - 1 - i;
     const date = new Date(today);
@@ -53,7 +56,8 @@ export default function ConsistencyHeatmap({
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
       date.getDate()
     ).padStart(2, "0")}`;
-    cells.push(active ? levelForCount(activity[key] ?? 0) : 0);
+    // Only show data if platform is connected AND provides calendar data
+    cells.push(active && hasCalendarData ? levelForCount(activity[key] ?? 0) : 0);
   }
 
   // Group into weeks of 7 for column layout
@@ -99,9 +103,11 @@ export default function ConsistencyHeatmap({
 
         <div className="overflow-x-auto main-scroll pb-1">
           <div className="min-w-max">
-            {!active ? (
+            {!active || !hasCalendarData ? (
               <div className="flex items-center justify-center py-12">
-                <p className="text-[12px] text-white/40">Connect a platform to see your activity history</p>
+                <p className="text-[12px] text-white/40">
+                  {!active ? "Connect a platform to see your activity history" : "No submission calendar data available from connected platforms"}
+                </p>
               </div>
             ) : (
               <>
@@ -175,6 +181,11 @@ export default function ConsistencyHeatmap({
             {footerNote && (
               <p className="text-[11px] text-white/30 mt-4 leading-relaxed">{footerNote}</p>
             )}
+            {!hasCalendarData && active && (
+              <p className="text-[11px] text-white/30 mt-4 leading-relaxed">
+                Connected platforms do not provide submission calendar data. The heatmap requires platforms like LeetCode that publish daily submission history.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -186,18 +197,20 @@ export default function ConsistencyHeatmap({
 export function ConsistencyStats({
   stats,
   active = true,
+  hasCalendarData = true,
 }: {
   stats: { currentStreak: number; longestStreak: number; thisWeek: number; thisMonth: number; activeDays: number };
   active?: boolean;
+  hasCalendarData?: boolean;
 }) {
   const items = [
-    { icon: Flame, label: "Current Streak", value: active ? `${stats.currentStreak} days` : "—" },
-    { icon: Zap, label: "Longest Streak", value: active ? `${stats.longestStreak} days` : "—" },
-    { icon: CalendarDays, label: "This Week", value: active ? `${stats.thisWeek} problems` : "—" },
-    { icon: CalendarRange, label: "This Month", value: active ? `${stats.thisMonth} problems` : "—" },
+    { icon: Flame, label: "Current Streak", value: active && hasCalendarData ? `${stats.currentStreak} days` : "—" },
+    { icon: Zap, label: "Longest Streak", value: active && hasCalendarData ? `${stats.longestStreak} days` : "—" },
+    { icon: CalendarDays, label: "This Week", value: active && hasCalendarData ? `${stats.thisWeek} problems` : "—" },
+    { icon: CalendarRange, label: "This Month", value: active && hasCalendarData ? `${stats.thisMonth} problems` : "—" },
     // No platform publishes an all-time active-day window, so the raw count of
     // recorded active days is shown without an invented "of N" denominator.
-    { icon: Activity, label: "Active Days", value: active ? `${stats.activeDays}` : "—" },
+    { icon: Activity, label: "Active Days", value: active && hasCalendarData ? `${stats.activeDays}` : "—" },
   ];
 
   return (

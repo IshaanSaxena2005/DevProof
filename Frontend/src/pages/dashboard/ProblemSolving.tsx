@@ -423,13 +423,14 @@ export default function ProblemSolving() {
     url: solve.url,
   }));
 
+  const hasCalendarData = Object.keys(calendar).length > 0;
   const consistency = {
-    currentStreak: overview.streak,
+    currentStreak: hasCalendarData ? overview.streak : 0,
     // Computed from the calendar because no platform publishes an all-time best.
-    longestStreak: Math.max(longestStreakFrom(calendar), overview.streak),
-    thisWeek: submissionsWithin(calendar, 7),
-    thisMonth: submissionsWithin(calendar, 30),
-    activeDays: Object.keys(calendar).length,
+    longestStreak: hasCalendarData ? Math.max(longestStreakFrom(calendar), overview.streak) : 0,
+    thisWeek: hasCalendarData ? submissionsWithin(calendar, 7) : 0,
+    thisMonth: hasCalendarData ? submissionsWithin(calendar, 30) : 0,
+    activeDays: hasCalendarData ? Object.keys(calendar).length : 0,
   };
 
   /**
@@ -764,7 +765,7 @@ export default function ProblemSolving() {
       <Reveal delay={0.35}>
         <SectionLabel>Coding Consistency</SectionLabel>
         <div className="mb-8">
-          <ConsistencyStats active={anyConnected} stats={consistency} />
+          <ConsistencyStats active={anyConnected} hasCalendarData={Object.keys(calendar).length > 0} stats={consistency} />
           <div className="mt-4">
             <ConsistencyHeatmap
               active={anyConnected}
