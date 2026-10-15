@@ -1,51 +1,7 @@
 import { motion } from "motion/react";
-import { Trophy, Sparkles, CircleDashed } from "lucide-react";
+import { Sparkles, CircleDashed } from "lucide-react";
 import GlassCard from "../../../components/GlassCard";
 import { LAStatLabel } from "./shared";
-
-/** Shared empty-section anatomy: icon tile, title, explanation, muted CTA. */
-function SectionEmpty({
-  icon,
-  title,
-  description,
-  cta,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  cta: string;
-}) {
-  return (
-    <GlassCard hover={false} className="flex flex-col items-center gap-3 py-10 text-center relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.10] to-transparent pointer-events-none" />
-      <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40 relative">
-        {icon}
-      </div>
-      <h3 className="text-sm font-bold text-white uppercase tracking-wider">{title}</h3>
-      <p className="text-[12px] max-w-md leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-        {description}
-      </p>
-      <button
-        disabled
-        title="Coming soon"
-        className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.03] text-white/35 cursor-not-allowed"
-      >
-        {cta} — coming soon
-      </button>
-    </GlassCard>
-  );
-}
-
-export function HackathonsEmpty() {
-  return (
-    <SectionEmpty
-      icon={<Trophy className="w-5 h-5" />}
-      title="No hackathon experiences added yet"
-      description="Competitive projects and hackathons can strengthen the evidence behind your engineering experience — placements, teams, and project links included."
-      cta="Add hackathon"
-    />
-  );
-}
 
 /**
  * Skills-derived-from-learning panel. Skill chips render only from real skill

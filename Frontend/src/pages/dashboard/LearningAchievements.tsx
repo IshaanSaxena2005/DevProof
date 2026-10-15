@@ -4,7 +4,6 @@ import PageContainer from "../../components/PageContainer";
 import { LAReveal, LALabel } from "./LA/shared";
 import { OverviewMetrics, LearningOverviewPanel, type OverviewMetric } from "./LA/LearningOverview";
 import {
-  HackathonsEmpty,
   SkillsFromLearning,
   LearningTimeline,
   type TimelineEvent,
@@ -12,9 +11,11 @@ import {
 import ResumeSection from "./LA/ResumeSection";
 import { AchievementEvidence, DevProofInsight } from "./LA/AchievementEvidence";
 import { RecordForm } from "./LA/RecordForm";
+import HackathonSection from "./LA/HackathonSection";
 import { RecordCard, type RecordKind } from "./LA/shared";
 import { certificationsService } from "../../services/certifications";
 import { coursesService } from "../../services/courses";
+import { hackathonsService } from "../../services/hackathons";
 import { useResource } from "../../lib/useResource";
 import type { Certification, CertificationInput, Course, CourseInput } from "../../lib/types";
 
@@ -32,9 +33,9 @@ type CombinedRecord =
  * Data reality in this build:
  *  - Courses and certifications: real backend CRUD against /courses and
  *    /certifications, shown together but stored and typed separately.
+ *  - Hackathons: real backend CRUD against /hackathons, in their own section.
  *  - Resume: real /resume backend for upload, parse and management.
- *  - Hackathons and learning hours: no backend wired yet — polished empty
- *    states with "coming soon" CTAs, never fabricated records.
+ *  - Learning hours and study streaks: no source — em-dashes, never estimates.
  */
 export default function LearningAchievements() {
   const {
@@ -49,10 +50,17 @@ export default function LearningAchievements() {
     error: coursesError,
     reload: reloadCourses,
   } = useResource(() => coursesService.list());
+  const {
+    data: hackathonData,
+    loading: hackathonsLoading,
+    error: hackathonsError,
+    reload: reloadHackathons,
+  } = useResource(() => hackathonsService.list());
 
   const [activeFilter, setActiveFilter] = useState<"all" | "courses" | "certifications">("all");
   const [createKind, setCreateKind] = useState<RecordKind | null>(null);
   const [editTarget, setEditTarget] = useState<{ kind: RecordKind; id: string } | null>(null);
+  const [showHackathonForm, setShowHackathonForm] = useState(false);
   /** Error from a delete request (create/edit errors render inside the form). */
   const [actionError, setActionError] = useState<string | null>(null);
   /** Skill names the backend reported as promoted by the last course/cert save. */
@@ -60,6 +68,7 @@ export default function LearningAchievements() {
 
   const certifications: Certification[] = certData?.certifications ?? [];
   const courses = courseData?.courses ?? [];
+  const hackathons = hackathonData?.hackathons ?? [];
 
   /** Client-side display only — records are never merged or retyped. */
   const combined: CombinedRecord[] = [
@@ -132,11 +141,17 @@ export default function LearningAchievements() {
       value: certsError ? null : certsLoading ? null : certifications.length,
       sub: "Recorded credentials",
     },
-    { icon: "hackathons", label: "Hackathons", value: null, sub: "No records yet" },
+    {
+      icon: "hackathons",
+      label: "Hackathons",
+      value: hackathonsError ? null : hackathonsLoading ? null : hackathons.length,
+      sub: "Recorded experiences",
+    },
     { icon: "activity", label: "Learning Activity", value: null, sub: "Awaiting course data" },
   ];
 
-  // Timeline is fed exclusively by real records (certifications + courses).
+  // Timeline is fed exclusively by real records (certifications, courses and
+  // hackathons).
   const timelineEvents: TimelineEvent[] = [
     ...certifications.map((c) => ({
       date: c.issueDate ?? c.createdAt,
@@ -147,6 +162,11 @@ export default function LearningAchievements() {
       date: c.completedAt ?? c.createdAt,
       context: c.platform,
       title: c.title,
+    })),
+    ...hackathons.map((h) => ({
+      date: h.heldAt ?? h.createdAt,
+      context: h.organizer,
+      title: h.name,
     })),
   ];
 
@@ -380,11 +400,33 @@ export default function LearningAchievements() {
         </LAReveal>
       </div>
 
-      {/* ── 5. Hackathons ── */}
+      {/* ── 5. Hackathons (separate section) ── */}
       <div className="mt-8">
         <LAReveal delay={0.2}>
-          <LALabel>Hackathons</LALabel>
-          <HackathonsEmpty />
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <LALabel className="mb-0">Hackathons</LALabel>
+            <button
+              type="button"
+              onClick={() => setShowHackathonForm((v) => !v)}
+              className={`ml-auto inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+                showHackathonForm
+                  ? "border-white/20 bg-white/[0.06] text-white/80"
+                  : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50"
+              }`}
+              aria-expanded={showHackathonForm}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {showHackathonForm ? "Close" : "Add hackathon"}
+            </button>
+          </div>
+          <HackathonSection
+            formOpen={showHackathonForm}
+            onToggleForm={() => setShowHackathonForm((v) => !v)}
+            hackathons={hackathons}
+            loading={hackathonsLoading}
+            error={hackathonsError}
+            reload={reloadHackathons}
+          />
         </LAReveal>
       </div>
 
@@ -416,7 +458,7 @@ export default function LearningAchievements() {
               sources={[
                 { name: "Course", available: courses.length > 0, note: courses.length > 0 ? `${courses.length} recorded — live backend` : "None recorded yet" },
                 { name: "Certification", available: certifications.length > 0, note: certifications.length > 0 ? `${certifications.length} recorded — live backend` : "None recorded yet" },
-                { name: "Hackathon", available: false, note: "No records can be added yet" },
+                { name: "Hackathon", available: hackathons.length > 0, note: hackathons.length > 0 ? `${hackathons.length} recorded — live backend` : "None recorded yet" },
               ]}
             />
             <AchievementEvidence
@@ -435,6 +477,7 @@ export default function LearningAchievements() {
           <DevProofInsight
             certificationCount={certifications.length}
             courseCount={courses.length}
+            hackathonCount={hackathons.length}
           />
         </LAReveal>
       </div>
@@ -444,9 +487,9 @@ export default function LearningAchievements() {
         <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-4 flex items-start gap-3">
           <Award className="w-4 h-4 text-white/30 shrink-0 mt-0.5" />
           <p className="text-[12px] text-white/35 leading-relaxed">
-            Certification records, your uploaded resume, and recorded courses are stored in your
-            DevProof account. Hackathons and learning-hour tracking are on the roadmap — those
-            sections stay empty until their integrations exist, so nothing here is assumed or invented.
+            Certification records, courses, hackathon experiences, and your uploaded resume are
+            stored in your DevProof account. Learning-hour and study-streak tracking have no data
+            source yet, so those stay blank — nothing here is assumed or invented.
           </p>
         </div>
       </LAReveal>

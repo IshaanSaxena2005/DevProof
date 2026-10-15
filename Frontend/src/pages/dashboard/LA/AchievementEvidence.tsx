@@ -36,12 +36,15 @@ export function AchievementEvidence({ sources }: { sources: EvidenceSource[] }) 
 export function DevProofInsight({
   certificationCount,
   courseCount,
+  hackathonCount,
 }: {
   certificationCount: number;
   courseCount: number;
+  hackathonCount: number;
 }) {
   const hasCerts = certificationCount > 0;
   const hasCourses = courseCount > 0;
+  const hasHackathons = hackathonCount > 0;
 
   return (
     <GlassCard hover={false} className="p-6 md:p-7 border-l-2 border-l-primary relative overflow-hidden">
@@ -55,7 +58,7 @@ export function DevProofInsight({
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">DevProof Insight</h3>
         </div>
 
-        {hasCerts || hasCourses ? (
+        {hasCerts || hasCourses || hasHackathons ? (
           <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
             You have recorded{" "}
             <span className="text-white font-semibold">
@@ -66,12 +69,15 @@ export function DevProofInsight({
                 hasCerts
                   ? `${certificationCount} ${certificationCount === 1 ? "certification" : "certifications"}`
                   : null,
+                hasHackathons
+                  ? `${hackathonCount} hackathon ${hackathonCount === 1 ? "experience" : "experiences"}`
+                  : null,
               ]
                 .filter(Boolean)
                 .join(" and ")}
             </span>{" "}
-            as learning evidence. Hackathon experiences are not connected yet, so your learning
-            profile is still partially evidenced — adding one would extend the record you have.
+            as learning evidence. Learning-hour and study-streak tracking still have no data
+            source, so those parts stay blank rather than estimated.
           </p>
         ) : (
           <p className="text-[14px] leading-relaxed text-white/75 max-w-3xl">
@@ -99,13 +105,14 @@ export function DevProofInsight({
               Live today — records coursework and can promote skills you list for it.
             </p>
           </div>
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+          <div className="rounded-xl border border-primary/25 bg-primary/[0.06] p-4">
             <LAStatLabel>Next</LAStatLabel>
-            <p className="text-sm font-bold text-white/60 mt-1 flex items-center gap-1.5">
-              Add hackathon <ArrowRight className="w-3.5 h-3.5 text-white/25" />
+            <p className="text-sm font-bold text-white mt-1 flex items-center gap-1.5">
+              Add hackathon <ArrowRight className="w-3.5 h-3.5 text-primary" />
             </p>
-            <p className="text-[11px] text-white/30 mt-1 leading-relaxed">
-              Hackathon records are coming soon.
+            <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+              Live today — records your own account of the event; listed technologies are stored
+              as claimed skills only.
             </p>
           </div>
         </div>
