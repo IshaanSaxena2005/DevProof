@@ -1,7 +1,11 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const jwt = require('jsonwebtoken');
 
 const { startServer, createClient, registerUser, cleanup } = require('./setup');
+// Built by `npm run build`, which both this suite's setup (dist/app.js) and the
+// test:unit script already depend on.
+const { COOKIE_NAME } = require('../../dist/config/cookies.js');
 
 /**
  * End-to-end tests over real HTTP, Prisma and PostgreSQL.
@@ -245,5 +249,86 @@ test('logout clears the session', async () => {
   const loggedOut = await client.post('/auth/logout');
   assert.equal(loggedOut.status, 200);
 
+  // The clear must carry the same attributes the cookie was set with,
+  // otherwise the browser keeps the original session cookie.
+  const cleared = loggedOut.headers.get('set-cookie') || '';
+  assert.match(cleared, /token=;/, 'logout must clear the session cookie');
+  assert.match(cleared, /Path=\//i, 'the clear must match the cookie path');
+  assert.match(cleared, /HttpOnly/i, 'the clear must match the cookie flags');
+
   assert.equal((await client.get('/auth/me')).status, 401, 'the session must no longer be accepted');
+});
+
+/* ── session rejection and cookie hygiene ─────────────── */
+
+/** Sends a raw Cookie header the shared jar would otherwise overwrite. */
+function requestWithToken(path, token) {
+  const client = createClient(server.baseUrl);
+  return client.request(path, { headers: { Cookie: `${COOKIE_NAME}=${token}` } });
+}
+
+/** Asserts a rejected session answered 401 AND cleared its own cookie. */
+function assertRejectedAndCleared(result, messagePattern, label) {
+  assert.equal(result.status, 401, `${label}: must be rejected`);
+  assert.match(result.body.message, messagePattern, `${label}: must explain the rejection`);
+
+  const cleared = result.headers.get('set-cookie') || '';
+  assert.match(cleared, /token=;/, `${label}: an invalid session cookie must be cleared, not left to expire`);
+  assert.match(cleared, /Path=\//i, `${label}: the clear must match the path the cookie was set with`);
+  assert.match(cleared, /HttpOnly/i, `${label}: the clear must keep the cookie httpOnly`);
+}
+
+test('a token whose user no longer exists is rejected and its cookie cleared', async () => {
+  // Valid signature, nonexistent userId — the orphaned-session case.
+  const orphan = jwt.sign(
+    { userId: '00000000-0000-0000-0000-000000000000', email: 'orphan@devproof.test', role: 'DEVELOPER' },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  assertRejectedAndCleared(
+    await requestWithToken('/auth/me', orphan),
+    /no longer exists/i,
+    'orphaned user'
+  );
+});
+
+test('a malformed, wrongly-signed or expired token is rejected and its cookie cleared', async () => {
+  const payload = { userId: '00000000-0000-0000-0000-000000000000', email: 'x@devproof.test', role: 'DEVELOPER' };
+  const cases = [
+    ['malformed', 'not-a-jwt'],
+    ['wrong signature', jwt.sign(payload, 'some-other-secret-value')],
+    ['expired', jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: -60 })]
+  ];
+
+  for (const [label, token] of cases) {
+    assertRejectedAndCleared(
+      await requestWithToken('/auth/me', token),
+      /invalid or expired/i,
+      label
+    );
+  }
+});
+
+test('email/password login issues a session that /auth/me accepts', async () => {
+  const { email } = await registerUser(server.baseUrl, 'login-ok');
+  const fresh = createClient(server.baseUrl);
+
+  const login = await fresh.post('/auth/login', { email, password: 'IntegrationTest123!' });
+  assert.equal(login.status, 200);
+  assert.ok(fresh.cookie, 'a successful login must set the session cookie');
+
+  const me = await fresh.get('/auth/me');
+  assert.equal(me.status, 200);
+  assert.equal(me.body.data.user.email, email);
+});
+
+test('no refresh-token endpoint exists that could establish a session', async () => {
+  // This app authenticates with a single long-lived cookie JWT and has no
+  // refresh-token flow. Pinning that /auth/refresh does not exist means anyone
+  // adding one later must also add real tests for orphaned refresh tokens.
+  const anon = createClient(server.baseUrl);
+  assert.equal((await anon.post('/auth/refresh', { refreshToken: 'whatever' })).status, 404);
+  assert.equal((await anon.get('/auth/refresh')).status, 404);
+  assert.equal((await anon.get('/auth/me')).status, 401, 'no tokenless request may end up authenticated');
 });
