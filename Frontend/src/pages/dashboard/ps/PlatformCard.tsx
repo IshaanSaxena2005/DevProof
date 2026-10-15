@@ -57,15 +57,21 @@ export default function PlatformCard({
   onConnect,
   connectDisabled = false,
   connectHint,
-  usernameInput,
+  usernameValue,
+  onUsernameChange,
+  usernamePlaceholder,
 }: {
   profile: PlatformProfile;
   onConnect?: () => void;
   connectDisabled?: boolean;
   /** Tooltip override for the disabled state — points at the working control or explains why none exists. */
   connectHint?: string;
-  /** Optional username input field to show when not connected */
-  usernameInput?: React.ReactNode;
+  /** Username input value to show when not connected */
+  usernameValue?: string;
+  /** Handler for username input changes */
+  onUsernameChange?: (value: string) => void;
+  /** Placeholder text for the username input */
+  usernamePlaceholder?: string;
 }) {
   const brand = BRAND[profile.platform];
 
@@ -207,10 +213,23 @@ export default function PlatformCard({
             </div>
           </>
         ) : (
-          /* ── Unconnected: muted placeholders, no fabricated numbers ── */
+          /* ── Unconnected: username input and connect button ── */
           <div className="flex flex-col gap-4 flex-1">
-            {/* Username input field when provided */}
-            {usernameInput}
+            {/* Username input with label */}
+            {usernameValue !== undefined && onUsernameChange && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                  {profile.platform === "LeetCode" ? "LEETCODE USERNAME" : "GFG USERNAME"}
+                </label>
+                <input
+                  type="text"
+                  value={usernameValue}
+                  onChange={(e) => onUsernameChange(e.target.value)}
+                  placeholder={usernamePlaceholder ?? `Enter your ${brand.name} username`}
+                  className="w-full rounded-lg border border-white/20 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+            )}
 
             <div className="flex-1 flex flex-col justify-center gap-4">
               <div>

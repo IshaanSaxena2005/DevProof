@@ -308,14 +308,9 @@ export default function ProblemSolving() {
         onConnect: () => void runConnect("LEETCODE", handleDrafts["LEETCODE"] ?? ""),
         connectDisabled: draft === "",
         connectHint: draft === "" ? "Enter your LeetCode username above first" : undefined,
-        usernameInput: (
-          <input
-            value={handleDrafts["LEETCODE"] ?? ""}
-            onChange={(e) => setHandleDrafts((d) => ({ ...d, LEETCODE: e.target.value }))}
-            placeholder="LeetCode username"
-            className="w-full rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
-          />
-        ),
+        usernameValue: handleDrafts["LEETCODE"] ?? "",
+        onUsernameChange: (value: string) => setHandleDrafts((d) => ({ ...d, LEETCODE: value })),
+        usernamePlaceholder: "Enter your LeetCode username",
       };
     }
     if (card.platform === "GeeksforGeeks" && !gfg) {
@@ -323,15 +318,10 @@ export default function ProblemSolving() {
       return {
         onConnect: () => void runConnect("GEEKSFORGEEKS", handleDrafts["GEEKSFORGEEKS"] ?? ""),
         connectDisabled: draft === "",
-        connectHint: draft === "" ? "Enter your GeeksforGeeks username above first" : undefined,
-        usernameInput: (
-          <input
-            value={handleDrafts["GEEKSFORGEEKS"] ?? ""}
-            onChange={(e) => setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: e.target.value }))}
-            placeholder="GeeksforGeeks username"
-            className="w-full rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
-          />
-        ),
+        connectHint: draft === "" ? "Enter your GFG username above first" : undefined,
+        usernameValue: handleDrafts["GEEKSFORGEEKS"] ?? "",
+        onUsernameChange: (value: string) => setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: value })),
+        usernamePlaceholder: "Enter your GFG username",
       };
     }
     return {};
