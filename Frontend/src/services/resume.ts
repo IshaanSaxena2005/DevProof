@@ -1,5 +1,9 @@
 import { api, ApiError, BASE_URL } from "../lib/api";
-import type { ResumeResponse, ResumeUploadResponse } from "../lib/types";
+import type {
+  ResumeAnalyseResponse,
+  ResumeResponse,
+  ResumeUploadResponse,
+} from "../lib/types";
 
 export const resumeService = {
   async get(): Promise<ResumeResponse> {
@@ -33,6 +37,15 @@ export const resumeService = {
       throw new ApiError(payload?.message ?? `Upload failed with status ${response.status}`, response.status);
     }
     return payload.data as ResumeUploadResponse;
+  },
+
+  /**
+   * Re-run extraction and structured analysis over the stored file.
+   * Deterministic server-side: creates no skills, no certifications, and
+   * no duplicate records of any kind.
+   */
+  async analyse(): Promise<ResumeAnalyseResponse> {
+    return api.post<ResumeAnalyseResponse>("/resume/analyse");
   },
 
   async remove(): Promise<void> {

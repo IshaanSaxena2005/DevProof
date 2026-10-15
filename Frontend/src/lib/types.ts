@@ -590,6 +590,77 @@ export interface ResumeParsed {
    */
   detectedSkills: string[];
   wordCount: number;
+  /**
+   * Deterministic structured reading of the sections, computed at upload or
+   * re-analysis. Absent on records parsed before this field existed — those
+   * still render from `sections` and gain an analysis via POST /resume/analyse.
+   */
+  analysis?: ResumeAnalysis;
+}
+
+/* ── Structured resume analysis (deterministic, evidence-preserving) ── */
+
+export interface ResumeContactLink {
+  label: string;
+  url: string;
+}
+
+export interface ResumeContactInfo {
+  email: string | null;
+  phone: string | null;
+  links: ResumeContactLink[];
+}
+
+export interface ResumeEducationEntry {
+  /** The resume line this entry was read from. */
+  evidence: string;
+  qualification: string | null;
+  institution: string | null;
+  /** Date span as written, e.g. "2017 - 2021". */
+  period: string | null;
+}
+
+export interface ResumeExperienceEntry {
+  evidence: string;
+  role: string | null;
+  organization: string | null;
+  period: string | null;
+  /** Deterministic month span from the written period, when computable. */
+  durationMonths: number | null;
+  highlights: string[];
+}
+
+export interface ResumeProjectEntry {
+  evidence: string;
+  name: string | null;
+  description: string | null;
+  /** Technologies matched inside this project's own text only. */
+  technologies: string[];
+  link: string | null;
+}
+
+export interface ResumeCertificationCandidate {
+  title: string;
+  issuer: string | null;
+  /** Date text as written on the resume, e.g. "2023" or "Nov 2023". */
+  issueDate: string | null;
+  credentialId: string | null;
+  credentialUrl: string | null;
+  evidence: string;
+  /** True when no issuer could be located — the entry needs human review. */
+  needsReview: boolean;
+}
+
+export interface ResumeAnalysis {
+  version: number;
+  analysedAt: string;
+  contact: ResumeContactInfo;
+  summary: string | null;
+  education: ResumeEducationEntry[];
+  experience: ResumeExperienceEntry[];
+  projects: ResumeProjectEntry[];
+  certifications: ResumeCertificationCandidate[];
+  achievements: string[];
 }
 
 export interface ResumeSummary {
@@ -611,6 +682,10 @@ export interface ResumeUploadResponse {
   resume: ResumeSummary;
   parsed: ResumeParsed | null;
   parseError: string | null;
+}
+
+export interface ResumeAnalyseResponse {
+  resume: ResumeSummary;
 }
 
 /* ── Growth history (GET /growth/history) ─────────────── */
