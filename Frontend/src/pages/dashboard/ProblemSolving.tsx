@@ -9,7 +9,6 @@ import {
   BarChart3,
   PieChart,
   Lightbulb,
-  Link2,
 } from "lucide-react";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
@@ -232,7 +231,6 @@ export default function ProblemSolving() {
     []
   );
 
-  const [busy, setBusy] = useState<CodingPlatform | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [handleDrafts, setHandleDrafts] = useState<Record<string, string>>({});
 
@@ -242,7 +240,6 @@ export default function ProblemSolving() {
   const anyConnected = profiles.length > 0;
 
   async function runConnect(platform: CodingPlatform, handle: string) {
-    setBusy(platform);
     setActionError(null);
     try {
       await codingProfilesService.connect(platform, handle.trim());
@@ -250,21 +247,6 @@ export default function ProblemSolving() {
       reload();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not connect that profile.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function runSync(platform: CodingPlatform) {
-    setBusy(platform);
-    setActionError(null);
-    try {
-      await codingProfilesService.sync(platform);
-      reload();
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Could not sync that profile.");
-    } finally {
-      setBusy(null);
     }
   }
 
@@ -775,64 +757,11 @@ export default function ProblemSolving() {
         </GlassCard>
       </Reveal>
 
-      {/* ── Platform connection ──
-          LeetCode connect/sync are live against /coding-profiles. The cards on
-          the right mirror the real connection state of each platform. */}
-      <Reveal delay={0.45}>
-        <SectionLabel>Platform Connection</SectionLabel>
-        <GlassCard hover={false} className="p-6 md:p-8 relative overflow-hidden mb-4">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-2.5 mb-2">
-                <Link2 className="w-4 h-4 text-primary" />
-                <h3 className="text-base font-bold text-white tracking-tight">Connect your coding platforms</h3>
-              </div>
-              <p className="text-[13px] leading-relaxed max-w-xl" style={{ color: "var(--text-secondary)" }}>
-                Connect your competitive-programming accounts to turn problem-solving activity
-                into measurable evidence. Enter your username in the platform cards above to connect.
-                GeeksforGeeks connection and sync are live today. Nothing here is simulated —
-                sections render their muted, unconnected variants until a platform is connected.
-              </p>
-              <div className="flex flex-wrap gap-3 mt-5">
-                {leetcode ? (
-                  <button
-                    onClick={() => void runSync("LEETCODE")}
-                    disabled={busy !== null}
-                    className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-                  >
-                    {busy === "LEETCODE" ? "Syncing…" : "Sync LeetCode"}
-                  </button>
-                ) : null}
-                {gfg ? (
-                  <button
-                    onClick={() => void runSync("GEEKSFORGEEKS")}
-                    disabled={busy !== null}
-                    className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-                  >
-                    {busy === "GEEKSFORGEEKS" ? "Syncing…" : "Sync GeeksforGeeks"}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            {/* Inline mirror of the platform cards in their real state — display only, no CTAs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-[420px] shrink-0">
-              {platforms.map((p) => (
-                <PlatformCard key={`pc-${p.platform}`} profile={p} {...connectProps(p, true)} />
-              ))}
-            </div>
-          </div>
-        </GlassCard>
-      </Reveal>
-
       <PendingNotice>
         <span className="font-semibold text-amber-200/90">GeeksforGeeks reports less than LeetCode.</span>{" "}
-        Connection and sync are live for both. Enter your username in the platform card above to connect.
-        GeeksforGeeks publishes a solve count, a coding score and a streak, but no difficulty split,
-        no acceptance rate, no contest rating and no daily activity — so those stay empty on its card
-        rather than showing a zero it never measured.
+        Enter your username in the platform card above to connect. GeeksforGeeks publishes a solve count,
+        a coding score and a streak, but no difficulty split, no acceptance rate, no contest rating and no
+        daily activity — so those stay empty on its card rather than showing a zero it never measured.
       </PendingNotice>
     </PageContainer>
   );
