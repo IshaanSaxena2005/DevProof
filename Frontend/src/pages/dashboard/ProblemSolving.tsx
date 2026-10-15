@@ -770,7 +770,7 @@ export default function ProblemSolving() {
               active={anyConnected}
               activity={calendar}
               weeks={26}
-              footerNote="Cells represent days with problem-solving activity across connected platforms — this is practice evidence, not GitHub commit activity."
+              footerNote="Cells represent days with problem-solving submissions from platforms that provide submission calendar data (e.g., LeetCode). This is practice evidence, not GitHub commit activity."
             />
           </div>
         </div>
