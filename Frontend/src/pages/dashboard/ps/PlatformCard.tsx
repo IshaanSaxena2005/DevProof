@@ -57,12 +57,15 @@ export default function PlatformCard({
   onConnect,
   connectDisabled = false,
   connectHint,
+  usernameInput,
 }: {
   profile: PlatformProfile;
   onConnect?: () => void;
   connectDisabled?: boolean;
   /** Tooltip override for the disabled state — points at the working control or explains why none exists. */
   connectHint?: string;
+  /** Optional username input field to show when not connected */
+  usernameInput?: React.ReactNode;
 }) {
   const brand = BRAND[profile.platform];
 
@@ -206,6 +209,9 @@ export default function PlatformCard({
         ) : (
           /* ── Unconnected: muted placeholders, no fabricated numbers ── */
           <div className="flex flex-col gap-4 flex-1">
+            {/* Username input field when provided */}
+            {usernameInput}
+
             <div className="flex-1 flex flex-col justify-center gap-4">
               <div>
                 <StatLabel>{profile.headline.label}</StatLabel>

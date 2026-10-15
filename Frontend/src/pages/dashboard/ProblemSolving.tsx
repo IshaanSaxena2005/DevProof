@@ -308,6 +308,14 @@ export default function ProblemSolving() {
         onConnect: () => void runConnect("LEETCODE", handleDrafts["LEETCODE"] ?? ""),
         connectDisabled: draft === "",
         connectHint: draft === "" ? "Enter your LeetCode username above first" : undefined,
+        usernameInput: (
+          <input
+            value={handleDrafts["LEETCODE"] ?? ""}
+            onChange={(e) => setHandleDrafts((d) => ({ ...d, LEETCODE: e.target.value }))}
+            placeholder="LeetCode username"
+            className="w-full rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
+          />
+        ),
       };
     }
     if (card.platform === "GeeksforGeeks" && !gfg) {
@@ -316,6 +324,14 @@ export default function ProblemSolving() {
         onConnect: () => void runConnect("GEEKSFORGEEKS", handleDrafts["GEEKSFORGEEKS"] ?? ""),
         connectDisabled: draft === "",
         connectHint: draft === "" ? "Enter your GeeksforGeeks username above first" : undefined,
+        usernameInput: (
+          <input
+            value={handleDrafts["GEEKSFORGEEKS"] ?? ""}
+            onChange={(e) => setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: e.target.value }))}
+            placeholder="GeeksforGeeks username"
+            className="w-full rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
+          />
+        ),
       };
     }
     return {};
@@ -783,8 +799,8 @@ export default function ProblemSolving() {
               </div>
               <p className="text-[13px] leading-relaxed max-w-xl" style={{ color: "var(--text-secondary)" }}>
                 Connect your competitive-programming accounts to turn problem-solving activity
-                into measurable evidence. LeetCode connection and sync are live today;
-                GeeksforGeeks activates once its integration ships. Nothing here is simulated —
+                into measurable evidence. Enter your username in the platform cards above to connect.
+                GeeksforGeeks connection and sync are live today. Nothing here is simulated —
                 sections render their muted, unconnected variants until a platform is connected.
               </p>
               <div className="flex flex-wrap gap-3 mt-5">
@@ -797,24 +813,7 @@ export default function ProblemSolving() {
                   >
                     {busy === "LEETCODE" ? "Syncing…" : "Sync LeetCode"}
                   </button>
-                ) : (
-                  <>
-                    <input
-                      value={handleDrafts["LEETCODE"] ?? ""}
-                      onChange={(e) => setHandleDrafts((d) => ({ ...d, LEETCODE: e.target.value }))}
-                      placeholder="LeetCode username"
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
-                    />
-                    <button
-                      onClick={() => void runConnect("LEETCODE", handleDrafts["LEETCODE"] ?? "")}
-                      disabled={busy !== null || !(handleDrafts["LEETCODE"] ?? "").trim()}
-                      className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                      style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-                    >
-                      {busy === "LEETCODE" ? "Connecting…" : "Connect LeetCode"}
-                    </button>
-                  </>
-                )}
+                ) : null}
                 {gfg ? (
                   <button
                     onClick={() => void runSync("GEEKSFORGEEKS")}
@@ -824,24 +823,7 @@ export default function ProblemSolving() {
                   >
                     {busy === "GEEKSFORGEEKS" ? "Syncing…" : "Sync GeeksforGeeks"}
                   </button>
-                ) : (
-                  <>
-                    <input
-                      value={handleDrafts["GEEKSFORGEEKS"] ?? ""}
-                      onChange={(e) => setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: e.target.value }))}
-                      placeholder="GeeksforGeeks username"
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs text-white placeholder:text-white/25 outline-none focus:border-white/25"
-                    />
-                    <button
-                      onClick={() => void runConnect("GEEKSFORGEEKS", handleDrafts["GEEKSFORGEEKS"] ?? "")}
-                      disabled={busy !== null || !(handleDrafts["GEEKSFORGEEKS"] ?? "").trim()}
-                      className="text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                      style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-                    >
-                      {busy === "GEEKSFORGEEKS" ? "Connecting…" : "Connect GeeksforGeeks"}
-                    </button>
-                  </>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -857,9 +839,10 @@ export default function ProblemSolving() {
 
       <PendingNotice>
         <span className="font-semibold text-amber-200/90">GeeksforGeeks reports less than LeetCode.</span>{" "}
-        Connection and sync are live for both. GeeksforGeeks publishes a solve count, a coding score
-        and a streak, but no difficulty split, no acceptance rate, no contest rating and no daily
-        activity — so those stay empty on its card rather than showing a zero it never measured.
+        Connection and sync are live for both. Enter your username in the platform card above to connect.
+        GeeksforGeeks publishes a solve count, a coding score and a streak, but no difficulty split,
+        no acceptance rate, no contest rating and no daily activity — so those stay empty on its card
+        rather than showing a zero it never measured.
       </PendingNotice>
     </PageContainer>
   );
