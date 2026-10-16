@@ -60,7 +60,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --test test/activityDays.test.mts"
+    "test": "node --test test/activityDays.test.mts test/difficulty.test.mts"
   },
   "keywords": [],
   "author": "",

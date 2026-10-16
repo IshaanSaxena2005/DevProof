@@ -16,6 +16,7 @@ import { NotConnectedNotice } from "../../components/StateBlocks";
 import { Reveal, SectionLabel, StatLabel, PendingNotice } from "./ps/shared";
 import { DIFFICULTY_COLORS } from "./ps/shared";
 import PlatformCard, { type PlatformProfile } from "./ps/PlatformCard";
+import { hasDifficultySplit, summarizeDifficulty } from "./ps/difficulty.mts";
 import {
   longestStreakFrom,
   mergeCalendars,
@@ -63,16 +64,6 @@ function relativeTime(iso: string | null): string | undefined {
 /* Calendar days, trailing windows and streaks live in ./activityDays, which
    documents the page's UTC-day convention in one place so the chart, the
    heatmap and the consistency stats cannot drift apart. */
-
-/**
- * Does this platform report how many of the solves were easy/medium/hard?
- *
- * LeetCode does; GeeksforGeeks publishes no split whatsoever, and sends null
- * for all three rather than a zero that would look like a measurement.
- */
-function hasDifficultySplit(profile: CodingProfile): boolean {
-  return profile.easySolved !== null || profile.mediumSolved !== null || profile.hardSolved !== null;
-}
 
 /**
  * One platform's card.
@@ -141,10 +132,10 @@ function toPlatformCard(
     profileUrl: profile.profileUrl ?? undefined,
     headline: { label: "Solved", value: profile.totalSolved },
     // Omitted entirely when the platform publishes no difficulty split, which
-    // leaves the bars out rather than drawing three empty ones.
-    // The per-bucket counts pass through as they arrived: a bucket the platform
-    // did not publish stays null and renders as unavailable on the card, rather
-    // than being substituted with a 0 it never measured.
+    // leaves the bars out rather than drawing three empty ones. Otherwise the
+    // per-bucket counts pass through as they arrived: a bucket the platform did
+    // not publish stays null and renders as unavailable on the card, rather than
+    // being substituted with a 0 it never measured.
     breakdown: hasDifficultySplit(profile)
       ? [
           { label: "Easy", count: profile.easySolved, color: DIFFICULTY_COLORS.easy },
@@ -263,19 +254,23 @@ export default function ProblemSolving() {
   const calendar = mergeCalendars(profiles);
   const series = seriesFrom(calendar, period);
 
-  // Only platforms that publish a difficulty split can contribute to the
-  // per-difficulty figures, and only their solves can be the denominator for
-  // them: dividing by every solve would silently understate each share by
-  // whatever GeeksforGeeks contributed.
-  const split = profiles.filter(hasDifficultySplit);
+  /**
+   * Only platforms that publish a difficulty split can contribute to the
+   * per-difficulty figures, and only their solves can be the denominator for
+   * them: dividing by every solve would silently understate each share by
+   * whatever GeeksforGeeks contributed. `summarizeDifficulty` also reports, per
+   * bucket, whether anything was published at all — so a bucket nobody reports
+   * renders as unavailable instead of as a zero.
+   */
+  const difficulty = summarizeDifficulty(profiles);
 
   const overview = {
     total: profiles.reduce((sum, p) => sum + p.totalSolved, 0),
     /** Solves on platforms that report a difficulty split. The right denominator. */
-    classified: split.reduce((sum, p) => sum + p.totalSolved, 0),
-    easy: split.reduce((sum, p) => sum + (p.easySolved ?? 0), 0),
-    medium: split.reduce((sum, p) => sum + (p.mediumSolved ?? 0), 0),
-    hard: split.reduce((sum, p) => sum + (p.hardSolved ?? 0), 0),
+    classified: difficulty.classified,
+    easy: difficulty.easy.count,
+    medium: difficulty.medium.count,
+    hard: difficulty.hard.count,
     // Each platform publishes its own streak under its own definition. Taking
     // the best one keeps the overview consistent with the platform cards;
     // recomputing it here produced a second, different number for the same word.
@@ -344,11 +339,40 @@ export default function ProblemSolving() {
     return {};
   };
 
+  /** Each bucket, with whether any connected platform actually reported it. */
   const difficultyDistribution = [
-    { label: "Easy", count: overview.easy, color: DIFFICULTY_COLORS.easy },
-    { label: "Medium", count: overview.medium, color: DIFFICULTY_COLORS.medium },
-    { label: "Hard", count: overview.hard, color: DIFFICULTY_COLORS.hard },
+    {
+      label: "Easy",
+      count: overview.easy,
+      known: difficulty.easy.known,
+      color: DIFFICULTY_COLORS.easy,
+    },
+    {
+      label: "Medium",
+      count: overview.medium,
+      known: difficulty.medium.known,
+      color: DIFFICULTY_COLORS.medium,
+    },
+    {
+      label: "Hard",
+      count: overview.hard,
+      known: difficulty.hard.known,
+      color: DIFFICULTY_COLORS.hard,
+    },
   ];
+
+  /** The buckets that were reported, in the donut's shape. */
+  const difficultySegments = difficultyDistribution
+    .filter((d) => d.known)
+    .map(({ label, count, color }) => ({ label, count, color }));
+
+  /**
+   * What the donut's centre says: the solved total its segments add up to, or
+   * null when no platform published a split — an unavailable centre, not 0.
+   */
+  const difficultyTotal = difficulty.anyKnown
+    ? difficultySegments.reduce((sum, segment) => sum + segment.count, 0)
+    : null;
 
   /**
    * Topics carry a solve count but no accuracy: platforms report problems
@@ -463,11 +487,33 @@ export default function ProblemSolving() {
       ? "of all solves"
       : `of ${overview.classified} solves with reported difficulty (${overview.total - overview.classified} from platforms without difficulty data)`;
 
-  const overviewCards = [
+  /**
+   * A bucket's figure and caption. A bucket nothing published has no count to
+   * report: the card shows a dash and says so, rather than a 0 the platforms
+   * never measured — which is also why the percentage is withheld.
+   */
+  const difficultyCard = (known: boolean, count: number) =>
+    known
+      ? { value: count, sub: `${difficultyPercent(count, overview.classified)}% ${shareBasis}` }
+      : { value: null, sub: "Not published by connected platforms" };
+
+  const easyCard = difficultyCard(difficulty.easy.known, overview.easy);
+  const mediumCard = difficultyCard(difficulty.medium.known, overview.medium);
+  const hardCard = difficultyCard(difficulty.hard.known, overview.hard);
+
+  const overviewCards: {
+    icon: typeof Target;
+    label: string;
+    value: number | null;
+    sub: string;
+    color: string;
+    border: string;
+    bg: string;
+  }[] = [
     { icon: Target, label: "Total Problems Solved", value: overview.total, sub: `Across ${profiles.length} platform${profiles.length === 1 ? "" : "s"}`, color: "text-primary", border: "border-primary/25", bg: "bg-primary/10" },
-    { icon: CheckCircle2, label: "Easy", value: overview.easy, sub: `${difficultyPercent(overview.easy, overview.classified)}% ${shareBasis}`, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
-    { icon: AlertTriangle, label: "Medium", value: overview.medium, sub: `${difficultyPercent(overview.medium, overview.classified)}% ${shareBasis}`, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
-    { icon: Braces, label: "Hard", value: overview.hard, sub: `${difficultyPercent(overview.hard, overview.classified)}% ${shareBasis}`, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
+    { icon: CheckCircle2, label: "Easy", ...easyCard, color: "text-green-300", border: "border-green-500/25", bg: "bg-green-500/10" },
+    { icon: AlertTriangle, label: "Medium", ...mediumCard, color: "text-amber-300", border: "border-amber-500/25", bg: "bg-amber-500/10" },
+    { icon: Braces, label: "Hard", ...hardCard, color: "text-red-300", border: "border-red-500/25", bg: "bg-red-500/10" },
     { icon: Flame, label: "Current Streak", value: overview.streak, sub: "Days in a row", color: "text-orange-300", border: "border-orange-500/25", bg: "bg-orange-500/10" },
   ];
 
@@ -526,8 +572,13 @@ export default function ProblemSolving() {
               <div className={`w-9 h-9 rounded-xl border ${c.border} ${c.bg} flex items-center justify-center ${c.color} mb-4`}>
                 <c.icon className="w-4 h-4" />
               </div>
-              <p className="text-[26px] leading-none font-extrabold text-white tracking-tight tabular-nums">
-                {c.value.toLocaleString()}
+              <p
+                className={`text-[26px] leading-none font-extrabold tracking-tight tabular-nums ${
+                  c.value === null ? "text-white/30" : "text-white"
+                }`}
+                title={c.value === null ? "No connected platform publishes this count" : undefined}
+              >
+                {c.value === null ? "—" : c.value.toLocaleString()}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mt-2.5">{c.label}</p>
               <p className="text-[11px] text-white/30 mt-0.5">{c.sub}</p>
@@ -602,7 +653,7 @@ export default function ProblemSolving() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-8">
-            <DifficultyDonut segments={difficultyDistribution} />
+            <DifficultyDonut segments={difficultySegments} total={difficultyTotal} />
 
             <div className="flex-1 w-full space-y-4">
               {difficultyDistribution.map((d) => (
@@ -613,26 +664,44 @@ export default function ProblemSolving() {
                       <span className="text-sm font-semibold text-white/85">{d.label}</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-bold text-white tabular-nums">{d.count}</span>
-                      <span className="text-[11px] text-white/35 tabular-nums">{difficultyPercent(d.count, overview.classified)}%</span>
+                      <span
+                        className={`text-sm font-bold tabular-nums ${d.known ? "text-white" : "text-white/25"}`}
+                        title={d.known ? undefined : "Not published by connected platforms"}
+                      >
+                        {d.known ? d.count : "—"}
+                      </span>
+                      {d.known && (
+                        <span className="text-[11px] text-white/35 tabular-nums">
+                          {difficultyPercent(d.count, overview.classified)}%
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${difficultyPercent(d.count, overview.classified)}%` }}
-                      transition={{ duration: 0.9, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      className="h-full rounded-full"
-                      style={{ background: d.color, boxShadow: `0 0 6px ${d.color}55` }}
-                    />
+                    {d.known && (
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${difficultyPercent(d.count, overview.classified)}%` }}
+                        transition={{ duration: 0.9, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                        className="h-full rounded-full"
+                        style={{ background: d.color, boxShadow: `0 0 6px ${d.color}55` }}
+                      />
+                    )}
                   </div>
                 </div>
               ))}
 
+              {/* Says which platforms the counts came from, or that none of them
+                  publish a split — the difference between 0 and unknown. */}
               <p className="text-[11px] text-white/30 pt-1 leading-relaxed">
-                {anyConnected
-                  ? `Counts come from ${profiles.map((p) => PLATFORM_LABEL[p.platform]).join(" and ")}.`
-                  : "No platform connected yet."}
+                {!anyConnected
+                  ? "No platform connected yet."
+                  : difficulty.anyKnown
+                    ? `Counts come from ${profiles
+                        .filter(hasDifficultySplit)
+                        .map((p) => PLATFORM_LABEL[p.platform])
+                        .join(" and ")}${difficulty.unclassified > 0 ? `; ${difficulty.unclassified} solves on platforms that publish no split are excluded from the shares` : ""}.`
+                    : "No connected platform publishes an easy / medium / hard split, so these counts are unavailable rather than zero."}
               </p>
             </div>
           </div>
