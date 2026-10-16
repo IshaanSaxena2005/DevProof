@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import {
   addUtcDays,
@@ -10,6 +12,8 @@ import {
   utcDayKey,
   utcToday,
 } from "../src/pages/dashboard/ps/activityDays.mts";
+
+import { EXIT_DEMO_PATH } from "../src/demo/routes.mts";
 
 /**
  * Deterministic tests for the dashboard's calendar-day convention: every key is
@@ -22,6 +26,13 @@ import {
  * property the convention exists to protect: a viewer west or east of UTC reads
  * the same day the server filed the submission under.
  */
+
+const HERE = fileURLToPath(new URL(".", import.meta.url));
+const SRC = `${HERE}../src/`;
+
+function source(relative: string): string {
+  return readFileSync(`${SRC}${relative}`, "utf8");
+}
 
 /** A fixed anchor: 2024-06-15 in UTC. */
 const ANCHOR = new Date("2024-06-15T00:00:00Z");
@@ -247,3 +258,54 @@ test('streaks count consecutive UTC days and cross the year boundary', () => {
     2
   );
 });
+
+/* ────────────────────────────────────────────────────────────
+   Logout redirect behavior
+   ──────────────────────────────────────────────────────────── */
+
+test("the sidebar logout navigates to the homepage, not /login", () => {
+  const sidebar = source("components/Sidebar.tsx");
+
+  // The real logout path (not the demo exit) must navigate to the shared exit
+  // path, which is "/" — the public homepage — not "/login".
+  assert.match(sidebar, /navigate\(EXIT_DEMO_PATH/);
+  assert.equal(EXIT_DEMO_PATH, "/", "EXIT_DEMO_PATH is the homepage");
+});
+
+test("the sidebar logout handles API failure without blocking navigation", () => {
+  const sidebar = source("components/Sidebar.tsx");
+
+  // Navigation must happen before the logout request resolves, so a failing or
+  // slow backend never traps the user in the dashboard.
+  assert.match(
+    sidebar,
+    /navigate\(EXIT_DEMO_PATH/,
+    "navigation is called with EXIT_DEMO_PATH"
+  );
+
+  // The logout request is fire-and-forget: .catch handles failures.
+  assert.match(sidebar, /logout\(\)\.catch/);
+
+  // Navigation happens before the catch, so failure doesn't block it.
+  const navigatePos = sidebar.indexOf("navigate(EXIT_DEMO_PATH");
+  const catchPos = sidebar.indexOf(".catch");
+  assert.ok(navigatePos < catchPos, "navigation call appears before the catch handler");
+});
+
+test("the logout flow preserves route protection", () => {
+  const protectedRoute = source("components/ProtectedRoute.tsx");
+
+  // ProtectedRoute must still gate the dashboard after logout.
+  assert.match(protectedRoute, /<Navigate to="\/login"/);
+  assert.match(protectedRoute, /from: location\.pathname/);
+});
+
+test("the public homepage remains the logout destination on mobile too", () => {
+  // Both shells that can trigger logout (desktop sidebar + mobile drawer) share
+  // the same Sidebar component and therefore the same EXIT_DEMO_PATH.
+  const layout = source("layouts/DashboardLayout.tsx");
+
+  assert.match(layout, /<Sidebar onClose/);
+  assert.match(layout, /<Sidebar \/>/);
+  assert.equal(EXIT_DEMO_PATH, "/");
+});;

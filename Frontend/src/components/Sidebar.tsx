@@ -60,14 +60,23 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       navigate(EXIT_DEMO_PATH, { replace: true });
       return;
     }
+
+    // Clear local state first so the user is not trapped in the dashboard if the
+    // backend cannot be reached. AuthContext.logout() already sets user = null in
+    // its finally block, but navigating before the in-flight request resolves keeps
+    // the UI responsive and avoids a race with ProtectedRoute bouncing to /login.
     setLoggingOut(true);
-    try {
-      await logout();
-      onClose?.();
-      navigate(EXIT_DEMO_PATH, { replace: true });
-    } finally {
+    onClose?.();
+    navigate(EXIT_DEMO_PATH, { replace: true });
+
+    // Fire-and-forget: the cookie clear and any backend-side invalidation still
+    // happen, and failures here must not block the navigation the user already
+    // chose.
+    logout().catch(() => {
+      /* backend was unreachable — local state is already cleared above */
+    }).finally(() => {
       setLoggingOut(false);
-    }
+    });
   }
 
   return (

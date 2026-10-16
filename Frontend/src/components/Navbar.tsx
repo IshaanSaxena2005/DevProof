@@ -48,7 +48,7 @@ export default function Navbar() {
               <img
                 src="/logo.png"
                 alt="DevProof"
-                className="w-16 h-16 rounded-lg object-cover transition-all group-hover:shadow-[0_0_24px_rgba(119,252,117,0.55)]"
+                className="w-14 h-14 rounded-lg object-contain transition-all group-hover:shadow-[0_0_24px_rgba(119,252,117,0.55)]"
               />
               <span className="text-3xl font-black tracking-tight group-hover:text-primary transition-colors">DevProof</span>
             </a>

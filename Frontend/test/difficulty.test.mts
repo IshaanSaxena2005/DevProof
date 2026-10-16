@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import {
   hasDifficultySplit,
@@ -16,6 +18,13 @@ import {
  * inspection for the connected ones (no connected account exists, and linking
  * one would write to the database).
  */
+
+const HERE = fileURLToPath(new URL(".", import.meta.url));
+const SRC = `${HERE}../src/`;
+
+function source(relative: string): string {
+  return readFileSync(`${SRC}${relative}`, "utf8");
+}
 
 /** A row shape close enough to CodingProfile for the fields this module reads. */
 const profile = (
@@ -108,3 +117,26 @@ test('two platforms that both report a split are summed per bucket', () => {
   assert.equal(summary.classified, 30);
   assert.equal(summary.unclassified, 0);
 });
+
+/* ────────────────────────────────────────────────────────────
+   Navbar logo rendering
+   ──────────────────────────────────────────────────────────── */
+
+test("the navbar logo uses object-contain so it is not cropped", () => {
+  const navbar = source("components/Navbar.tsx");
+
+  // The logo image must use object-contain (not object-cover) so the full emblem
+  // and wordmark are visible.
+  assert.match(navbar, /object-contain/);
+  assert.doesNotMatch(navbar, /object-cover/);
+
+  // The logo src is the shared asset.
+  assert.match(navbar, /src="\/logo\.png"/);
+});
+
+test("the navbar logo container is responsive, not oversized", () => {
+  const navbar = source("components/Navbar.tsx");
+
+  // The logo container should be a reasonable size that fits in the navbar.
+  assert.match(navbar, /w-14 h-14/);
+});;
