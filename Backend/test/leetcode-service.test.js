@@ -127,6 +127,31 @@ test('the submission calendar is converted from epoch keys to ISO dates', async 
   assert.equal(calendar['2024-01-02'], 5);
 });
 
+test('calendar days are UTC days, including across a year boundary', async (t) => {
+  const payload = fullPayload();
+  payload.matchedUser.userCalendar.submissionCalendar = JSON.stringify({
+    1704067199: 1, // 2023-12-31T23:59:59Z — still the previous UTC day
+    1704067200: 2, // 2024-01-01T00:00:00Z
+    1704067201: 3, // 2024-01-01T00:00:01Z — same UTC day as the entry above
+    1735689599: 4, // 2024-12-31T23:59:59Z
+    1735689600: 5 // 2025-01-01T00:00:00Z
+  });
+  stubFetch(t, async () => graphqlResponse(payload));
+
+  const p = await LeetCodeService.fetchProfile('someone');
+
+  assert.deepEqual(
+    p.rawStats.submissionCalendar,
+    {
+      '2023-12-31': 1,
+      '2024-01-01': 5,
+      '2024-12-31': 4,
+      '2025-01-01': 5
+    },
+    'epoch seconds are bucketed by the UTC day they fall in'
+  );
+});
+
 test('a malformed calendar costs the heatmap, not the whole sync', async (t) => {
   const payload = fullPayload();
   payload.matchedUser.userCalendar.submissionCalendar = 'not json at all';

@@ -3,11 +3,11 @@ import { motion } from "motion/react";
 import GlassCard from "../../../components/GlassCard";
 import { Reveal } from "./shared";
 import { ACTIVITY_RAMP } from "./shared";
+import { addUtcDays, formatUtcDay, utcDayKey, utcToday } from "./activityDays.mts";
 
 /**
- * GitHub-style heatmap of problem-solving activity (days solved problems), NOT
- * commits. Trailing weeks of the current month render as empty cells, like
- * GitHub does for future dates.
+ * GitHub-style heatmap of recorded submissions per day, NOT commits and not
+ * distinct problems solved. The grid ends on today, so no future day is shown.
  */
 /** Submissions on a day mapped onto the 0..4 intensity ramp. */
 function levelForCount(count: number) {
@@ -35,7 +35,10 @@ export default function ConsistencyHeatmap({
    */
   activity: Record<string, number>;
 }) {
-  const today = new Date();
+  // UTC days, matching the stored calendar keys and the chart and consistency
+  // windows on this page (see activityDays.mts). A local-day grid would look up
+  // the wrong cell for anyone who is not on UTC.
+  const today = utcToday();
   const totalDays = weeks * 7;
   const cells: (number | null)[] = [];
 
@@ -43,19 +46,9 @@ export default function ConsistencyHeatmap({
   const hasCalendarData = Object.keys(activity).length > 0;
 
   for (let i = 0; i < totalDays; i++) {
-    const daysAgo = totalDays - 1 - i;
-    const date = new Date(today);
-    date.setDate(today.getDate() - daysAgo);
-    // Cells after today stay empty
-    if (daysAgo < 0) {
-      cells.push(null);
-      continue;
-    }
-    // Local date parts, not toISOString(): that converts to UTC and would
-    // shift every cell by a day for anyone west of Greenwich.
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-      date.getDate()
-    ).padStart(2, "0")}`;
+    // The grid ends on today, so it spans exactly `totalDays` past days.
+    const date = addUtcDays(today, -(totalDays - 1 - i));
+    const key = utcDayKey(date);
     // Only show data if platform is connected AND provides calendar data
     cells.push(active && hasCalendarData ? levelForCount(activity[key] ?? 0) : 0);
   }
@@ -73,12 +66,10 @@ export default function ConsistencyHeatmap({
     const firstReal = col.find((c) => c !== null);
     if (firstReal === undefined) return;
     const cellIndex = col.indexOf(firstReal);
-    const daysAgo = totalDays - 1 - (idx * 7 + cellIndex);
-    const date = new Date(today);
-    date.setDate(today.getDate() - Math.max(daysAgo, 0));
-    if (date.getMonth() !== lastMonth) {
-      lastMonth = date.getMonth();
-      monthMarks.push({ index: idx, label: date.toLocaleString(undefined, { month: "short" }) });
+    const date = addUtcDays(today, -(totalDays - 1 - (idx * 7 + cellIndex)));
+    if (date.getUTCMonth() !== lastMonth) {
+      lastMonth = date.getUTCMonth();
+      monthMarks.push({ index: idx, label: formatUtcDay(date, { month: "short" }) });
     }
   });
 
@@ -142,9 +133,8 @@ export default function ConsistencyHeatmap({
                     <div key={ci} className="flex flex-col gap-[3px]">
                       {col.map((level, ri) => {
                         const idx = ci * 7 + ri;
-                        const date = new Date(today);
-                        date.setDate(today.getDate() - (totalDays - 1 - idx));
-                        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+                        const date = addUtcDays(today, -(totalDays - 1 - idx));
+                        const key = utcDayKey(date);
                         const count = activity[key] ?? 0;
                         return (
                           <motion.div
@@ -157,7 +147,7 @@ export default function ConsistencyHeatmap({
                             title={
                               level === null
                                 ? "No data"
-                                : `${date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} — ${count} submission${count === 1 ? "" : "s"}`
+                                : `${formatUtcDay(date, { month: "short", day: "numeric", year: "numeric" })} — ${count} submission${count === 1 ? "" : "s"}`
                             }
                           />
                         );

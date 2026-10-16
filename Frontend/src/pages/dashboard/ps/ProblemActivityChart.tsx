@@ -2,8 +2,14 @@ import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 
 export interface ActivityPoint {
+  /** The day (or bucket start day) this point counts, as a UTC day. */
   label: string;
   value: number;
+  /**
+   * The full span a bucketed point sums, e.g. "Jun 9 – Jun 15". Absent for
+   * daily points, where `label` is already the whole story.
+   */
+  range?: string;
 }
 
 /**

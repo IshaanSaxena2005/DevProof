@@ -16,7 +16,13 @@ import { NotConnectedNotice } from "../../components/StateBlocks";
 import { Reveal, SectionLabel, StatLabel, PendingNotice } from "./ps/shared";
 import { DIFFICULTY_COLORS } from "./ps/shared";
 import PlatformCard, { type PlatformProfile } from "./ps/PlatformCard";
-import ProblemActivityChart, { type ActivityPoint } from "./ps/ProblemActivityChart";
+import {
+  longestStreakFrom,
+  mergeCalendars,
+  seriesFrom,
+  submissionsWithin,
+} from "./ps/activityDays.mts";
+import ProblemActivityChart from "./ps/ProblemActivityChart";
 import DifficultyDonut, { difficultyPercent } from "./ps/DifficultyDonut";
 import ConsistencyHeatmap, { ConsistencyStats } from "./ps/ConsistencyHeatmap";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
@@ -54,77 +60,9 @@ function relativeTime(iso: string | null): string | undefined {
   return `${Math.round(hours / 24)}d ago`;
 }
 
-/** Merges every connected platform's daily counts into one ISO-date map. */
-function mergeCalendars(profiles: CodingProfile[]): Record<string, number> {
-  const merged: Record<string, number> = {};
-  for (const profile of profiles) {
-    for (const [day, count] of Object.entries(profile.rawStats?.submissionCalendar ?? {})) {
-      merged[day] = (merged[day] ?? 0) + count;
-    }
-  }
-  return merged;
-}
-
-/** Local YYYY-MM-DD. Not toISOString(), which shifts to UTC and skews the day. */
-function dayKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate()
-  ).padStart(2, "0")}`;
-}
-
-/** Daily submission counts over the trailing window the period selector asks for. */
-function seriesFrom(calendar: Record<string, number>, period: string): ActivityPoint[] {
-  const days = period === "7D" ? 7 : period === "30D" ? 30 : period === "90D" ? 90 : 365;
-  const points: ActivityPoint[] = [];
-  // A year of daily columns is unreadable, so 1Y is bucketed into weeks.
-  const step = days > 90 ? 7 : 1;
-
-  for (let i = days - step; i >= 0; i -= step) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-
-    let value = 0;
-    for (let d = 0; d < step; d++) {
-      const bucket = new Date(date);
-      bucket.setDate(date.getDate() + d);
-      value += calendar[dayKey(bucket)] ?? 0;
-    }
-
-    points.push({
-      label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      value,
-    });
-  }
-  return points;
-}
-
-/** Longest run of consecutive active days anywhere in the recorded history. */
-function longestStreakFrom(calendar: Record<string, number>): number {
-  const days = Object.keys(calendar).sort();
-  let longest = 0;
-  let run = 0;
-  let previous: number | null = null;
-
-  for (const day of days) {
-    const time = new Date(`${day}T00:00:00`).getTime();
-    const consecutive = previous !== null && Math.round((time - previous) / 86400000) === 1;
-    run = consecutive ? run + 1 : 1;
-    if (run > longest) longest = run;
-    previous = time;
-  }
-  return longest;
-}
-
-/** Submissions across the trailing `days` window. */
-function submissionsWithin(calendar: Record<string, number>, days: number): number {
-  let total = 0;
-  for (let i = 0; i < days; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    total += calendar[dayKey(date)] ?? 0;
-  }
-  return total;
-}
+/* Calendar days, trailing windows and streaks live in ./activityDays, which
+   documents the page's UTC-day convention in one place so the chart, the
+   heatmap and the consistency stats cannot drift apart. */
 
 /**
  * Does this platform report how many of the solves were easy/medium/hard?

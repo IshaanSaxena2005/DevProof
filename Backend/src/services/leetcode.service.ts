@@ -400,6 +400,14 @@ export class LeetCodeService {
    *
    * Converted to ISO dates so consumers never deal with epoch maths or the
    * double-encoding, and so the stored shape is readable in the database.
+   *
+   * Each key is the **UTC calendar day**. That is the convention for the whole
+   * feature: the viewer's timezone is not known here, so a submission is filed
+   * under the UTC day it happened, and the dashboard reads every day — chart
+   * windows, heatmap cells, weekly/monthly counts and streaks — as UTC days too
+   * (see Frontend/src/pages/dashboard/ps/activityDays.mts). Deriving days from
+   * local clock parts on either side would file submissions on a neighbouring
+   * day for every user who is not on UTC.
    */
   private static parseCalendar(raw: string | undefined): Record<string, number> {
     if (!raw) return {};
