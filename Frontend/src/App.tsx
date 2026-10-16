@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import GlobalBackground from "./components/GlobalBackground";
 import Navbar from "./components/Navbar";
@@ -18,6 +19,14 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import Login from "./pages/Login";
+import DemoShell from "./demo/DemoShell";
+import {
+  DASHBOARD_BASE,
+  DASHBOARD_SECTIONS,
+  DEMO_BASE,
+  sectionPath,
+  type DashboardSectionId,
+} from "./demo/routes.mts";
 
 // Dashboard imports
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -32,6 +41,29 @@ import Growth from "./pages/dashboard/Growth";
 import CareerReadiness from "./pages/dashboard/CareerReadiness";
 import AiInsights from "./pages/dashboard/AiInsights";
 import Settings from "./pages/dashboard/Settings";
+
+/**
+ * One page per section id. Both route tables read from this, so a section added to
+ * `DASHBOARD_SECTIONS` fails to compile until it is mounted here — and the demo
+ * and the authenticated dashboard therefore always render the same ten pages.
+ *
+ * The two tables below expand `DASHBOARD_SECTIONS` inline rather than through a
+ * shared wrapper component: `<Routes>` only accepts `<Route>` children (a custom
+ * component throws "is not a <Route> component"), so the map has to sit inside
+ * each table.
+ */
+const SECTION_PAGES: Record<DashboardSectionId, ReactElement> = {
+  overview: <Overview />,
+  repositories: <Repositories />,
+  "developer-360": <Developer360 />,
+  skills: <Skills />,
+  "problem-solving": <ProblemSolving />,
+  learning: <LearningAchievements />,
+  growth: <Growth />,
+  "career-readiness": <CareerReadiness />,
+  "ai-insights": <AiInsights />,
+  settings: <Settings />,
+};
 
 function LandingPage() {
   return (
@@ -72,23 +104,32 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
 
+          {/* Public demo.
+
+              The same page components as the dashboard, mounted under /demo and
+              wrapped in DemoProvider. These routes are deliberately *outside*
+              ProtectedRoute: the demo is public because its route and its data
+              are public, not because a guard was weakened. Nothing below
+              /dashboard changed. */}
+          <Route path={DEMO_BASE} element={<DemoShell />}>
+            <Route index element={<Navigate to={sectionPath(DEMO_BASE, "overview")} replace />} />
+            {DASHBOARD_SECTIONS.map((section) => (
+              <Route key={section.id} path={section.id} element={SECTION_PAGES[section.id]} />
+            ))}
+            <Route path="repositories/:repoId" element={<RepositoryDetails />} />
+            <Route path="*" element={<Navigate to={sectionPath(DEMO_BASE, "overview")} replace />} />
+          </Route>
+
           {/* Everything below requires a session. ProtectedRoute renders an
               Outlet, so the dashboard shell nests inside it. */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<Navigate to="/dashboard/overview" replace />} />
-              <Route path="overview" element={<Overview />} />
-              <Route path="repositories" element={<Repositories />} />
+            <Route path={DASHBOARD_BASE} element={<DashboardLayout />}>
+              <Route index element={<Navigate to={sectionPath(DASHBOARD_BASE, "overview")} replace />} />
+              {DASHBOARD_SECTIONS.map((section) => (
+                <Route key={section.id} path={section.id} element={SECTION_PAGES[section.id]} />
+              ))}
               <Route path="repositories/:repoId" element={<RepositoryDetails />} />
-              <Route path="developer-360" element={<Developer360 />} />
-              <Route path="skills" element={<Skills />} />
-              <Route path="problem-solving" element={<ProblemSolving />} />
-              <Route path="learning" element={<LearningAchievements />} />
-              <Route path="growth" element={<Growth />} />
-              <Route path="career-readiness" element={<CareerReadiness />} />
-              <Route path="ai-insights" element={<AiInsights />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
+              <Route path="*" element={<Navigate to={sectionPath(DASHBOARD_BASE, "overview")} replace />} />
             </Route>
           </Route>
 

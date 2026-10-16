@@ -81,8 +81,9 @@ export default function HeroSection() {
               Connect GitHub
             </Link>
 
+            {/* Opens the public demo — no account, no redirect to login. */}
             <Link
-              to="/login"
+              to="/demo"
               className="glass-chip text-white text-xs md:text-sm cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] hover:bg-white/[0.12] hover:border-white/30 shrink-0 text-center"
               style={{ padding: "0.95rem 2.25rem" }}
             >

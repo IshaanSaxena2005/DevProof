@@ -61,8 +61,9 @@ export default function FinalCtaSection() {
                   </Link>
                 </div>
 
+                {/* Opens the public demo — no account, no redirect to login. */}
                 <Link
-                  to="/login"
+                  to="/demo"
                   className="glass-chip font-bold text-xs md:text-sm uppercase tracking-widest px-8 py-4 text-white hover:bg-white/12 hover:border-white/25 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shrink-0 text-center"
                 >
                   Explore Demo

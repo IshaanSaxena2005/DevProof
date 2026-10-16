@@ -4,10 +4,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { authService } from "../services/auth";
+import { DEMO_BASE } from "../demo/routes.mts";
 import type { User } from "../lib/types";
 
 interface AuthContextValue {
@@ -42,8 +45,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Bootstrap once on mount so a page refresh keeps the user signed in.
+  // True while the URL is under /demo. Read during render so the mount-time
+  // bootstrap below sees the route the app actually opened on.
+  const location = useLocation();
+  const onDemoRoute =
+    location.pathname === DEMO_BASE || location.pathname.startsWith(`${DEMO_BASE}/`);
+
+  /** Set when the mount bootstrap was skipped because the demo was open. */
+  const restoreSessionRef = useRef(false);
+
+  // Bootstrap once on mount so a page refresh keeps the user signed in — but
+  // not on the public demo. The demo is synthetic and needs no session;
+  // bootstrapping one just to render it would call a protected endpoint on
+  // behalf of a visitor who has no account, and could put a real signed-in
+  // account behind pages whose identity is sample data. The skip is remembered
+  // and undone by the effect below, so leaving the demo restores the same
+  // "signed in or not" answer the cookie would give anywhere else.
   useEffect(() => {
+    if (onDemoRoute) {
+      restoreSessionRef.current = true;
+      setLoading(false);
+      return;
+    }
+
     let active = true;
     (async () => {
       await refresh();
@@ -53,6 +77,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [refresh]);
+
+  // The first navigation out of the demo runs the session check the mount
+  // skipped. A visitor who reached the demo from an already-bootstrapped page
+  // never needs it: their session is still in memory, untouched.
+  useEffect(() => {
+    if (onDemoRoute || !restoreSessionRef.current) return;
+    restoreSessionRef.current = false;
+
+    let active = true;
+    (async () => {
+      await refresh();
+      if (active) setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [onDemoRoute, refresh]);
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await authService.login(email, password);
