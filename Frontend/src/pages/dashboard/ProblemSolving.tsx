@@ -204,11 +204,14 @@ function toPlatformCard(
     headline: { label: "Solved", value: profile.totalSolved },
     // Omitted entirely when the platform publishes no difficulty split, which
     // leaves the bars out rather than drawing three empty ones.
+    // The per-bucket counts pass through as they arrived: a bucket the platform
+    // did not publish stays null and renders as unavailable on the card, rather
+    // than being substituted with a 0 it never measured.
     breakdown: hasDifficultySplit(profile)
       ? [
-          { label: "Easy", count: profile.easySolved ?? 0, color: DIFFICULTY_COLORS.easy },
-          { label: "Medium", count: profile.mediumSolved ?? 0, color: DIFFICULTY_COLORS.medium },
-          { label: "Hard", count: profile.hardSolved ?? 0, color: DIFFICULTY_COLORS.hard },
+          { label: "Easy", count: profile.easySolved, color: DIFFICULTY_COLORS.easy },
+          { label: "Medium", count: profile.mediumSolved, color: DIFFICULTY_COLORS.medium },
+          { label: "Hard", count: profile.hardSolved, color: DIFFICULTY_COLORS.hard },
         ]
       : undefined,
     difficultyUnavailable: !hasDifficultySplit(profile),

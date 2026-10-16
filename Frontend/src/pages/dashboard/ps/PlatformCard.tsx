@@ -12,7 +12,8 @@ export interface PlatformProfile {
   profileUrl?: string;
   headline: { label: string; value: number };
   stats: { label: string; value: string }[];
-  breakdown?: { label: string; count: number; color: string }[];
+  /** Difficulty counts, with null for a bucket the platform did not publish. */
+  breakdown?: { label: string; count: number | null; color: string }[];
   progress?: { label: string; percent: number; caption: string };
   /** GFG-specific metrics when available */
   gfgStats?: {
@@ -263,23 +264,33 @@ export default function PlatformCard({
               )}
             </div>
 
-            {/* Difficulty breakdown bars (LeetCode-style) */}
+            {/* Difficulty breakdown bars (LeetCode-style).
+             *
+             * A bucket the platform did not report keeps its row but shows a dash
+             * and an empty track — the split exists, that one count does not. */}
             {profile.breakdown ? (
               <div className="space-y-2">
                 {profile.breakdown.map((b, i) => (
                   <div key={b.label}>
                     <div className="flex items-center justify-between text-[11px] mb-1">
                       <span className="text-white/55 font-medium">{b.label}</span>
-                      <span className="text-white/40 tabular-nums">{b.count}</span>
+                      <span
+                        className={`tabular-nums ${b.count === null ? "text-white/25" : "text-white/40"}`}
+                        title={b.count === null ? `${b.label} count is not published by this platform` : undefined}
+                      >
+                        {b.count === null ? "—" : b.count}
+                      </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(100, (b.count / Math.max(...profile.breakdown!.map((x) => x.count), 1)) * 100)}%` }}
-                        transition={{ duration: 0.8, delay: 0.3 + i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
-                        className="h-full rounded-full"
-                        style={{ background: b.color, boxShadow: `0 0 6px ${b.color}55` }}
-                      />
+                      {b.count !== null && (
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, (b.count / Math.max(...profile.breakdown!.map((x) => x.count ?? 0), 1)) * 100)}%` }}
+                          transition={{ duration: 0.8, delay: 0.3 + i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+                          className="h-full rounded-full"
+                          style={{ background: b.color, boxShadow: `0 0 6px ${b.color}55` }}
+                        />
+                      )}
                     </div>
                   </div>
                 ))}

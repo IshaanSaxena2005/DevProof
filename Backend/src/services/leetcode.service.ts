@@ -12,6 +12,9 @@ import { AppError } from '../utils/appError';
 //
 // Nothing here invents a value. A statistic LeetCode does not return stays null
 // all the way to the dashboard, which renders it as unavailable rather than 0.
+// The solve statistics are the exception that proves the rule: the dashboard has
+// nowhere to put a missing total, so a profile returned without them is rejected
+// (503, "try again shortly") instead of being shown as an account with 0 solved.
 
 const LEETCODE_GRAPHQL = 'https://leetcode.com/graphql';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -50,14 +53,21 @@ interface LeetCodeResponse {
   errors?: { message?: string }[];
 }
 
-/** Normalized profile, with null for anything LeetCode did not report. */
+/**
+ * Normalized profile, with null for anything LeetCode did not report.
+ *
+ * `totalSolved` is the one required figure: a profile without it is rejected
+ * outright (see fetchProfile), because "not reported" and "solved nothing" are
+ * indistinguishable once it reaches the dashboard. The per-difficulty counts
+ * stay nullable — an absent bucket is unavailable, not zero.
+ */
 export interface LeetCodeProfile {
   handle: string;
   profileUrl: string;
   totalSolved: number;
-  easySolved: number;
-  mediumSolved: number;
-  hardSolved: number;
+  easySolved: number | null;
+  mediumSolved: number | null;
+  hardSolved: number | null;
   acceptanceRate: number | null;
   ranking: number | null;
   rating: number | null;
@@ -141,7 +151,14 @@ function num(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-/** A finite non-negative integer, defaulting to 0 — used only for solve counts. */
+/**
+ * A finite non-negative integer, defaulting to 0.
+ *
+ * Only for values the caller has already established exist: a difficulty bucket
+ * that is present and reports 0 solved is a real measurement. An absent bucket
+ * is handled as null by the caller and never reaches this function, so a
+ * missing section can not be read as a zero count.
+ */
 function count(value: unknown): number {
   const n = num(value);
   return n !== null && n >= 0 ? Math.round(n) : 0;
@@ -153,8 +170,10 @@ export class LeetCodeService {
    *
    * @throws 404 when the handle does not exist or the profile is not public.
    * @throws 503 when LeetCode is unreachable, times out, or answers with a
-   *         shape we cannot read — never a 500, because none of these are bugs
-   *         in DevProof and all of them are worth retrying later.
+   *         shape we cannot read — including a profile returned without its
+   *         solve statistics, which is rejected rather than read as "0 solved".
+   *         Never a 500, because none of these are bugs in DevProof and all of
+   *         them are worth retrying later.
    */
   static async fetchProfile(handle: string): Promise<LeetCodeProfile> {
     const username = handle.trim();
@@ -216,6 +235,24 @@ export class LeetCodeService {
     const accepted = user.submitStats?.acSubmissionNum;
     const attempted = user.submitStats?.totalSubmissionNum;
 
+    // The solve statistics are the profile. LeetCode answers 200 with them
+    // absent when its response shape moves, and a defaulted 0 would reach the
+    // dashboard as a real-looking "0 solved" for an account with hundreds. A
+    // payload without them is reported as unreadable instead, which is the same
+    // 503 this service already uses for responses it cannot parse.
+    const allSolved = num(bucket(accepted, 'All')?.count);
+    if (allSolved === null) {
+      throw AppError.serviceUnavailable(
+        'LeetCode returned a profile without its solve statistics. Please try again shortly.'
+      );
+    }
+
+    /** A difficulty bucket's count, or null when that bucket was not published. */
+    const solvedFor = (difficulty: Difficulty): number | null => {
+      const entry = bucket(accepted, difficulty);
+      return entry ? count(entry.count) : null;
+    };
+
     // LeetCode's own acceptance rate is accepted submissions over all
     // submissions — not problems solved over problems attempted.
     const acceptedSubmissions = num(bucket(accepted, 'All')?.submissions);
@@ -252,10 +289,10 @@ export class LeetCodeService {
     return {
       handle: user.username ?? username,
       profileUrl: `https://leetcode.com/u/${encodeURIComponent(user.username ?? username)}/`,
-      totalSolved: count(bucket(accepted, 'All')?.count),
-      easySolved: count(bucket(accepted, 'Easy')?.count),
-      mediumSolved: count(bucket(accepted, 'Medium')?.count),
-      hardSolved: count(bucket(accepted, 'Hard')?.count),
+      totalSolved: Math.max(0, Math.round(allSolved)),
+      easySolved: solvedFor('Easy'),
+      mediumSolved: solvedFor('Medium'),
+      hardSolved: solvedFor('Hard'),
       acceptanceRate,
       ranking: num(user.profile?.ranking),
       // A user who has never entered a contest has no rating. That is null,

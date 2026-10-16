@@ -138,7 +138,10 @@ test('a malformed calendar costs the heatmap, not the whole sync', async (t) => 
   assert.equal(p.totalSolved, 300, 'the rest of the profile must still load');
 });
 
-test('missing optional sections degrade to empty rather than throwing', async (t) => {
+test('a profile returned without its solve statistics is unavailable, not zero', async (t) => {
+  // LeetCode answers 200 with submitStats absent when its shape moves. Reading
+  // that as "0 solved" would put a wrong number on the dashboard, so the payload
+  // is rejected instead.
   stubFetch(t, async () =>
     graphqlResponse({
       matchedUser: { username: 'sparse', submitStats: { acSubmissionNum: [] } },
@@ -146,13 +149,77 @@ test('missing optional sections degrade to empty rather than throwing', async (t
     })
   );
 
+  await assert.rejects(
+    () => LeetCodeService.fetchProfile('sparse'),
+    (error) => {
+      assert.equal(error.statusCode, 503, 'a shape change is retryable, not a client error');
+      assert.match(error.message, /without its solve statistics/i);
+      return true;
+    }
+  );
+});
+
+test('a profile with no submitStats object at all is unavailable, not zero', async (t) => {
+  stubFetch(t, async () => graphqlResponse({ matchedUser: { username: 'sparse' } }));
+
+  await assert.rejects(() => LeetCodeService.fetchProfile('sparse'), /without its solve statistics/i);
+});
+
+test('missing optional sections degrade to empty rather than throwing', async (t) => {
+  stubFetch(t, async () =>
+    graphqlResponse({
+      matchedUser: {
+        username: 'sparse',
+        submitStats: { acSubmissionNum: [{ difficulty: 'All', count: 5, submissions: 9 }] }
+      },
+      userContestRanking: null
+    })
+  );
+
   const p = await LeetCodeService.fetchProfile('sparse');
 
-  assert.equal(p.totalSolved, 0);
+  assert.equal(p.totalSolved, 5, 'the required statistics still map through');
   assert.equal(p.streakDays, null);
+  assert.equal(p.rating, null);
+  assert.equal(p.acceptanceRate, null, 'no totalSubmissionNum means no rate, not 0%');
+  assert.deepEqual(p.rawStats.submissionCalendar, {});
   assert.deepEqual(p.rawStats.topics, []);
   assert.deepEqual(p.rawStats.languages, []);
   assert.deepEqual(p.rawStats.totalAvailable, { easy: null, medium: null, hard: null });
+});
+
+test('a genuine zero solved count is kept as zero', async (t) => {
+  const payload = fullPayload();
+  payload.matchedUser.submitStats.acSubmissionNum = [
+    { difficulty: 'All', count: 0, submissions: 0 },
+    { difficulty: 'Easy', count: 0, submissions: 0 },
+    { difficulty: 'Medium', count: 0, submissions: 0 },
+    { difficulty: 'Hard', count: 0, submissions: 0 }
+  ];
+  stubFetch(t, async () => graphqlResponse(payload));
+
+  const p = await LeetCodeService.fetchProfile('someone');
+
+  assert.equal(p.totalSolved, 0, 'a reported zero is a measurement, not an absence');
+  assert.equal(p.easySolved, 0);
+  assert.equal(p.mediumSolved, 0);
+  assert.equal(p.hardSolved, 0);
+});
+
+test('a difficulty bucket that is absent stays null rather than becoming zero', async (t) => {
+  const payload = fullPayload();
+  payload.matchedUser.submitStats.acSubmissionNum = [
+    { difficulty: 'All', count: 300, submissions: 500 },
+    { difficulty: 'Easy', count: 150, submissions: 200 }
+  ];
+  stubFetch(t, async () => graphqlResponse(payload));
+
+  const p = await LeetCodeService.fetchProfile('someone');
+
+  assert.equal(p.totalSolved, 300);
+  assert.equal(p.easySolved, 150);
+  assert.equal(p.mediumSolved, null, 'an unpublished bucket is unknown, not 0');
+  assert.equal(p.hardSolved, null);
 });
 
 test('topics are flattened across difficulty groupings and sorted', async (t) => {
