@@ -19,6 +19,10 @@ export interface ActivityPoint {
  *
  * The viewBox stretches to its container; tooltips are positioned in
  * percentages so the drawn geometry and DOM overlay never disagree.
+ *
+ * It plots the counts the platforms publish in their submission calendars, so
+ * every label says "submissions" — one problem submitted three times is three
+ * submissions, and calling these "problems solved" would overstate the line.
  */
 export default function ProblemActivityChart({ data }: { data: ActivityPoint[] }) {
   const [hovered, setHovered] = useState<number | null>(null);
@@ -64,7 +68,7 @@ export default function ProblemActivityChart({ data }: { data: ActivityPoint[] }
 
   return (
     <div className="relative w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[340px]" preserveAspectRatio="none" role="img" aria-label="Problems solved over the selected period">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[340px]" preserveAspectRatio="none" role="img" aria-label="Recorded submissions over the selected period">
         <defs>
           <linearGradient id="ps-area-fill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="rgba(22,255,0,0.16)" />
@@ -151,9 +155,12 @@ export default function ProblemActivityChart({ data }: { data: ActivityPoint[] }
             top: `${(hoveredPoint.y / H) * 100 - 14}%`,
           }}
         >
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40 whitespace-nowrap">{hoveredPoint.label}</p>
+          {/* A weekly bucket states the span it sums; a daily point is its label. */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40 whitespace-nowrap">
+            {hoveredPoint.range ?? hoveredPoint.label}
+          </p>
           <p className="text-sm font-bold text-primary leading-tight mt-0.5">
-            {hoveredPoint.value} {hoveredPoint.value === 1 ? "problem" : "problems"}
+            {hoveredPoint.value} {hoveredPoint.value === 1 ? "submission" : "submissions"}
           </p>
         </div>
       )}

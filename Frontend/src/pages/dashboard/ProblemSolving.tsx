@@ -555,7 +555,9 @@ export default function ProblemSolving() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-3.5 h-3.5 text-primary" />
-              <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">Problems Solved — Last {period}</h3>
+              {/* The plotted series is the platforms' submission calendars:
+                  submissions recorded in the window, not distinct solves. */}
+              <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">Submissions — Last {period}</h3>
             </div>
 
             {/* Period selector */}
@@ -582,6 +584,11 @@ export default function ProblemSolving() {
           </div>
 
           <ProblemActivityChart data={series} />
+          <p className="text-[11px] text-white/30 mt-3 leading-relaxed">
+            Recorded submissions from the submission calendars the connected platforms publish. A
+            problem submitted more than once counts more than once — these are submission counts, not
+            distinct problems solved.
+          </p>
         </GlassCard>
       </Reveal>
 

@@ -196,8 +196,10 @@ export function ConsistencyStats({
   const items = [
     { icon: Flame, label: "Current Streak", value: active && hasCalendarData ? `${stats.currentStreak} days` : "—" },
     { icon: Zap, label: "Longest Streak", value: active && hasCalendarData ? `${stats.longestStreak} days` : "—" },
-    { icon: CalendarDays, label: "This Week", value: active && hasCalendarData ? `${stats.thisWeek} problems` : "—" },
-    { icon: CalendarRange, label: "This Month", value: active && hasCalendarData ? `${stats.thisMonth} problems` : "—" },
+    // The calendar counts submissions, so these two do as well — a week in which
+    // one problem was submitted four times reads as four, not one.
+    { icon: CalendarDays, label: "This Week", value: active && hasCalendarData ? `${stats.thisWeek} submissions` : "—" },
+    { icon: CalendarRange, label: "This Month", value: active && hasCalendarData ? `${stats.thisMonth} submissions` : "—" },
     // No platform publishes an all-time active-day window, so the raw count of
     // recorded active days is shown without an invented "of N" denominator.
     { icon: Activity, label: "Active Days", value: active && hasCalendarData ? `${stats.activeDays}` : "—" },
