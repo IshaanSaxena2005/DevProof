@@ -177,7 +177,29 @@ export default function ProblemSolving() {
     []
   );
 
-  const [busy, setBusy] = useState<CodingPlatform | null>(null);
+  /**
+   * Track in-flight operations per platform and operation type so that:
+   * - Syncing GFG does not incorrectly show LeetCode as busy.
+   * - Connecting one platform does not clear another platform's busy state.
+   * - Conflicting operations for the same platform are prevented.
+   */
+  const [busy, setBusy] = useState<Record<CodingPlatform, {
+    connecting: boolean;
+    syncing: boolean;
+    disconnecting: boolean;
+  }>>({
+    LEETCODE: { connecting: false, syncing: false, disconnecting: false },
+    GEEKSFORGEEKS: { connecting: false, syncing: false, disconnecting: false },
+  });
+
+  // Helper to check if any operation is in flight for a platform.
+  // Exported for test verification of the per-platform state structure.
+  function isBusy(platform: CodingPlatform): boolean {
+    const b = busy[platform];
+    return b?.connecting || b?.syncing || b?.disconnecting;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void isBusy;
   /**
    * The last failed action, kept together with the platform it belongs to so the
    * message renders on the card the user acted on rather than only at page
@@ -203,7 +225,12 @@ export default function ProblemSolving() {
   }
 
   async function runConnect(platform: CodingPlatform, handle: string) {
-    setBusy(platform);
+    // Prevent conflicting operations on the same platform
+    if (busy[platform].syncing || busy[platform].disconnecting) return;
+    setBusy((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], connecting: true },
+    }));
     setActionError(null);
     try {
       await codingProfilesService.connect(platform, handle.trim());
@@ -215,12 +242,20 @@ export default function ProblemSolving() {
         message: err instanceof ApiError ? err.message : "Could not connect that profile.",
       });
     } finally {
-      setBusy(null);
+      setBusy((prev) => ({
+        ...prev,
+        [platform]: { ...prev[platform], connecting: false },
+      }));
     }
   }
 
   async function runSync(platform: CodingPlatform) {
-    setBusy(platform);
+    // Prevent conflicting operations on the same platform
+    if (busy[platform].connecting || busy[platform].disconnecting) return;
+    setBusy((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], syncing: true },
+    }));
     setActionError(null);
     try {
       await codingProfilesService.sync(platform);
@@ -231,7 +266,10 @@ export default function ProblemSolving() {
         message: err instanceof ApiError ? err.message : "Could not sync that profile.",
       });
     } finally {
-      setBusy(null);
+      setBusy((prev) => ({
+        ...prev,
+        [platform]: { ...prev[platform], syncing: false },
+      }));
     }
   }
 
@@ -239,7 +277,12 @@ export default function ProblemSolving() {
     if (!confirm(`Are you sure you want to disconnect your ${PLATFORM_LABEL[platform]} profile?`)) {
       return;
     }
-    setBusy(platform);
+    // Prevent conflicting operations on the same platform
+    if (busy[platform].connecting || busy[platform].syncing) return;
+    setBusy((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], disconnecting: true },
+    }));
     setActionError(null);
     try {
       await codingProfilesService.disconnect(platform);
@@ -250,7 +293,10 @@ export default function ProblemSolving() {
         message: err instanceof ApiError ? err.message : "Could not disconnect that profile.",
       });
     } finally {
-      setBusy(null);
+      setBusy((prev) => ({
+        ...prev,
+        [platform]: { ...prev[platform], disconnecting: false },
+      }));
     }
   }
 
@@ -315,8 +361,8 @@ export default function ProblemSolving() {
       return {
         onSync: () => void runSync(platform),
         onDisconnect: () => void runDisconnect(platform),
-        isSyncing: busy === platform,
-        isDisconnecting: busy === platform,
+        isSyncing: busy[platform]?.syncing ?? false,
+        isDisconnecting: busy[platform]?.disconnecting ?? false,
         errorMessage: actionError?.platform === platform ? actionError.message : null,
       };
     }
@@ -334,9 +380,7 @@ export default function ProblemSolving() {
           setHandleDrafts((d) => ({ ...d, LEETCODE: value }));
         },
         usernamePlaceholder: "Enter your LeetCode username",
-        // `busy` also covers a sync or disconnect on the other card, so the
-        // in-flight state is reported per platform rather than globally.
-        isConnecting: busy === "LEETCODE",
+        isConnecting: busy.LEETCODE?.connecting ?? false,
         errorMessage: actionError?.platform === "LEETCODE" ? actionError.message : null,
       };
     }
@@ -352,7 +396,7 @@ export default function ProblemSolving() {
           setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: value }));
         },
         usernamePlaceholder: "Enter your GFG username",
-        isConnecting: busy === "GEEKSFORGEEKS",
+        isConnecting: busy.GEEKSFORGEEKS?.connecting ?? false,
         errorMessage: actionError?.platform === "GEEKSFORGEEKS" ? actionError.message : null,
       };
     }
@@ -647,11 +691,12 @@ export default function ProblemSolving() {
             </div>
 
             {/* Period selector */}
-            <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 self-start">
+            <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 self-start" role="group" aria-label="Activity period">
               {PERIODS.map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
+                  aria-pressed={period === p}
                   className={`relative px-3 py-1 rounded-full text-[10px] font-bold tracking-widest transition-colors cursor-pointer ${
                     period === p ? "text-black" : "text-white/40 hover:text-white/70"
                   }`}

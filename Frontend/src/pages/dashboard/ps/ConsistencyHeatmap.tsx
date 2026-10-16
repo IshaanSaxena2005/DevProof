@@ -59,6 +59,21 @@ export default function ConsistencyHeatmap({
     columns.push(cells.slice(w * 7, w * 7 + 7));
   }
 
+  // Compute weekday labels from the actual first column's weekday so the labels
+  // always match the rows regardless of what day the grid starts on.
+  const firstCellDate = addUtcDays(today, -(totalDays - 1));
+  const firstWeekday = firstCellDate.getUTCDay(); // 0=Sun .. 6=Sat
+  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayLabels: (string | null)[] = [];
+  for (let i = 0; i < 7; i++) {
+    const actualDay = (firstWeekday + i) % 7;
+    // Show only Mon, Wed, Fri, Sun — skip Tue, Thu, Sat to keep the labels
+    // sparse and readable, matching the original intent.
+    dayLabels.push(["Mon", "Wed", "Fri", "Sun"].includes(DAY_LABELS[actualDay])
+      ? DAY_LABELS[actualDay]
+      : "");
+  }
+
   // Month labels above the first week of each month
   const monthMarks: { index: number; label: string }[] = [];
   let lastMonth = -1;
@@ -119,9 +134,9 @@ export default function ConsistencyHeatmap({
                 </div>
 
                 <div className="flex gap-[3px]">
-                  {/* Day labels */}
+                  {/* Day labels — computed from the actual first column's weekday */}
                   <div className="flex flex-col gap-[3px] pr-1.5 shrink-0">
-                    {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((d, i) => (
+                    {dayLabels.map((d, i) => (
                       <div key={i} className="w-6 h-3 flex items-center">
                         <span className="text-[9px] font-medium text-white/25 leading-none">{d}</span>
                       </div>
@@ -167,17 +182,19 @@ export default function ConsistencyHeatmap({
                 </div>
               </>
             )}
-
-            {footerNote && (
-              <p className="text-[11px] text-white/30 mt-4 leading-relaxed">{footerNote}</p>
-            )}
-            {!hasCalendarData && active && (
-              <p className="text-[11px] text-white/30 mt-4 leading-relaxed">
-                Connected platforms do not provide submission calendar data. The heatmap requires platforms like LeetCode that publish daily submission history.
-              </p>
-            )}
           </div>
         </div>
+
+        {/* Footer notes rendered outside the scroll container so they are never
+            clipped on mobile, while the heatmap grid itself can still scroll. */}
+        {footerNote && (
+          <p className="text-[11px] text-white/30 mt-4 leading-relaxed">{footerNote}</p>
+        )}
+        {!hasCalendarData && active && (
+          <p className="text-[11px] text-white/30 mt-4 leading-relaxed">
+            Connected platforms do not provide submission calendar data. The heatmap requires platforms like LeetCode that publish daily submission history.
+          </p>
+        )}
       </div>
     </GlassCard>
   );

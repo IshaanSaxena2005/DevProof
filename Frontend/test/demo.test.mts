@@ -525,3 +525,112 @@ test("the dataset is deterministic for a given day and moves with the clock", ()
   const repoNames = sample.repositories.map((repo) => repo.name);
   assert.equal(new Set(repoNames).size, repoNames.length);
 });
+
+/* ────────────────────────────────────────────────────────────
+   6. Per-platform request state
+   ──────────────────────────────────────────────────────────── */
+
+test("the problem-solving page tracks busy state per platform and operation", () => {
+  const ps = source("pages/dashboard/ProblemSolving.tsx");
+
+  // Busy state is a record keyed by platform, with separate flags for each
+  // operation type — not a single CodingPlatform | null value.
+  assert.match(ps, /busy.*\[platform\].*connecting/);
+  assert.match(ps, /busy.*\[platform\].*syncing/);
+  assert.match(ps, /busy.*\[platform\].*disconnecting/);
+
+  // Each operation function sets only its own flag on the target platform.
+  assert.match(ps, /connecting: true/);
+  assert.match(ps, /syncing: true/);
+  assert.match(ps, /disconnecting: true/);
+
+  // Conflicting operations on the same platform are prevented.
+  assert.match(ps, /if \(busy\[platform\]\.syncing || busy\[platform\]\.disconnecting\) return/);
+  assert.match(ps, /if \(busy\[platform\]\.connecting || busy\[platform\]\.disconnecting\) return/);
+  assert.match(ps, /if \(busy\[platform\]\.connecting || busy\[platform\]\.syncing\) return/);
+
+  // Buttons receive per-platform, per-operation busy state.
+  assert.match(ps, /isSyncing: busy\[platform\].*syncing/);
+  assert.match(ps, /isDisconnecting: busy\[platform\].*disconnecting/);
+  assert.match(ps, /isConnecting: busy\.LEETCODE.*connecting/);
+  assert.match(ps, /isConnecting: busy\.GEEKSFORGEEKS.*connecting/);
+});
+
+test("syncing one platform does not set the other platform's busy state", () => {
+  const ps = source("pages/dashboard/ProblemSolving.tsx");
+
+  // runSync spreads the previous state and only sets syncing: true on the
+  // target platform, leaving other platforms' state untouched.
+  assert.match(ps, /\.\.\.prev/);
+  assert.match(ps, /\[platform\]: \{\s*\.\.\.prev\[platform\]/);
+  assert.match(ps, /syncing: true/);
+
+  // The finally block clears only the target platform's syncing flag.
+  assert.match(ps, /\[platform\]: \{\s*\.\.\.prev\[platform\],\s*syncing: false/);
+});
+
+/* ────────────────────────────────────────────────────────────
+   7. Period selector accessibility
+   ──────────────────────────────────────────────────────────── */
+
+test("the period selector buttons have aria-pressed for the selected state", () => {
+  const ps = source("pages/dashboard/ProblemSolving.tsx");
+
+  // The period selector group has an accessible label.
+  assert.match(ps, /role="group" aria-label="Activity period"/);
+
+  // Each button has aria-pressed reflecting the selected state.
+  assert.match(ps, /aria-pressed=\{period === p\}/);
+});
+
+/* ────────────────────────────────────────────────────────────
+   8. Disabled connect button accessibility
+   ──────────────────────────────────────────────────────────── */
+
+test("the disabled connect button has a visible accessible explanation", () => {
+  const card = source("pages/dashboard/ps/PlatformCard.tsx");
+
+  // When connect is unavailable (no onConnect or connectDisabled) and there's a
+  // hint, render it as visible text with aria-live so screen readers announce it.
+  assert.match(card, /!onConnect || connectDisabled/);
+  assert.match(card, /connectHint/);
+  assert.match(card, /aria-live="polite"/);
+
+  // The button has aria-disabled reflecting its disabled state.
+  assert.match(card, /aria-disabled=/);
+  assert.match(card, /aria-describedby.*handleMessageId/);
+
+  // Validation errors are associated with the input via aria-describedby and aria-invalid.
+  assert.match(card, /aria-describedby={handleMessageShown/);
+  assert.match(card, /aria-invalid={handleMessageShown/);
+});
+
+/* ────────────────────────────────────────────────────────────
+   9. Background refresh preserves current data
+   ──────────────────────────────────────────────────────────── */
+
+test("useResource preserves data during background refreshes", () => {
+  const useResource = source("lib/useResource.ts");
+
+  // The hook tracks initial mount to distinguish it from background refreshes.
+  assert.match(useResource, /isInitialMount/);
+  assert.match(useResource, /useRef\(true\)/);
+
+  // On background refresh (non-initial mount), loading is not set to true.
+  assert.match(useResource, /if \(\!isInitialMount\.current\) \{\s*setLoading\(false\)/);
+
+  // On successful refresh, data is updated but loading stays false.
+  assert.match(
+    useResource,
+    /if \(active\) \{\s*setData\(result\);\s*if \(isInitialMount\.current\) \{\s*setLoading\(false\)/s,
+    "success updates data but only sets loading false on initial mount"
+  );
+
+  // On failed refresh, error is set but loading stays false.
+  assert.match(
+    useResource,
+    /setError.*if \(isInitialMount\.current\) \{\s*setLoading\(false\)/s,
+    "error sets message but only sets loading false on initial mount"
+  );
+});
+;

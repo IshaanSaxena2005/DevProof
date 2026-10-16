@@ -514,9 +514,19 @@ export default function PlatformCard({
               </ul>
             </div>
 
+            {/* Visible explanation when the connect button is disabled */}
+            {(!onConnect || connectDisabled) && !isConnecting && connectHint && (
+              <p className="text-[11px] text-white/35 text-center leading-relaxed" aria-live="polite"
+                id={handleMessageId}>
+                {connectHint}
+              </p>
+            )}
+
             <button
               type="submit"
               disabled={onConnect === undefined || connectDisabled || isConnecting}
+              aria-disabled={onConnect === undefined || connectDisabled || isConnecting}
+              aria-describedby={(!onConnect || connectDisabled) && connectHint ? handleMessageId : undefined}
               title={
                 isConnecting
                   ? `Connecting ${brand.name}…`

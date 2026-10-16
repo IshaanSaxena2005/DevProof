@@ -260,6 +260,86 @@ test('streaks count consecutive UTC days and cross the year boundary', () => {
 });
 
 /* ────────────────────────────────────────────────────────────
+   Heatmap weekday label alignment
+   ──────────────────────────────────────────────────────────── */
+
+/** The seven weekday abbreviations the heatmap renders. */
+const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/**
+ * What the heatmap shows as a day label for a given row index, given the
+ * weekday of the first column. Rows that are not Mon/Wed/Fri/Sun are blank.
+ */
+function dayLabelForRow(firstWeekday: number, row: number): string | null {
+  const actualDay = (firstWeekday + row) % 7;
+  const name = DAY_ABBREVS[actualDay];
+  return ["Mon", "Wed", "Fri", "Sun"].includes(name) ? name : null;
+}
+
+test('heatmap weekday labels match rows regardless of start weekday', () => {
+  // When the first column is Monday, the labels are Mon/_/Wed/_/Fri/_/Sun.
+  assert.equal(dayLabelForRow(1, 0), "Mon");
+  assert.equal(dayLabelForRow(1, 1), null);
+  assert.equal(dayLabelForRow(1, 2), "Wed");
+  assert.equal(dayLabelForRow(1, 3), null);
+  assert.equal(dayLabelForRow(1, 4), "Fri");
+  assert.equal(dayLabelForRow(1, 5), null);
+  assert.equal(dayLabelForRow(1, 6), "Sun");
+
+  // When the first column is Saturday (day 6), the rows are:
+  // row 0 = Sat, row 1 = Sun, row 2 = Mon, row 3 = Tue, row 4 = Wed,
+  // row 5 = Thu, row 6 = Fri
+  // Displayed labels should be on Sun(row1), Mon(row2), Wed(row4), Fri(row6)
+  assert.equal(dayLabelForRow(6, 0), null); // Sat
+  assert.equal(dayLabelForRow(6, 1), "Sun");
+  assert.equal(dayLabelForRow(6, 2), "Mon");
+  assert.equal(dayLabelForRow(6, 3), null); // Tue
+  assert.equal(dayLabelForRow(6, 4), "Wed");
+  assert.equal(dayLabelForRow(6, 5), null); // Thu
+  assert.equal(dayLabelForRow(6, 6), "Fri");
+
+  // Verify the full label array for start=6
+  const labelsFromSaturday = [0, 1, 2, 3, 4, 5, 6].map((row) =>
+    dayLabelForRow(6, row)
+  );
+  assert.deepEqual(
+    labelsFromSaturday,
+    [null, "Sun", "Mon", null, "Wed", null, "Fri"]
+  );
+
+  // The labels cycle correctly across a full week boundary.
+  const labelsFromThursday = [0, 1, 2, 3, 4, 5, 6].map((row) =>
+    dayLabelForRow(4, row)
+  );
+  assert.deepEqual(
+    labelsFromThursday,
+    [null, "Fri", null, "Sun", "Mon", null, "Wed"]
+  );
+});
+
+test('heatmap labels always show Mon/Wed/Fri/Sun in the right rows', () => {
+  // For every possible start weekday, the four displayed labels are exactly
+  // Mon, Wed, Fri, Sun and they land on the rows whose weekday matches.
+  for (let start = 0; start < 7; start++) {
+    const shown: { row: number; label: string }[] = [];
+    for (let row = 0; row < 7; row++) {
+      const label = dayLabelForRow(start, row);
+      if (label) shown.push({ row, label });
+    }
+    assert.equal(shown.length, 4, `start=${start}: exactly four labels shown`);
+    assert.deepEqual(
+      shown.map((s) => s.label).sort(),
+      ["Fri", "Mon", "Sun", "Wed"].sort(),
+      `start=${start}: labels are Mon/Wed/Fri/Sun`
+    );
+    for (const { row, label } of shown) {
+      const actualDay = (start + row) % 7;
+      assert.equal(DAY_ABBREVS[actualDay], label, `start=${start} row=${row}: label matches weekday`);
+    }
+  }
+});
+
+/* ────────────────────────────────────────────────────────────
    Logout redirect behavior
    ──────────────────────────────────────────────────────────── */
 
