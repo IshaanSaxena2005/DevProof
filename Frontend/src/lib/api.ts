@@ -6,6 +6,8 @@
  * the envelope is unwrapped here — callers just get `data`.
  */
 
+import { DEMO_READ_ONLY_MESSAGE, isDemoActive } from "../demo/mode.mts";
+
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "")
   ?? "http://localhost:5000/api/v1";
 
@@ -57,6 +59,15 @@ function toFieldErrors(error: unknown): FieldError[] {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response;
+
+  // Demo mode is read-only. A demo visitor is not signed in, so a write could
+  // only ever be rejected by the server anyway — refusing it here means no
+  // request is sent at all, and the failure is explained in the visitor's terms
+  // instead of as a 401 on an account they do not have.
+  const method = (init.method ?? "GET").toUpperCase();
+  if (isDemoActive() && method !== "GET" && method !== "HEAD") {
+    throw new ApiError(DEMO_READ_ONLY_MESSAGE, 403);
+  }
 
   try {
     response = await fetch(`${BASE_URL}${path}`, {
