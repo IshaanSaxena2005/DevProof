@@ -13,6 +13,9 @@ import {
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { NotConnectedNotice } from "../../components/StateBlocks";
+import { useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 import { Reveal, SectionLabel, StatLabel, PendingNotice } from "./ps/shared";
 import { DIFFICULTY_COLORS } from "./ps/shared";
 import PlatformCard, { type PlatformProfile } from "./ps/PlatformCard";
@@ -28,7 +31,6 @@ import DifficultyDonut, { difficultyPercent } from "./ps/DifficultyDonut";
 import ConsistencyHeatmap, { ConsistencyStats } from "./ps/ConsistencyHeatmap";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { ApiError } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import { codingProfilesService } from "../../services/codingProfiles";
 import type { CodingPlatform, CodingProfile, CodingProfilesResponse } from "../../lib/types";
 
@@ -168,8 +170,10 @@ const PLATFORM_BADGE: Record<string, string> = {
 export default function ProblemSolving() {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("30D");
 
-  const { data, loading, error, reload } = useResource<CodingProfilesResponse>(
+  const isDemo = useDemoMode();
+  const { data, loading, error, reload } = useDemoResource<CodingProfilesResponse>(
     () => codingProfilesService.list(),
+    sampleData.codingProfilesResponse,
     []
   );
 
@@ -288,7 +292,23 @@ export default function ProblemSolving() {
       never gets a CTA — it only reflects state. */
   const connectProps = (card: PlatformProfile, mirror: boolean) => {
     if (mirror) return {};
-    
+
+    /**
+     * The demo shows the sample profile's cards with their controls off.
+     *
+     * Syncing or disconnecting would write a coding-profile row, and connecting
+     * would call a third-party platform for a handle that is not the visitor's.
+     * The connected card therefore renders without its sync/disconnect buttons,
+     * and the unconnected one keeps its input but says why the CTA is inert.
+     */
+    if (isDemo) {
+      if (card.connected) return {};
+      return {
+        connectHint: "Platform linking is disabled in the demo",
+        usernamePlaceholder: card.platform === "LeetCode" ? "Sample handle" : "Not connected in the sample profile",
+      };
+    }
+
     // For connected platforms, provide sync and disconnect handlers
     if (card.connected) {
       const platform = card.platform === "LeetCode" ? "LEETCODE" : "GEEKSFORGEEKS";
@@ -542,16 +562,31 @@ export default function ProblemSolving() {
   return (
     <PageContainer
       title="Problem Solving"
-      description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
+      description={
+        isDemo
+          ? "The sample profile's coding practice — synthetic records, derived consistently across every chart here."
+          : "Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
+      }
     >
       {/* Header-right status indicator. Pulled up beside the page title to sit
           top-right, as the title block above only occupies the left side. */}
       <div className="-mt-16 mb-4 flex justify-end">
         <span className="glass-chip px-3 py-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{anyConnected ? "Data synced" : "Not connected"}</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+            {isDemo ? "Sample data" : anyConnected ? "Data synced" : "Not connected"}
+          </span>
         </span>
       </div>
+
+      {isDemo && (
+        <DemoNotice className="mb-4">
+          The sample profile's coding activity is fictional and was never fetched from LeetCode or
+          GeeksforGeeks: 29 solved problems (12 easy, 13 medium, 4 hard) over a written submission
+          calendar, from which the streaks and the activity chart below are derived. No platform handle
+          belongs to a real account, and connecting or syncing is disabled here.
+        </DemoNotice>
+      )}
 
       {!anyConnected && (
         <NotConnectedNotice what="No coding platform is connected yet, so there is nothing to measure. Enter your public GeeksforGeeks or LeetCode username in a card below and these sections fill with your real solve history." />
@@ -694,7 +729,9 @@ export default function ProblemSolving() {
               {/* Says which platforms the counts came from, or that none of them
                   publish a split — the difference between 0 and unknown. */}
               <p className="text-[11px] text-white/30 pt-1 leading-relaxed">
-                {!anyConnected
+                {isDemo
+                  ? "A LeetCode-shaped sample profile written for the demo — no platform was queried, and this handle is not a real account."
+                  : !anyConnected
                   ? "No platform connected yet."
                   : difficulty.anyKnown
                     ? `Counts come from ${profiles

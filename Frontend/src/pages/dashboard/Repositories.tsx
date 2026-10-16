@@ -7,11 +7,13 @@ import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock } from "../../components/StateBlocks";
 import { ApiError } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
 import { relativeTime } from "../../lib/utils";
 import type { GitHubAccessState, GitHubRepoOption, RepositoriesResponse, Repository } from "../../lib/types";
+import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 function scoreColor(score: number) {
   if (score >= 80) return "#16ff00";
@@ -55,10 +57,15 @@ type SyncState =
 export default function Repositories() {
   const navigate = useNavigate();
   const { user, refresh: refreshAuth } = useAuth();
-  const hasGitHub = Boolean(user?.githubAccount);
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
+  // The demo renders the sample account's repositories, so the GitHub-side
+  // affordances are shown in their "connected" shape — with their actions off.
+  const hasGitHub = isDemo || Boolean(user?.githubAccount);
 
-  const { data, loading, error, reload } = useResource<RepositoriesResponse>(
-    () => githubService.getRepositories()
+  const { data, loading, error, reload } = useDemoResource<RepositoriesResponse>(
+    () => githubService.getRepositories(),
+    sampleData.repositoriesResponse
   );
 
   const [showForm, setShowForm] = useState(false);
@@ -102,7 +109,9 @@ export default function Repositories() {
   // Load the user's own GitHub repos once the form is opened, so they can be
   // picked directly instead of pasting a URL.
   useEffect(() => {
-    if (!showForm || !hasGitHub || ghRepos !== null) return;
+    // Demo mode never lists a GitHub account's repositories: there is no
+    // account, and the form is not reachable in the demo anyway.
+    if (isDemo || !showForm || !hasGitHub || ghRepos !== null) return;
     let active = true;
     setGhLoading(true);
     setGhError(null);
@@ -123,7 +132,7 @@ export default function Repositories() {
     return () => {
       active = false;
     };
-  }, [showForm, hasGitHub, ghRepos]);
+  }, [isDemo, showForm, hasGitHub, ghRepos]);
 
   // Search & Filter state
   const [search, setSearch] = useState("");
@@ -204,10 +213,21 @@ export default function Repositories() {
 
   return (
     <PageContainer
-      title="Repositories"
-      description="Connect a GitHub repository to generate evidence-based analysis metrics."
+      title="Repositories"            description={
+              isDemo
+                ? "Six sample repositories, with the engineering metrics the analyzer measured for each."
+                : "Connect a GitHub repository to generate evidence-based analysis metrics."
+            }
     >
       <div className="flex flex-col gap-6">
+        {isDemo && (
+          <DemoNotice>
+            These six repositories are fictional. Their languages, topics, metrics and findings are the
+            sample records the rest of the demo derives its skills, growth and readiness scores from — no
+            GitHub account is connected, and connecting or removing a repository is disabled here.
+          </DemoNotice>
+        )}
+
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full sm:max-w-xs">
@@ -256,14 +276,18 @@ export default function Repositories() {
               <option value="name" className="bg-[#0b0b0d] text-white">Name</option>
             </select>
 
-            <button
-              onClick={() => { setShowForm((v) => !v); setFormError(null); }}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(22,255,0,0.2)] hover:shadow-[0_0_24px_rgba(22,255,0,0.35)] cursor-pointer shrink-0"
-              style={{ backgroundColor: "#16ff00", color: "#000" }}
-            >
-              {showForm ? <X className="w-4.5 h-4.5" /> : <Plus className="w-4.5 h-4.5" />}
-              {showForm ? "Cancel" : "Add Repository"}
-            </button>
+            {/* Connecting a repository writes a record, so the demo omits the
+                control instead of offering an action that cannot work. */}
+            {!isDemo && (
+              <button
+                onClick={() => { setShowForm((v) => !v); setFormError(null); }}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] shadow-[0_0_16px_rgba(22,255,0,0.2)] hover:shadow-[0_0_24px_rgba(22,255,0,0.35)] cursor-pointer shrink-0"
+                style={{ backgroundColor: "#16ff00", color: "#000" }}
+              >
+                {showForm ? <X className="w-4.5 h-4.5" /> : <Plus className="w-4.5 h-4.5" />}
+                {showForm ? "Cancel" : "Add Repository"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -281,24 +305,32 @@ export default function Repositories() {
                 <span className="flex items-center gap-1.5 text-red-400">
                   <AlertCircle className="w-3.5 h-3.5" /> {syncState.message}
                 </span>
+              ) : isDemo ? (
+                <>Six fictional repositories, used across every page of the demo.</>
               ) : (
                 <>Pull your latest repositories and stats straight from GitHub.</>
               )}
             </p>
-            <button
-              onClick={handleSync}
-              disabled={syncState.kind === "loading"}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-primary/20 bg-primary/[0.07] hover:bg-primary/[0.14] text-primary transition-all cursor-pointer disabled:opacity-55 disabled:cursor-not-allowed shrink-0"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncState.kind === "loading" ? "animate-spin" : ""}`} />
-              {syncState.kind === "loading"
-                ? "Syncing…"
-                : syncState.kind === "ok"
-                ? "Synced ✓"
-                : syncState.kind === "err"
-                ? "Retry Sync"
-                : "Sync GitHub"}
-            </button>
+            {isDemo ? (
+              <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70 px-4 py-2 rounded-full border border-primary/20 bg-primary/[0.07] shrink-0">
+                Sample data
+              </span>
+            ) : (
+              <button
+                onClick={handleSync}
+                disabled={syncState.kind === "loading"}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-primary/20 bg-primary/[0.07] hover:bg-primary/[0.14] text-primary transition-all cursor-pointer disabled:opacity-55 disabled:cursor-not-allowed shrink-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncState.kind === "loading" ? "animate-spin" : ""}`} />
+                {syncState.kind === "loading"
+                  ? "Syncing…"
+                  : syncState.kind === "ok"
+                  ? "Synced ✓"
+                  : syncState.kind === "err"
+                  ? "Retry Sync"
+                  : "Sync GitHub"}
+              </button>
+            )}
           </div>
         )}
 
@@ -491,7 +523,7 @@ export default function Repositories() {
                 >
                   <GlassCard
                     className="p-6 flex flex-col justify-between min-h-[210px] h-full"
-                    onClick={() => navigate(`/dashboard/repositories/${repo.id}`)}
+                    onClick={() => navigate(`${base}/repositories/${repo.id}`)}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center justify-between mb-4">
@@ -502,16 +534,18 @@ export default function Repositories() {
                           <span className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full border border-white/10 text-white/40">
                             {repo.isPrivate ? "Private" : "Public"}
                           </span>
-                          <button
-                            title="Remove repository"
-                            onClick={(e) => { e.stopPropagation(); void handleDelete(repo); }}
-                            disabled={deletingId === repo.id}
-                            className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer disabled:opacity-40"
-                          >
-                            {deletingId === repo.id
-                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              : <Trash2 className="w-3.5 h-3.5" />}
-                          </button>
+                          {!isDemo && (
+                            <button
+                              title="Remove repository"
+                              onClick={(e) => { e.stopPropagation(); void handleDelete(repo); }}
+                              disabled={deletingId === repo.id}
+                              className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer disabled:opacity-40"
+                            >
+                              {deletingId === repo.id
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <Trash2 className="w-3.5 h-3.5" />}
+                            </button>
+                          )}
                         </div>
                       </div>
 

@@ -1,6 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useDashboardBase, useDemoMode } from "../demo/DemoContext";
+import { EXIT_DEMO_PATH } from "../demo/routes.mts";
+import { DemoBadge } from "../demo/DemoNotice";
+import { SAMPLE_IDENTITY } from "../demo/sampleData.mts";
 
 /** "Ada Lovelace" -> "AL"; falls back to the email's first two characters. */
 function initialsFor(name: string | null | undefined, email: string | undefined) {
@@ -37,10 +41,31 @@ const TITLE_MAP: Record<string, string> = {
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
   const { user } = useAuth();
+
+  // The demo visitor is signed out, so this shell shows the sample profile's
+  // linked account instead of "Not linked" — the pages underneath it do render
+  // GitHub-derived evidence, and a header contradicting them would read as a
+  // broken page.
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
   const github = user?.githubAccount ?? null;
+
+  const demoAccount = isDemo
+    ? { username: SAMPLE_IDENTITY.githubUsername, profileUrl: null, avatarUrl: null }
+    : null;
+
+  // The demo never renders a real account's photo or name, even when a
+  // signed-in visitor opens /demo: the sample identity is the only identity
+  // this shell may show.
+  const avatarSrc = isDemo ? null : user?.avatarUrl ?? github?.avatarUrl;
+  const avatarAlt =
+    (isDemo ? SAMPLE_IDENTITY.name : user?.name ?? user?.email) ?? "Profile";
+
+  // Title lookup works for both prefixes: /demo/... and /dashboard/... .
+  const path = location.pathname.replace(/^\/demo/, "/dashboard");
   const pageTitle =
-    TITLE_MAP[location.pathname] ??
-    (location.pathname.startsWith("/dashboard/repositories/") ? "Repository Details" : "Dashboard");
+    TITLE_MAP[path] ??
+    (path.startsWith("/dashboard/repositories/") ? "Repository Details" : "Dashboard");
 
   return (
     <header className="h-16 px-6 border-b border-white/[0.08] flex items-center justify-between bg-black/[0.15] backdrop-blur-xl">
@@ -56,14 +81,37 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
         <h2 className="text-base md:text-lg font-bold text-white uppercase tracking-wider hidden sm:block">
           {pageTitle}
         </h2>
+        {isDemo && <DemoBadge compact />}
       </div>
 
       {/* Right: status, profile. A dashboard search field and a notifications
           bell were removed: they had no backing behavior, and non-functional
           controls (a bell with a fake unread dot) read as broken or dishonest. */}
       <div className="flex items-center gap-4 md:gap-5">
-        {/* GitHub link status — reflects the real linked account, if any */}
-        {github ? (
+        {/* Way out of the demo, always one click away. */}
+        {isDemo && (
+          <Link
+            to={EXIT_DEMO_PATH}
+            title="Leave the sample profile and return to the homepage"
+            className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-primary hover:bg-primary/20 transition-all shrink-0"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Exit Demo</span>
+          </Link>
+        )}
+
+        {/* GitHub link status — the real linked account, or the sample one */}
+        {demoAccount ? (
+          <div
+            title="Sample account — no GitHub account is connected in the demo"
+            className="flex items-center gap-2 border border-primary/20 bg-primary/10 rounded-full px-3 py-1.5 shrink-0"
+          >
+            <GithubIcon className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-widest hidden sm:inline">
+              {demoAccount.username}
+            </span>
+          </div>
+        ) : github ? (
           <a
             href={github.profileUrl ?? `https://github.com/${github.username}`}
             target="_blank"
@@ -90,22 +138,21 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
         )}
 
         {/* Profile avatar — real avatar when we have one, initials otherwise.
+            The demo never renders a real account's photo, even if a signed-in
+            visitor opens /demo: the sample identity is the only identity this
+            shell may show.
             Links to Settings: profile management lives there, so the control
             is never a dead end. */}
         <Link
-          to="/dashboard/settings"
-          title={user?.email ?? "Your profile"}
+          to={`${base}/settings`}
+          title={isDemo ? "Sample profile settings" : user?.email ?? "Your profile"}
           className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/[0.08] flex items-center justify-center hover:border-white/30 transition-all shrink-0"
         >
-          {user?.avatarUrl ?? github?.avatarUrl ? (
-            <img
-              src={(user?.avatarUrl ?? github?.avatarUrl)!}
-              alt={user?.name ?? user?.email ?? "Profile"}
-              className="w-full h-full object-cover"
-            />
+          {avatarSrc ? (
+            <img src={avatarSrc} alt={avatarAlt} className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs font-bold text-white select-none">
-              {initialsFor(user?.name, user?.email)}
+              {initialsFor(isDemo ? SAMPLE_IDENTITY.name : user?.name, isDemo ? SAMPLE_IDENTITY.email : user?.email)}
             </span>
           )}
         </Link>

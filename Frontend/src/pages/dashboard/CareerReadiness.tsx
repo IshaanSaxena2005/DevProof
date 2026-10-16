@@ -15,10 +15,12 @@ import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import { certificationsService } from "../../services/certifications";
 import { careerService } from "../../services/career";
 import type { Developer360Response, RoleReadiness } from "../../lib/types";
+import { useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -67,15 +69,25 @@ function UnavailableNote({ children }: { children: React.ReactNode }) {
 /* ── page ────────────────────────────────────────────── */
 
 export default function CareerReadiness() {
-  const { data, loading, error, reload } = useResource<Developer360Response>(
-    () => api.get<Developer360Response>("/developer360/overview")
+  const isDemo = useDemoMode();
+  const { data, loading, error, reload } = useDemoResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview"),
+    sampleData.developer360
   );
   // Certifications load independently; a failure here degrades to zero tiles
   // rather than failing the whole page (the overview data is the primary read).
-  const { data: certData, loading: certsLoading } = useResource(() => certificationsService.list());
+  const { data: certData, loading: certsLoading } = useDemoResource(
+    () => certificationsService.list(),
+    sampleData.certificationsResponse
+  );
   // Readiness is its own endpoint and its own failure: losing it costs the two
   // role panels, not the measured-evidence panels that come from the overview.
-  const { data: readinessData, error: readinessError } = useResource(() => careerService.readiness());
+  // In the demo the scores are computed by the same role definitions over the
+  // sample profile, since the endpoint is authenticated and cannot be called.
+  const { data: readinessData, error: readinessError } = useDemoResource(
+    () => careerService.readiness(),
+    sampleData.career
+  );
 
   if (loading || certsLoading) {
     return (
@@ -96,6 +108,14 @@ export default function CareerReadiness() {
   const o = data.overview;
   const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
   const certifications = certData?.certifications ?? [];
+  const sampleNotice = isDemo ? (
+    <DemoNotice className="mb-6">
+      These role scores are illustrative sample output. They are computed from the demo's own sample
+      skills, repository metrics and solve count using the same requirement weights the product uses —
+      which is why the gaps below (no CI/CD pipeline, 29 of 100 problems solved) match the repositories
+      and coding profile elsewhere in the demo.
+    </DemoNotice>
+  ) : null;
   const credentialVerified = o.evidenceTiers.CREDENTIAL_VERIFIED ?? 0;
   const practicallyEvidenced = o.evidenceTiers.PRACTICALLY_EVIDENCED ?? 0;
 
@@ -136,8 +156,14 @@ export default function CareerReadiness() {
   return (
     <PageContainer
       title="Career Readiness"
-      description="Role readiness matching and evidence-based career signals."
+      description={
+        isDemo
+          ? "The sample profile's readiness against each role — illustrative output, computed from its own sample evidence."
+          : "Role readiness matching and evidence-based career signals."
+      }
     >
+      {sampleNotice}
+
       {/* ── Readiness against the best-matching role ── */}
       <GlassCard hover={false} className="p-8 mb-6 text-center relative overflow-hidden">
         <div

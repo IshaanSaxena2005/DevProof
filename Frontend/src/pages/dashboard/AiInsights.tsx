@@ -13,8 +13,10 @@ import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import type { AiInsightsResponse, InsightPriority } from "../../lib/types";
+import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -72,16 +74,32 @@ function ScoreRing({ score, size = 148 }: { score: number | null; size?: number 
 
 export default function AiInsights() {
   const navigate = useNavigate();
-  const { data, loading, error, reload } = useResource<AiInsightsResponse>(
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
+  const { data, loading, error, reload } = useDemoResource<AiInsightsResponse>(
     () => api.get<AiInsightsResponse>("/ai/insights"),
+    sampleData.ai,
     []
   );
 
   return (
     <PageContainer
       title="DevProof Intelligence"
-      description="AI-powered engineering analysis, generated only from your analyzed repositories."
+      description={
+        isDemo
+          ? "Sample insights over the demo's sample repositories — no model is called in the demo."
+          : "AI-powered engineering analysis, generated only from your analyzed repositories."
+      }
     >
+      {isDemo && (
+        <div className="mb-6">
+          <DemoNotice>
+            These are prewritten sample insights, labelled as such: no model was invoked and nothing here was
+            generated from a real GitHub repository. The figures inside them are read from the same sample
+            analyses the Repositories and Developer 360 pages show.
+          </DemoNotice>
+        </div>
+      )}
       {loading && <LoadingBlock label="Generating insights from your analysis evidence…" />}
 
       {!loading && error && <ErrorBlock message={error} onRetry={reload} />}
@@ -92,7 +110,7 @@ export default function AiInsights() {
           title="No analysis evidence yet"
           description="DevProof Intelligence reports only on repositories that have actually been analyzed. Run an analysis on at least one repository and the model will summarize what the evidence shows."
           actionText="Go to repositories"
-          onAction={() => navigate("/dashboard/repositories")}
+          onAction={() => navigate(`${base}/repositories`)}
         />
       )}
 

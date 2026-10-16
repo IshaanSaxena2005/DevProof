@@ -4,8 +4,10 @@ import { AlertCircle, FolderGit2, Star, GitFork, Users, Activity, Code2 } from "
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import type { Developer360Response, EvidenceLevel, SkillCategory } from "../../lib/types";
+import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -102,8 +104,11 @@ function SLabel({ children, className = "" }: { children: React.ReactNode; class
 /* ── page ────────────────────────────────────────────── */
 
 export default function Developer360() {
-  const { data, loading, error, reload } = useResource<Developer360Response>(
-    () => api.get<Developer360Response>("/developer360/overview")
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
+  const { data, loading, error, reload } = useDemoResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview"),
+    sampleData.developer360
   );
 
   if (loading) return <LoadingBlock label="Compiling your developer profile…" />;
@@ -127,9 +132,19 @@ export default function Developer360() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">Developer 360</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-          Your engineering profile, compiled from analyzed repositories and recorded skill evidence.
+          {isDemo
+            ? "The sample profile's engineering evidence, compiled from its six fictional repositories."
+            : "Your engineering profile, compiled from analyzed repositories and recorded skill evidence."}
         </p>
       </div>
+
+      {isDemo && (
+        <DemoNotice>
+          Every tier, score and skill below is derived from the demo's sample repositories — including the
+          one repository whose security scan found a hardcoded credential, which is why the sample profile
+          still has a gap to show.
+        </DemoNotice>
+      )}
 
       {/* No completed analyses — the ring below renders as an empty dash, this
           just explains why rather than leaving it unexplained. */}
@@ -139,7 +154,7 @@ export default function Developer360() {
           <div className="text-[12px] leading-relaxed text-amber-100/70">
             <span className="font-semibold text-amber-200/90">Nothing measured yet.</span>{" "}
             No completed repository analyses, so there is no score to show.{" "}
-            <Link to="/dashboard/repositories" className="font-semibold text-primary hover:underline">
+            <Link to={`${base}/repositories`} className="font-semibold text-primary hover:underline">
               Connect and analyze a repository
             </Link>{" "}
             to generate one.
@@ -384,7 +399,7 @@ export default function Developer360() {
               Connect GitHub to unlock repository intelligence.
             </p>
             <Link
-              to="/dashboard/settings"
+              to={`${base}/settings`}
               className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5"
               style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
             >
@@ -438,7 +453,7 @@ export default function Developer360() {
             </p>
           </div>
           <Link
-            to="/dashboard/repositories"
+            to={`${base}/repositories`}
             className="text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-full transition-all hover:-translate-y-0.5 cursor-pointer"
             style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
           >

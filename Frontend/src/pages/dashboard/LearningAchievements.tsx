@@ -16,8 +16,10 @@ import { RecordCard, type RecordKind } from "./LA/shared";
 import { certificationsService } from "../../services/certifications";
 import { coursesService } from "../../services/courses";
 import { hackathonsService } from "../../services/hackathons";
-import { useResource } from "../../lib/useResource";
 import type { Certification, CertificationInput, Course, CourseInput } from "../../lib/types";
+import { useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 /** One loaded record of the combined section — the kind discriminant keeps the
  * two backend records separate: a course is never rendered or saved as a
@@ -38,24 +40,25 @@ type CombinedRecord =
  *  - Learning hours and study streaks: no source — em-dashes, never estimates.
  */
 export default function LearningAchievements() {
+  const isDemo = useDemoMode();
   const {
     data: certData,
     loading: certsLoading,
     error: certsError,
     reload: reloadCerts,
-  } = useResource(() => certificationsService.list());
+  } = useDemoResource(() => certificationsService.list(), sampleData.certificationsResponse);
   const {
     data: courseData,
     loading: coursesLoading,
     error: coursesError,
     reload: reloadCourses,
-  } = useResource(() => coursesService.list());
+  } = useDemoResource(() => coursesService.list(), sampleData.coursesResponse);
   const {
     data: hackathonData,
     loading: hackathonsLoading,
     error: hackathonsError,
     reload: reloadHackathons,
-  } = useResource(() => hackathonsService.list());
+  } = useDemoResource(() => hackathonsService.list(), sampleData.hackathonsResponse);
 
   const [activeFilter, setActiveFilter] = useState<"all" | "courses" | "certifications">("all");
   const [createKind, setCreateKind] = useState<RecordKind | null>(null);
@@ -187,8 +190,22 @@ export default function LearningAchievements() {
   return (
     <PageContainer
       title="Learning & Achievements"
-      description="Track the learning, credentials, and experiences that strengthen your developer profile."
+      description={
+        isDemo
+          ? "The sample profile's courses, credentials and hackathons — fictional records, clearly labelled."
+          : "Track the learning, credentials, and experiences that strengthen your developer profile."
+      }
     >
+      {isDemo && (
+        <LAReveal>
+          <DemoNotice className="mb-6">
+            These courses, certifications and hackathons belong to the fictional sample profile. No credential
+            id, verification link or certificate url is invented anywhere in them, and adding, editing or
+            removing a record is disabled in the demo.
+          </DemoNotice>
+        </LAReveal>
+      )}
+
       {/* ── 1. Overview metrics ── */}
       <LAReveal>
         <OverviewMetrics metrics={metrics} />
@@ -216,6 +233,7 @@ export default function LearningAchievements() {
           <LALabel>Resume</LALabel>
           <ResumeSection
             certifications={certifications}
+            readOnly={isDemo}
             onCertificationAdded={(result) => {
               // A confirmed resume candidate becomes a normal certification
               // record through the existing API — refresh the combined
@@ -267,6 +285,7 @@ export default function LearningAchievements() {
               ))}
             </div>
             <div className="flex items-center gap-2 ml-auto">
+              {!isDemo && (
               <button
                 type="button"
                 onClick={() => setCreateKind((k) => (k === "course" ? null : "course"))}
@@ -280,6 +299,8 @@ export default function LearningAchievements() {
                 <Plus className="w-3.5 h-3.5" />
                 {createKind === "course" ? "Close" : "Add course"}
               </button>
+              )}
+              {!isDemo && (
               <button
                 type="button"
                 onClick={() => setCreateKind((k) => (k === "certification" ? null : "certification"))}
@@ -293,10 +314,11 @@ export default function LearningAchievements() {
                 <Plus className="w-3.5 h-3.5" />
                 {createKind === "certification" ? "Close" : "Add certification"}
               </button>
+              )}
             </div>
           </div>
 
-          {createKind && (
+          {createKind && !isDemo && (
             <RecordForm
               key={`create-${createKind}`}
               kind={createKind}
@@ -375,15 +397,17 @@ export default function LearningAchievements() {
                     ? "Add the credentials you have earned — issuer, credential ID, and link turn each one into profile evidence."
                     : "Add courses and certifications to build your learning record — courses support completion tracking and learned skills; certifications track issuer and credential details."}
               </p>
-              <button
-                type="button"
-                onClick={() =>
-                  setCreateKind(activeFilter === "certifications" ? "certification" : "course")
-                }
-                className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-0.5"
-              >
-                {activeFilter === "certifications" ? "Add certification" : "Add course"}
-              </button>
+              {!isDemo && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCreateKind(activeFilter === "certifications" ? "certification" : "course")
+                  }
+                  className="mt-1 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-0.5"
+                >
+                  {activeFilter === "certifications" ? "Add certification" : "Add course"}
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
@@ -403,8 +427,8 @@ export default function LearningAchievements() {
                   issueDate={item.kind === "certification" ? item.record.issueDate : undefined}
                   learnedSkills={item.kind === "course" ? item.record.learnedSkills : undefined}
                   isCompleted={item.kind === "course" ? item.record.isCompleted : undefined}
-                  onRemove={() => handleRemove(item)}
-                  onEdit={(id, kind) => setEditTarget({ kind, id })}
+                  onRemove={isDemo ? undefined : () => handleRemove(item)}
+                  onEdit={isDemo ? undefined : (id, kind) => setEditTarget({ kind, id })}
                 />
               ))}
             </div>
@@ -417,6 +441,7 @@ export default function LearningAchievements() {
         <LAReveal delay={0.2}>
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <LALabel className="mb-0">Hackathons</LALabel>
+            {!isDemo && (
             <button
               type="button"
               onClick={() => setShowHackathonForm((v) => !v)}
@@ -430,6 +455,7 @@ export default function LearningAchievements() {
               <Plus className="w-3.5 h-3.5" />
               {showHackathonForm ? "Close" : "Add hackathon"}
             </button>
+            )}
           </div>
           <HackathonSection
             formOpen={showHackathonForm}
@@ -438,6 +464,7 @@ export default function LearningAchievements() {
             loading={hackathonsLoading}
             error={hackathonsError}
             reload={reloadHackathons}
+            readOnly={isDemo}
           />
         </LAReveal>
       </div>
@@ -468,9 +495,9 @@ export default function LearningAchievements() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <AchievementEvidence
               sources={[
-                { name: "Course", available: courses.length > 0, note: courses.length > 0 ? `${courses.length} recorded — live backend` : "None recorded yet" },
-                { name: "Certification", available: certifications.length > 0, note: certifications.length > 0 ? `${certifications.length} recorded — live backend` : "None recorded yet" },
-                { name: "Hackathon", available: hackathons.length > 0, note: hackathons.length > 0 ? `${hackathons.length} recorded — live backend` : "None recorded yet" },
+                { name: "Course", available: courses.length > 0, note: courses.length > 0 ? `${courses.length} recorded — ${isDemo ? "sample data" : "live backend"}` : "None recorded yet" },
+                { name: "Certification", available: certifications.length > 0, note: certifications.length > 0 ? `${certifications.length} recorded — ${isDemo ? "sample data" : "live backend"}` : "None recorded yet" },
+                { name: "Hackathon", available: hackathons.length > 0, note: hackathons.length > 0 ? `${hackathons.length} recorded — ${isDemo ? "sample data" : "live backend"}` : "None recorded yet" },
               ]}
             />
             <AchievementEvidence
@@ -499,9 +526,9 @@ export default function LearningAchievements() {
         <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-4 flex items-start gap-3">
           <Award className="w-4 h-4 text-white/30 shrink-0 mt-0.5" />
           <p className="text-[12px] text-white/35 leading-relaxed">
-            Certification records, courses, hackathon experiences, and your uploaded resume are
-            stored in your DevProof account. Learning-hour and study-streak tracking have no data
-            source yet, so those stay blank — nothing here is assumed or invented.
+            {isDemo
+              ? "In the demo these records are sample data and nothing is written when you browse them. Learning-hour and study-streak tracking have no data source yet, so those stay blank — nothing here is assumed or invented."
+              : "Certification records, courses, hackathon experiences, and your uploaded resume are stored in your DevProof account. Learning-hour and study-streak tracking have no data source yet, so those stay blank — nothing here is assumed or invented."}
           </p>
         </div>
       </LAReveal>

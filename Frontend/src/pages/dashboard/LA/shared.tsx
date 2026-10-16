@@ -102,7 +102,11 @@ export interface RecordCardProps {
   issueDate?: string | null;
   learnedSkills?: string[];
   isCompleted?: boolean;
-  onRemove: (id: string) => void;
+  /**
+   * Omitted in the demo, where removing a record would write to an account the
+   * visitor does not have — the button is then not rendered at all.
+   */
+  onRemove?: (id: string) => void;
   onEdit?: (id: string, kind: RecordKind) => void;
 }
 
@@ -221,13 +225,15 @@ export function RecordCard({
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
           )}
-          <button
-            onClick={() => onRemove(id)}
-            title={`Remove ${title}`}
-            className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-all cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {onRemove && (
+            <button
+              onClick={() => onRemove(id)}
+              title={`Remove ${title}`}
+              className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

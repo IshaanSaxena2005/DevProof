@@ -2,8 +2,9 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Loader2, ExternalLink, ShieldQuestion, Check } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
-import { useResource } from "../../../lib/useResource";
 import { ApiError } from "../../../lib/api";
+import { useDemoResource } from "../../../demo/DemoContext";
+import { sampleData } from "../../../demo/sampleData.mts";
 import { resumeService } from "../../../services/resume";
 import { skillsService } from "../../../services/skills";
 import { certificationsService } from "../../../services/certifications";
@@ -164,6 +165,7 @@ function saveDismissed(userId: string, titles: string[]) {
 export default function ResumeSection({
   certifications,
   onCertificationAdded,
+  readOnly = false,
 }: {
   /** The user's existing certification records — used for duplicate
    * detection against the authenticated user's own data only. */
@@ -171,8 +173,16 @@ export default function ResumeSection({
   /** Called after a confirmed certification is created, so the parent can
    * refresh the combined section and surface any promoted skills. */
   onCertificationAdded: (result: CertificationMutationResponse) => void;
+  /**
+   * Demo mode: show the sample resume, with every upload/manage control off.
+   *
+   * There is no stored file behind the sample — download, replace, re-analyse
+   * and remove would all address a record that does not exist, so the section
+   * says that instead of offering them.
+   */
+  readOnly?: boolean;
 }) {
-  const { data, loading, reload } = useResource(() => resumeService.get(), []);
+  const { data, loading, reload } = useDemoResource(() => resumeService.get(), sampleData.resume, []);
   const resume = data?.resume ?? null;
 
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -241,6 +251,7 @@ export default function ResumeSection({
           onReanalyse={reload}
           certifications={certifications}
           onCertificationAdded={onCertificationAdded}
+          readOnly={readOnly}
         />
       ) : (
         <ResumeEmpty uploading={uploading} onUpload={() => fileInput.current?.click()} />
@@ -302,6 +313,7 @@ function ResumeCard({
   onReanalyse,
   certifications,
   onCertificationAdded,
+  readOnly = false,
 }: {
   resume: ResumeSummary;
   uploading: boolean;
@@ -311,6 +323,7 @@ function ResumeCard({
   onReanalyse: () => void;
   certifications: Certification[];
   onCertificationAdded: (result: CertificationMutationResponse) => void;
+  readOnly?: boolean;
 }) {
   const [reanalysing, setReanalysing] = useState(false);
   const [reanalyseNote, setReanalyseNote] = useState<string | null>(null);
@@ -365,24 +378,37 @@ function ResumeCard({
             {analysis && (
               <span>Analysed {new Date(analysis.analysedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
             )}
-            <a
-              href={resumeService.downloadUrl()}
-              className="text-white/50 hover:text-primary transition-colors underline underline-offset-2 cursor-pointer"
-            >
-              Download
-            </a>
-            <button
-              onClick={onRemove}
-              className="text-white/40 hover:text-red-400 transition-colors underline underline-offset-2 cursor-pointer"
-            >
-              Remove
-            </button>
+            {/* No stored file exists behind the sample resume, so download and
+                removal are absent rather than pointing at nothing. */}
+            {readOnly ? (
+              <span className="text-[11px] text-white/30">Sample resume — no stored file</span>
+            ) : (
+              <>
+                <a
+                  href={resumeService.downloadUrl()}
+                  className="text-white/50 hover:text-primary transition-colors underline underline-offset-2 cursor-pointer"
+                >
+                  Download
+                </a>
+                <button
+                  onClick={onRemove}
+                  className="text-white/40 hover:text-red-400 transition-colors underline underline-offset-2 cursor-pointer"
+                >
+                  Remove
+                </button>
+              </>
+            )}
           </p>
 
           {resume.parseError ? (
             <p className="text-[11px] text-amber-200/80 mt-4 leading-relaxed">
               {resume.parseError} The file is kept and can be downloaded, but nothing was extracted
               from it — scanned resumes have no text layer to read.
+            </p>
+          ) : readOnly ? (
+            <p className="mt-4 text-[11px] leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+              Uploading, re-analysing and removing a resume are disabled in the demo — these sections are
+              read from the sample profile's document.
             </p>
           ) : (
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -458,8 +484,12 @@ function ResumeCard({
 /** Skills chips with the claims-vs-inventory distinction. Loads the user's
  * own skill list lazily, only when there is something to compare. */
 function SkillsChips({ detectedSkills }: { detectedSkills: string[] }) {
-  const { data, loading } = useResource(
+  // Same comparison in both modes — the inventory it checks against is the
+  // sample profile's skills in the demo, so the resume and the Skills page
+  // still agree instead of the chips going grey because there is no session.
+  const { data, loading } = useDemoResource(
     () => (detectedSkills.length > 0 ? skillsService.getSkills() : Promise.resolve({ skills: [] })),
+    sampleData.skillsResponse,
     [detectedSkills.length > 0]
   );
 

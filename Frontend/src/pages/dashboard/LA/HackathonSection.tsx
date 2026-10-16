@@ -34,6 +34,7 @@ export default function HackathonSection({
   loading,
   error,
   reload,
+  readOnly = false,
 }: {
   /** Controlled from the page so the section header's Add button owns it. */
   formOpen: boolean;
@@ -43,6 +44,11 @@ export default function HackathonSection({
   loading: boolean;
   error: string | null;
   reload: () => void;
+  /**
+   * Demo mode: the sample hackathons render with their edit/remove controls and
+   * the create form withheld, since every one of those writes a record.
+   */
+  readOnly?: boolean;
 }) {
   const [actionError, setActionError] = useState<string | null>(null);
   /** Technologies the backend reported as newly recorded at CLAIMED. */
@@ -79,7 +85,7 @@ export default function HackathonSection({
   }
 
   // The edit form opens in place of the create form — one visible form slot.
-  const showCreateForm = formOpenProp && editing === null;
+  const showCreateForm = formOpenProp && editing === null && !readOnly;
 
   if (error) {
     return (
@@ -175,8 +181,8 @@ export default function HackathonSection({
               key={hackathon.id}
               hackathon={hackathon}
               index={i}
-              onRemove={handleRemove}
-              onEdit={setEditing}
+              onRemove={readOnly ? undefined : handleRemove}
+              onEdit={readOnly ? undefined : setEditing}
             />
           ))}
         </div>
@@ -194,8 +200,9 @@ function HackathonCard({
 }: {
   hackathon: Hackathon;
   index: number;
-  onRemove: (h: Hackathon) => void;
-  onEdit: (h: Hackathon) => void;
+  /** Omitted in the demo — the controls are then not rendered. */
+  onRemove?: (h: Hackathon) => void;
+  onEdit?: (h: Hackathon) => void;
 }) {
   const [open, setOpen] = useState(false);
   const hasExtras =
@@ -243,7 +250,8 @@ function HackathonCard({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {hackathon.projectUrl && (
+          {/* Sample records have no live project page behind them. */}
+          {hackathon.projectUrl && onEdit && (
             <a
               href={hackathon.projectUrl}
               target="_blank"
@@ -254,14 +262,16 @@ function HackathonCard({
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
-          <button
-            type="button"
-            onClick={() => onEdit(hackathon)}
-            title={`Edit ${hackathon.name}`}
-            className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all cursor-pointer"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(hackathon)}
+              title={`Edit ${hackathon.name}`}
+              className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all cursor-pointer"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
           {hasExtras && (
             <button
               type="button"
@@ -273,14 +283,16 @@ function HackathonCard({
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => onRemove(hackathon)}
-            title={`Remove ${hackathon.name}`}
-            className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-all cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {onRemove && (
+            <button
+              type="button"
+              onClick={() => onRemove(hackathon)}
+              title={`Remove ${hackathon.name}`}
+              className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

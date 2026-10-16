@@ -5,10 +5,12 @@ import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { api, ApiError } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
 import type { Developer360Response } from "../../lib/types";
+import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { SAMPLE_IDENTITY, sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 function scoreColor(n: number) {
   if (n >= 80) return "#77fc75";
@@ -49,11 +51,17 @@ function StatCard({
 export default function Overview() {
   const navigate = useNavigate();
   const { user, refresh: refreshAuth } = useAuth();
-  const { data, loading, error, reload } = useResource<Developer360Response>(
-    () => api.get<Developer360Response>("/developer360/overview")
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
+
+  // In the demo this never issues a request: the sample overview resolves
+  // instead of GET /developer360/overview.
+  const { data, loading, error, reload } = useDemoResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview"),
+    sampleData.developer360
   );
 
-  const firstName = (user?.name ?? "").trim().split(/\s+/)[0];
+  const firstName = (isDemo ? SAMPLE_IDENTITY.name : user?.name ?? "").trim().split(/\s+/)[0];
 
   type SyncState = { kind: "idle" } | { kind: "loading" } | { kind: "ok" } | { kind: "err"; message: string };
   const [syncState, setSyncState] = useState<SyncState>({ kind: "idle" });
@@ -167,14 +175,14 @@ export default function Overview() {
             </h3>
             <div className="space-y-2.5">
               <button
-                onClick={() => navigate("/dashboard/repositories")}
+                onClick={() => navigate(`${base}/repositories`)}
                 className="w-full flex items-center justify-between p-3.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] text-xs font-semibold text-white/90 transition-all cursor-pointer"
               >
-                <span>Connect a Repository</span>
+                <span>{isDemo ? "Browse Sample Repositories" : "Connect a Repository"}</span>
                 <Plus className="w-4 h-4 text-primary" />
               </button>
               <button
-                onClick={() => navigate("/dashboard/developer-360")}
+                onClick={() => navigate(`${base}/developer-360`)}
                 className="w-full flex items-center justify-between p-3.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] text-xs font-semibold text-white/90 transition-all cursor-pointer"
               >
                 <span>View Developer 360</span>
@@ -201,21 +209,27 @@ export default function Overview() {
                       <AlertCircle className="w-3 h-3" /> {syncState.message}
                     </span>
                   )}
-                  <button
-                    onClick={handleSync}
-                    disabled={syncState.kind === "loading"}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${syncState.kind === "loading" ? "animate-spin" : ""}`} />
-                    Sync
-                  </button>
+                  {isDemo ? (
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/70 pr-1">
+                      Sample data
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleSync}
+                      disabled={syncState.kind === "loading"}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${syncState.kind === "loading" ? "animate-spin" : ""}`} />
+                      Sync
+                    </button>
+                  )}
                 </div>
               </>
             ) : (
               <>
                 <span>
                   No GitHub account linked —{" "}
-                  <Link to="/dashboard/settings" className="text-primary hover:underline font-medium">
+                  <Link to={`${base}/settings`} className="text-primary hover:underline font-medium">
                     connect one
                   </Link>{" "}
                   to analyze private repositories.
@@ -225,6 +239,16 @@ export default function Overview() {
           </div>
         </GlassCard>
       </div>
+
+      {isDemo && (
+        <div className="mt-6">
+          <DemoNotice>
+            This overview is the sample profile of {SAMPLE_IDENTITY.name} — a fictional developer. Every
+            figure below is computed from the same sample records the rest of the demo reads, and nothing
+            here was fetched from GitHub or any other service.
+          </DemoNotice>
+        </div>
+      )}
 
       {/* Repository intelligence — sourced entirely from synced GitHub data */}
       <div className="mt-6">

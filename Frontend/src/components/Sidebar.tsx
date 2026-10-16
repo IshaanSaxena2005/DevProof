@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useDashboardBase, useDemoMode } from "../demo/DemoContext";
+import { EXIT_DEMO_PATH, NAV_SECTIONS, sectionPath, type DashboardSectionId } from "../demo/routes.mts";
+import { SAMPLE_IDENTITY } from "../demo/sampleData.mts";
+import { DemoBadge } from "../demo/DemoNotice";
 import { motion } from "motion/react";
 import {
   LayoutDashboard,
@@ -14,32 +18,53 @@ import {
   Sparkles,
   Settings,
   LogOut,
+  ArrowLeft,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
-const NAV_ITEMS = [
-  { label: "Overview", href: "/dashboard/overview", icon: LayoutDashboard },
-  { label: "Repositories", href: "/dashboard/repositories", icon: FolderGit2 },
-  { label: "Developer 360", href: "/dashboard/developer-360", icon: User },
-  { label: "Skills", href: "/dashboard/skills", icon: Code2 },
-  { label: "Problem Solving", href: "/dashboard/problem-solving", icon: Target },
-  { label: "Learning & Achievements", href: "/dashboard/learning", icon: Award },
-  { label: "Growth", href: "/dashboard/growth", icon: TrendingUp },
-  { label: "Career Readiness", href: "/dashboard/career-readiness", icon: Briefcase },
-  { label: "AI Insights", href: "/dashboard/ai-insights", icon: Sparkles },
-];
+/**
+ * Icons for the shared section list. The labels and paths live in
+ * `demo/routes.mts` because the demo mounts the same sections under `/demo`; a
+ * `Record` keyed by section id means a new section cannot be added without an
+ * icon (and an icon cannot be left pointing at a section that no longer exists).
+ */
+const SECTION_ICONS: Record<DashboardSectionId, LucideIcon> = {
+  overview: LayoutDashboard,
+  repositories: FolderGit2,
+  "developer-360": User,
+  skills: Code2,
+  "problem-solving": Target,
+  learning: Award,
+  growth: TrendingUp,
+  "career-readiness": Briefcase,
+  "ai-insights": Sparkles,
+  settings: Settings,
+};
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // In the demo the same links have to point at /demo/...: a `/dashboard/...`
+  // link would drop the visitor straight into the login wall.
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
+
   async function handleLogout() {
+    // The demo has no session to end — "leaving" means going back to the site,
+    // the same destination signing out goes to.
+    if (isDemo) {
+      onClose?.();
+      navigate(EXIT_DEMO_PATH, { replace: true });
+      return;
+    }
     setLoggingOut(true);
     try {
       await logout();
       onClose?.();
-      navigate("/", { replace: true });
+      navigate(EXIT_DEMO_PATH, { replace: true });
     } finally {
       setLoggingOut(false);
     }
@@ -74,7 +99,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           <div className="flex flex-col min-w-0">
             <span className="text-[15px] font-bold tracking-tight text-white/95">DevProof</span>
             <span className="text-[9px] font-semibold text-primary uppercase tracking-widest leading-none mt-0.5">
-              Developer Intelligence
+              {isDemo ? "Sample profile" : "Developer Intelligence"}
             </span>
           </div>
         </div>
@@ -82,12 +107,12 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
       {/* Nav Links: reduced margins and gap spacing to prevent scrolling */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-hidden">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
+        {NAV_SECTIONS.map((item) => {
+          const Icon = SECTION_ICONS[item.id];
           return (
             <NavLink
-              key={item.label}
-              to={item.href}
+              key={item.id}
+              to={sectionPath(base, item.id)}
               onClick={onClose}
               className="relative block"
             >
@@ -128,7 +153,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Footer / Action Links: clearly separated */}
       <div className="p-3 border-t border-white/[0.08] space-y-2 shrink-0 bg-black/[0.15]">
         <NavLink
-          to="/dashboard/settings"
+          to={sectionPath(base, "settings")}
           onClick={onClose}
           className="relative block"
         >
@@ -158,33 +183,56 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           )}
         </NavLink>
 
-        {/* Signed-in identity */}
-        {user && (
-          <div className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">
-              Signed in as
+        {/* Signed-in identity — or, in the demo, whose sample profile this is */}
+        {isDemo ? (
+          <div className="px-3 py-2 rounded-lg bg-primary/[0.04] border border-primary/15 space-y-1.5">
+            <DemoBadge compact />
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">Sample profile</p>
+            <p className="text-[11px] font-medium text-white/70 truncate" title={SAMPLE_IDENTITY.email}>
+              {SAMPLE_IDENTITY.name}
             </p>
-            <p className="text-[11px] font-medium text-white/70 truncate mt-0.5" title={user.email}>
-              {user.name || user.email}
-            </p>
+            <p className="text-[10px] text-white/35">{SAMPLE_IDENTITY.role}</p>
           </div>
+        ) : (
+          user && (
+            <div className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">
+                Signed in as
+              </p>
+              <p className="text-[11px] font-medium text-white/70 truncate mt-0.5" title={user.email}>
+                {user.name || user.email}
+              </p>
+            </div>
+          )
         )}
 
-        {/* Logout: Smooth spring-based red scale slide & glow */}
+        {/* Logout (or, in the demo, the way out): spring slide & glow */}
         <motion.button
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
           whileHover={{ scale: 1.01, x: 2 }}
           transition={{ type: "spring", stiffness: 280, damping: 22 }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium text-red-400/90 hover:text-red-400 hover:bg-red-500/[0.08] hover:shadow-[0_0_15px_rgba(239,68,68,0.1)] border border-transparent hover:border-red-500/20 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+          className={cn(
+            "w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium border border-transparent transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group",
+            isDemo
+              ? "text-primary/90 hover:text-primary hover:bg-primary/[0.08] hover:shadow-[0_0_15px_rgba(119,252,117,0.12)] hover:border-primary/25"
+              : "text-red-400/90 hover:text-red-400 hover:bg-red-500/[0.08] hover:shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:border-red-500/20"
+          )}
         >
           <div className="flex items-center gap-2.5">
-            <LogOut className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:-rotate-12" />
-            <span>{loggingOut ? "Signing out…" : "Logout"}</span>
+            {isDemo ? (
+              <ArrowLeft className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:-translate-x-0.5" />
+            ) : (
+              <LogOut className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:-rotate-12" />
+            )}
+            <span>{isDemo ? "Exit Demo" : loggingOut ? "Signing out…" : "Logout"}</span>
           </div>
           <motion.span 
-            className="text-[11px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pr-1 text-red-400/70"
+            className={cn(
+              "text-[11px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pr-1",
+              isDemo ? "text-primary/70" : "text-red-400/70"
+            )}
             animate={{ x: [0, 3, 0] }}
             transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
           >

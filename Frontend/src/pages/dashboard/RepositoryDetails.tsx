@@ -11,11 +11,13 @@ import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { ApiError } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import { githubService } from "../../services/github";
 import type {
   Finding, MetricCategory, RepositoryResponse, SeverityLevel,
 } from "../../lib/types";
+import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -172,9 +174,14 @@ function FindingCard({ finding, index }: { finding: Finding; index: number }) {
 export default function RepositoryDetails() {
   const { repoId } = useParams<{ repoId: string }>();
   const navigate = useNavigate();
+  const isDemo = useDemoMode();
+  const base = useDashboardBase();
 
-  const { data, loading, error, reload } = useResource<RepositoryResponse>(
+  // In the demo the sample repository resolves instead of GET /repositories/:id,
+  // and an unknown id resolves to null so the page shows its own not-found state.
+  const { data, loading, error, reload } = useDemoResource<RepositoryResponse | null>(
     () => githubService.getRepository(repoId!),
+    sampleData.repositoryResponse(repoId ?? ""),
     [repoId]
   );
 
@@ -215,9 +222,16 @@ export default function RepositoryDetails() {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="w-full flex flex-col gap-8 pb-8"
     >
+      {isDemo && (
+        <DemoNotice>
+          A fictional repository from the sample profile. Its metrics and findings are the records the
+          demo's skill, growth and readiness figures are derived from.
+        </DemoNotice>
+      )}
+
       {/* Breadcrumb */}
       <button
-        onClick={() => navigate("/dashboard/repositories")}
+        onClick={() => navigate(`${base}/repositories`)}
         className="flex items-center gap-2 text-[13px] font-medium text-white/40 hover:text-white/80 transition-colors w-fit cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -256,15 +270,24 @@ export default function RepositoryDetails() {
                   <Clock className="w-3 h-3" /> Analysis pending
                 </span>
               )}
-              <a
-                href={repo.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/40 hover:text-primary transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                View on GitHub
-              </a>
+              {/* The sample repository has no live source to open, so the demo
+                  says that instead of linking somewhere that 404s. */}
+              {isDemo ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/30">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Sample repository — no live source
+                </span>
+              ) : (
+                <a
+                  href={repo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/40 hover:text-primary transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View on GitHub
+                </a>
+              )}
             </div>
 
             <p className="text-sm text-white/50 mb-4 leading-relaxed max-w-2xl">
@@ -284,15 +307,24 @@ export default function RepositoryDetails() {
               </span>
             </div>
 
-            <button
-              onClick={runAnalysis}
-              disabled={analyzing}
-              className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-[0_0_16px_rgba(119,252,117,0.25)]"
-              style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-            >
-              {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              {analyzing ? "Analyzing…" : latest ? "Re-run Analysis" : "Run Analysis"}
-            </button>
+            {/* Running an analysis writes an analysis row, so the demo shows the
+                stored result and says why the trigger is absent. */}
+            {isDemo ? (
+              <p className="mt-6 text-[11px] leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+                Analysis is disabled in the demo. The metrics below are the stored result of the sample
+                repository's most recent analysis.
+              </p>
+            ) : (
+              <button
+                onClick={runAnalysis}
+                disabled={analyzing}
+                className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-[0_0_16px_rgba(119,252,117,0.25)]"
+                style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+              >
+                {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                {analyzing ? "Analyzing…" : latest ? "Re-run Analysis" : "Run Analysis"}
+              </button>
+            )}
 
             {analyzing && (
               <p className="mt-3 text-[12px]" style={{ color: "var(--text-tertiary)" }}>

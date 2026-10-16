@@ -15,7 +15,6 @@ import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
 import { ApiError } from "../../lib/api";
-import { useResource } from "../../lib/useResource";
 import { skillsService } from "../../services/skills";
 import type {
   EvidenceLevel,
@@ -23,6 +22,9 @@ import type {
   SkillWithEvidence,
   SkillsResponse,
 } from "../../lib/types";
+import { useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 
 /* ── presentation helpers ────────────────────────────── */
 
@@ -85,8 +87,10 @@ function confidenceColor(n: number) {
 /* ── page ────────────────────────────────────────────── */
 
 export default function Skills() {
-  const { data, loading, error, reload } = useResource<SkillsResponse>(
+  const isDemo = useDemoMode();
+  const { data, loading, error, reload } = useDemoResource<SkillsResponse>(
     () => skillsService.getSkills(),
+    sampleData.skillsResponse,
     []
   );
 
@@ -171,7 +175,11 @@ export default function Skills() {
   return (
     <PageContainer
       title="Skills Intelligence"
-      description="Technologies your repositories actually demonstrate, and the evidence behind each one."
+      description={
+        isDemo
+          ? "The sample profile's skills, with the evidence each one rests on."
+          : "Technologies your repositories actually demonstrate, and the evidence behind each one."
+      }
     >
       {loading && <LoadingBlock label="Loading your skills…" />}
 
@@ -179,24 +187,42 @@ export default function Skills() {
 
       {!loading && !error && data && (
         <>
-          {/* Actions */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <button
-              onClick={runDerive}
-              disabled={deriving}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer disabled:opacity-50"
-            >
-              {deriving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-              {deriving ? "Deriving…" : "Derive from repositories"}
-            </button>
-            <button
-              onClick={() => { setShowAdd((v) => !v); setActionError(null); }}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {showAdd ? "Cancel" : "Add a skill"}
-            </button>
-          </div>
+          {isDemo && (
+            <div className="mb-6">
+              <DemoNotice>
+                These skills are derived from the sample repositories the same way the product derives them
+                from yours: languages and topics GitHub reports, plus measured analysis signals. Deriving,
+                adding and removing skills are disabled here because they would write records.
+              </DemoNotice>
+            </div>
+          )}
+
+          {/* Actions — every one of these writes, so the demo omits them */}
+          {isDemo ? (
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70 px-5 py-2.5 rounded-full border border-primary/20 bg-primary/[0.07]">
+                Read-only sample skills
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <button
+                onClick={runDerive}
+                disabled={deriving}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {deriving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                {deriving ? "Deriving…" : "Derive from repositories"}
+              </button>
+              <button
+                onClick={() => { setShowAdd((v) => !v); setActionError(null); }}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {showAdd ? "Cancel" : "Add a skill"}
+              </button>
+            </div>
+          )}
 
           {actionError && (
             <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/[0.08] px-5 py-3.5">
@@ -204,7 +230,7 @@ export default function Skills() {
             </div>
           )}
 
-          {showAdd && (
+          {showAdd && !isDemo && (
             <form onSubmit={addSkill} className="mb-6 glass-panel p-5 flex flex-wrap items-end gap-3">
               <div className="flex-1 min-w-[200px]">
                 <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">
@@ -401,13 +427,15 @@ export default function Skills() {
                               </div>
                             </div>
                           </button>
-                          <button
-                            onClick={() => removeSkill(skill)}
-                            title={`Remove ${skill.name}`}
-                            className="shrink-0 w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-all cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {!isDemo && (
+                            <button
+                              onClick={() => removeSkill(skill)}
+                              title={`Remove ${skill.name}`}
+                              className="shrink-0 w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
 
                         {open && (
@@ -426,7 +454,8 @@ export default function Skills() {
                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/50">
                                       {evidenceLabel(evidence.evidenceType)}
                                     </span>
-                                    {evidence.sourceUrl ? (
+                                    {/* Sample evidence has no live source behind it. */}
+                                    {evidence.sourceUrl && !isDemo ? (
                                       <a
                                         href={evidence.sourceUrl}
                                         target="_blank"

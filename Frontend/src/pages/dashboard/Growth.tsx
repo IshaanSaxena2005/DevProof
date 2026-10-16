@@ -17,8 +17,11 @@ import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { useResource, type Resource } from "../../lib/useResource";
+import { type Resource } from "../../lib/useResource";
 import { useAuth } from "../../hooks/useAuth";
+import { useDemoMode, useDemoResource } from "../../demo/DemoContext";
+import { SAMPLE_IDENTITY, sampleData } from "../../demo/sampleData.mts";
+import { DemoNotice } from "../../demo/DemoNotice";
 import { relativeTime } from "../../lib/utils";
 import { growthService } from "../../services/growth";
 import type {
@@ -339,13 +342,18 @@ function GrowthOverTime({ resource }: { resource: Resource<GrowthHistoryResponse
 
 export default function Growth() {
   const { user } = useAuth();
-  const { data, loading, error, reload } = useResource<Developer360Response>(
-    () => api.get<Developer360Response>("/developer360/overview")
+  const isDemo = useDemoMode();
+  const { data, loading, error, reload } = useDemoResource<Developer360Response>(
+    () => api.get<Developer360Response>("/developer360/overview"),
+    sampleData.developer360
   );
 
   // Loaded separately from the overview so a failure here costs the history
   // panel rather than the whole page — the two endpoints are independent.
-  const history = useResource<GrowthHistoryResponse>(() => growthService.history());
+  const history = useDemoResource<GrowthHistoryResponse>(
+    () => growthService.history(),
+    sampleData.growth
+  );
 
   if (loading) {
     return (
@@ -364,7 +372,7 @@ export default function Growth() {
   }
 
   const o = data.overview;
-  const firstName = (user?.name ?? "").trim().split(/\s+/)[0];
+  const firstName = (isDemo ? SAMPLE_IDENTITY.name : user?.name ?? "").trim().split(/\s+/)[0];
   // null = no completed analyses: "not measured", never a zero.
   const score = o.developer360Score !== null ? Math.round(o.developer360Score) : null;
 
@@ -380,8 +388,21 @@ export default function Growth() {
   return (
     <PageContainer
       title="Growth & Analytics"
-      description="Your measured engineering growth across repositories, analyses, and skills."
+      description={
+        isDemo
+          ? "The sample profile's measured history, reconstructed from its own analysis records."
+          : "Your measured engineering growth across repositories, analyses, and skills."
+      }
     >
+      {isDemo && (
+        <div className="mb-6">
+          <DemoNotice>
+            This timeline is not a drawing: every point is one of the sample profile's eight stored
+            analyses, and the two trends exist because two sample repositories were measured twice.
+          </DemoNotice>
+        </div>
+      )}
+
       {/* Overview — every figure measured from live data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={FolderGit2} label="Repositories" value={`${o.totalRepositories}`} sub="connected to DevProof" />
