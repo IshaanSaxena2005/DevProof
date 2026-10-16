@@ -53,6 +53,45 @@ const BRAND: Record<PlatformProfile["platform"], { name: string; icon: React.Rea
 };
 
 /**
+ * One metric tile on a platform card.
+ *
+ * A `null`/`undefined` value means the platform never published that figure,
+ * and it renders as a muted em dash. That keeps "not published" visually
+ * distinct from a real zero, which is a number and renders as `0`.
+ */
+function MetricTile({ label, value }: { label: string; value: number | null | undefined }) {
+  const available = value !== null && value !== undefined;
+
+  return (
+    <div
+      className="flex flex-col rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5"
+      title={available ? undefined : `${label} is not published by this platform`}
+    >
+      <StatLabel>{label}</StatLabel>
+      {/* `mt-auto` bottom-aligns the figure, so a tile whose label wraps to two
+       *   lines keeps its value on the same baseline as its row neighbour. */}
+      <p
+        className={`text-sm font-bold mt-auto pt-1.5 tabular-nums ${
+          available ? "text-white" : "text-white/25"
+        }`}
+      >
+        {available ? value.toLocaleString() : "—"}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Column count for the secondary-stat row, so one reported figure does not sit
+ * alone in a three-column grid padded out with nothing.
+ */
+function statsRowClass(count: number): string {
+  if (count === 1) return "grid-cols-1";
+  if (count === 2) return "grid-cols-2";
+  return "grid-cols-3";
+}
+
+/**
  * Large platform profile card. When `connected` is false, renders muted
  * placeholder shapes and a connect CTA instead of fabricated numbers.
  *
@@ -146,12 +185,15 @@ export default function PlatformCard({
 
         {profile.connected ? (
           <>
-            {/* Headline metric */}
+            {/* Headline metric — the platform's total solved count. */}
             <div>
               <StatLabel>{profile.headline.label}</StatLabel>
-              <p className="text-4xl font-extrabold text-white tracking-tight mt-0.5">
+              <p className="text-4xl font-extrabold text-white tracking-tight mt-0.5 tabular-nums">
                 <CountUp value={profile.headline.value} />
               </p>
+              {profile.platform === "GeeksforGeeks" && (
+                <p className="text-[10px] text-white/30 mt-1">Total solved on GeeksforGeeks</p>
+              )}
             </div>
 
             {/* Difficulty breakdown bars (LeetCode-style) */}
@@ -176,44 +218,37 @@ export default function PlatformCard({
                 ))}
               </div>
             ) : profile.difficultyUnavailable ? (
-              <div className="text-[11px] text-white/35 italic">
-                Difficulty breakdown unavailable from {profile.platform}
+              <div className="flex items-center gap-2 rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/20 shrink-0" aria-hidden="true" />
+                <span className="text-[11px] leading-relaxed text-white/35">
+                  {profile.platform} publishes no Easy / Medium / Hard split, so those counts are
+                  unknown here — not zero.
+                </span>
               </div>
             ) : null}
 
-            {/* GFG-specific metrics */}
-            {profile.gfgStats && (
+            {/* GeeksforGeeks metrics.
+             *
+             * A fixed two-column grid rather than a filtered list: the card
+             * keeps its shape whichever subset of figures the profile carries,
+             * and a metric the source did not publish reads as a dash instead
+             * of silently reshaping the layout.
+             *
+             * Total Solved is not repeated here — it is the headline figure
+             * directly above. */}
+            {profile.platform === "GeeksforGeeks" && (
               <div className="grid grid-cols-2 gap-2">
-                {profile.gfgStats.codingScore !== null && (
-                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
-                    <StatLabel>Coding Score</StatLabel>
-                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.codingScore}</p>
-                  </div>
-                )}
-                {profile.gfgStats.monthlyScore !== null && (
-                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
-                    <StatLabel>Monthly Score</StatLabel>
-                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.monthlyScore}</p>
-                  </div>
-                )}
-                {profile.gfgStats.longestStreak !== null && (
-                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
-                    <StatLabel>Longest Streak</StatLabel>
-                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.longestStreak}</p>
-                  </div>
-                )}
-                {profile.gfgStats.articlesPublished !== null && (
-                  <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
-                    <StatLabel>Articles</StatLabel>
-                    <p className="text-sm font-bold text-white mt-1 tabular-nums">{profile.gfgStats.articlesPublished}</p>
-                  </div>
-                )}
+                <MetricTile label="Coding Score" value={profile.gfgStats?.codingScore} />
+                <MetricTile label="Monthly Score" value={profile.gfgStats?.monthlyScore} />
+                <MetricTile label="Longest Streak" value={profile.gfgStats?.longestStreak} />
+                <MetricTile label="Articles Published" value={profile.gfgStats?.articlesPublished} />
               </div>
             )}
 
-            {/* Secondary stats (acceptance, rating, streak, etc.) */}
+            {/* Secondary stats (acceptance, rating, current streak, etc.).
+             *   Column count follows however many the platform reported. */}
             {profile.stats.length > 0 && (
-              <div className="grid grid-cols-3 gap-2.5 mt-auto">
+              <div className={`grid ${statsRowClass(profile.stats.length)} gap-2.5`}>
                 {profile.stats.map((s) => (
                   <div key={s.label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
                     <StatLabel>{s.label}</StatLabel>
@@ -243,17 +278,19 @@ export default function PlatformCard({
               </div>
             )}
 
-            {/* Footer: sync/disconnect actions + view profile */}
-            <div className="flex items-center justify-between gap-3 pt-1">
+            {/* Footer: sync/disconnect actions + view profile.
+             *   Pinned to the bottom of the card so two cards holding
+             *   different amounts of data still align along one baseline. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-1 mt-auto">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-white/25">
+                <span className="text-[10px] text-white/25 whitespace-nowrap">
                   {profile.lastSyncedAt ? `Synced ${profile.lastSyncedAt}` : "—"}
                 </span>
                 {onSync && (
                   <button
                     onClick={onSync}
                     disabled={isSyncing || isDisconnecting}
-                    className="flex items-center gap-1 text-[10px] font-bold text-white/40 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 text-[10px] font-bold text-white/40 hover:text-primary transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Sync profile"
                   >
                     <RefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`} />
@@ -264,7 +301,7 @@ export default function PlatformCard({
                   <button
                     onClick={onDisconnect}
                     disabled={isSyncing || isDisconnecting}
-                    className="flex items-center gap-1 text-[10px] font-bold text-white/40 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 text-[10px] font-bold text-white/40 hover:text-red-400 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Disconnect profile"
                   >
                     <LogOut className={`w-3 h-3 ${isDisconnecting ? "animate-pulse" : ""}`} />
@@ -277,14 +314,14 @@ export default function PlatformCard({
                   href={profile.profileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1 text-[11px] font-bold text-white/50 hover:text-primary transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-bold text-white/50 hover:text-primary transition-colors whitespace-nowrap cursor-pointer"
                 >
                   View Profile <ArrowUpRight className="w-3.5 h-3.5" />
                 </a>
               ) : (
                 <span
                   title="Profile URL not available yet — reconnect to refresh it"
-                  className="flex items-center gap-1 text-[11px] font-bold text-white/25"
+                  className="flex items-center gap-1 text-[11px] font-bold text-white/25 whitespace-nowrap"
                 >
                   View Profile <ArrowUpRight className="w-3.5 h-3.5" />
                 </span>
