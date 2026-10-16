@@ -1,5 +1,6 @@
+import { useId, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, RefreshCw, LogOut } from "lucide-react";
+import { ArrowUpRight, RefreshCw, LogOut, Loader2 } from "lucide-react";
 import GlassCard from "../../../components/GlassCard";
 import { CountUp, StatLabel } from "./shared";
 
@@ -81,6 +82,54 @@ function MetricTile({ label, value }: { label: string; value: number | null | un
   );
 }
 
+/** Mirrors the backend's handle rule (codingProfile.validator.ts). */
+const HANDLE_MAX_LENGTH = 64;
+const HANDLE_PATTERN = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * Client-side check for a platform username, using the same rules the API
+ * enforces so an obviously rejected handle never leaves the browser.
+ *
+ * The server stays authoritative: this only pre-empts a round trip, and its
+ * message is replaced by the API's own error when one arrives.
+ *
+ * @returns the problem to show, or null when the handle looks acceptable.
+ */
+export function validateHandle(value: string): string | null {
+  const handle = value.trim();
+  if (!handle) return "Enter your username to connect.";
+  if (handle.length > HANDLE_MAX_LENGTH) {
+    return `Username must be ${HANDLE_MAX_LENGTH} characters or fewer.`;
+  }
+  if (!HANDLE_PATTERN.test(handle)) {
+    return "Username may only contain letters, numbers, dots, underscores and hyphens.";
+  }
+  return null;
+}
+
+/**
+ * What each platform's integration actually reads, named on the disconnected
+ * card so the state explains what connecting will produce.
+ *
+ * Deliberately a list of figures rather than a preview with numbers: the card
+ * has no data while disconnected, so any value shown here would be invented.
+ * GeeksforGeeks publishes no difficulty split, so it is not promised for it.
+ */
+const CONNECTED_METRICS: Record<PlatformProfile["platform"], string[]> = {
+  GeeksforGeeks: [
+    "Total problems solved",
+    "Coding score and monthly score",
+    "Current and longest problem-of-the-day streak",
+    "Articles published",
+  ],
+  LeetCode: [
+    "Total problems solved",
+    "Easy / Medium / Hard split",
+    "Acceptance rate and contest rating",
+    "Current streak and active days",
+  ],
+};
+
 /**
  * Column count for the secondary-stat row, so one reported figure does not sit
  * alone in a three-column grid padded out with nothing.
@@ -112,6 +161,8 @@ export default function PlatformCard({
   onDisconnect,
   isSyncing = false,
   isDisconnecting = false,
+  isConnecting = false,
+  errorMessage = null,
 }: {
   profile: PlatformProfile;
   onConnect?: () => void;
@@ -132,8 +183,24 @@ export default function PlatformCard({
   isSyncing?: boolean;
   /** Whether disconnect is in progress */
   isDisconnecting?: boolean;
+  /** Whether a connect request for this card is in flight */
+  isConnecting?: boolean;
+  /** Message from the last failed connect, sync or disconnect for this platform */
+  errorMessage?: string | null;
 }) {
   const brand = BRAND[profile.platform];
+
+  // Hooks stay above every branch: one card renders either the connected or the
+  // disconnected layout, and both need these ids and the touched flag.
+  const handleInputId = useId();
+  const handleMessageId = `${handleInputId}-message`;
+  const [handleTouched, setHandleTouched] = useState(false);
+
+  const handleDraft = usernameValue ?? "";
+  const handleValidationError =
+    usernameValue === undefined ? null : validateHandle(handleDraft);
+  const visibleHandleError = handleTouched ? handleValidationError : null;
+  const handleMessageShown = Boolean(errorMessage) || Boolean(visibleHandleError);
 
   return (
     <GlassCard className="p-6 md:p-7 relative overflow-hidden group h-full">
@@ -278,6 +345,16 @@ export default function PlatformCard({
               </div>
             )}
 
+            {/* Failure from the last sync or disconnect, shown next to the
+                controls that raised it rather than only in a page-level banner
+                that named no cause. */}
+            {errorMessage && (
+              <p role="alert" className="flex items-start gap-1.5 text-[11px] leading-snug text-red-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 mt-1.5" aria-hidden="true" />
+                {errorMessage}
+              </p>
+            )}
+
             {/* Footer: sync/disconnect actions + view profile.
              *   Pinned to the bottom of the card so two cards holding
              *   different amounts of data still align along one baseline. */}
@@ -329,65 +406,124 @@ export default function PlatformCard({
             </div>
           </>
         ) : (
-          /* ── Unconnected: username input and connect button ── */
-          <div className="flex flex-col gap-4 flex-1">
-            {/* Username input with label */}
+          /* ── Unconnected: username, what connecting adds, connect action.
+           *
+           *   A form rather than a bare button, so Enter submits and a second
+           *   submit is refused while one is still in flight. */
+          <form
+            className="flex flex-col gap-4 flex-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (isConnecting) return;
+              setHandleTouched(true);
+              // Nothing is sent with a handle the API would reject anyway.
+              if (handleValidationError) return;
+              if (onConnect === undefined || connectDisabled) return;
+              onConnect();
+            }}
+          >
+            {/* Username input, with a label bound to it rather than a
+                placeholder standing in for one. */}
             {usernameValue !== undefined && onUsernameChange && (
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
-                  {profile.platform === "LeetCode" ? "LEETCODE USERNAME" : "GFG USERNAME"}
-                </label>
+                <div className="flex items-center justify-between gap-3">
+                  <label
+                    htmlFor={handleInputId}
+                    className="text-[10px] font-bold uppercase tracking-widest text-white/50"
+                  >
+                    {profile.platform === "LeetCode" ? "LeetCode username" : "GFG username"}
+                  </label>
+                  {isConnecting && (
+                    <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-primary whitespace-nowrap">
+                      <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                      Connecting
+                    </span>
+                  )}
+                </div>
                 <input
+                  id={handleInputId}
+                  name="handle"
                   type="text"
                   value={usernameValue}
                   onChange={(e) => onUsernameChange(e.target.value)}
+                  onBlur={() => setHandleTouched(true)}
+                  disabled={isConnecting}
                   placeholder={usernamePlaceholder ?? `Enter your ${brand.name} username`}
-                  className="w-full rounded-lg border border-white/20 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  // A platform handle is not a DevProof credential, so autofill
+                  // should not offer the signed-in account's details here.
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={HANDLE_MAX_LENGTH}
+                  aria-invalid={handleMessageShown ? true : undefined}
+                  aria-describedby={handleMessageShown ? handleMessageId : undefined}
+                  className="w-full rounded-lg border border-white/20 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 />
+
+                {/* The API's answer wins; the local check only speaks once the
+                    field has been touched, so an untouched empty input is not
+                    scolded before the user has typed anything. */}
+                {errorMessage ? (
+                  <p
+                    id={handleMessageId}
+                    role="alert"
+                    className="flex items-start gap-1.5 text-[11px] leading-snug text-red-300"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 mt-1.5" aria-hidden="true" />
+                    {errorMessage}
+                  </p>
+                ) : visibleHandleError ? (
+                  <p
+                    id={handleMessageId}
+                    className="flex items-start gap-1.5 text-[11px] leading-snug text-amber-200/85"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-300/70 shrink-0 mt-1.5" aria-hidden="true" />
+                    {visibleHandleError}
+                  </p>
+                ) : null}
               </div>
             )}
 
-            <div className="flex-1 flex flex-col justify-center gap-4">
-              <div>
-                <StatLabel>{profile.headline.label}</StatLabel>
-                <div className="h-8 w-24 rounded-lg bg-white/[0.05] border border-white/[0.04] mt-1.5" aria-hidden="true" />
-              </div>
-
-              {/* Muted difficulty shapes */}
-              <div className="space-y-2.5">
-                {[76, 88, 62].map((w, i) => (
-                  <div key={i} className="h-1.5 rounded-full bg-white/[0.05]" style={{ width: `${w}%` }} aria-hidden="true" />
+            {/* The figures this platform's integration actually reads. Named
+                rather than previewed: a disconnected card holds no data, so any
+                number drawn here would be an invented one. */}
+            <div className="flex-1 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5">
+              <StatLabel>What connecting adds</StatLabel>
+              <ul className="mt-2.5 space-y-1.5">
+                {CONNECTED_METRICS[profile.platform].map((metric) => (
+                  <li
+                    key={metric}
+                    className="flex items-start gap-2 text-[11px] leading-snug text-white/45"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-primary/60 shrink-0 mt-1.5" aria-hidden="true" />
+                    {metric}
+                  </li>
                 ))}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {profile.stats.map((s) => (
-                  <div key={s.label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
-                    <StatLabel>{s.label}</StatLabel>
-                    <div className="h-4 w-10 rounded bg-white/[0.06] mt-1.5" aria-hidden="true" />
-                  </div>
-                ))}
-              </div>
+              </ul>
             </div>
 
             <button
-              onClick={onConnect}
-              disabled={onConnect === undefined || connectDisabled}
+              type="submit"
+              disabled={onConnect === undefined || connectDisabled || isConnecting}
               title={
-                onConnect !== undefined && !connectDisabled
-                  ? `Connect ${brand.name}`
-                  : connectHint ?? `Connect ${brand.name} once its integration is available`
+                isConnecting
+                  ? `Connecting ${brand.name}…`
+                  : onConnect !== undefined && !connectDisabled
+                    ? `Connect ${brand.name}`
+                    : connectHint ?? `Connect ${brand.name} once its integration is available`
               }
               className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-full border transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer"
               style={
-                onConnect !== undefined && !connectDisabled
+                onConnect !== undefined && !connectDisabled && !isConnecting
                   ? { borderColor: "rgba(119,252,117,0.3)", background: "rgba(119,252,117,0.1)", color: "hsl(var(--primary))" }
                   : undefined
               }
             >
-              Connect {brand.name}
+              {isConnecting && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+              {isConnecting ? `Connecting to ${brand.name}…` : `Connect ${brand.name}`}
             </button>
-          </div>
+          </form>
         )}
       </div>
     </GlassCard>

@@ -242,13 +242,29 @@ export default function ProblemSolving() {
   );
 
   const [busy, setBusy] = useState<CodingPlatform | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  /**
+   * The last failed action, kept together with the platform it belongs to so the
+   * message renders on the card the user acted on rather than only at page
+   * level, where it named no cause and sat far from the control.
+   */
+  const [actionError, setActionError] = useState<{
+    platform: CodingPlatform;
+    message: string;
+  } | null>(null);
   const [handleDrafts, setHandleDrafts] = useState<Record<string, string>>({});
 
   const profiles: CodingProfile[] = data?.profiles ?? [];
   const leetcode = profiles.find((p) => p.platform === "LEETCODE");
   const gfg = profiles.find((p) => p.platform === "GEEKSFORGEEKS");
   const anyConnected = profiles.length > 0;
+
+  /**
+   * Drop a failure message once its cause is being edited. The message names the
+   * handle that failed, so it would otherwise read as a verdict on the new one.
+   */
+  function clearActionError(platform: CodingPlatform) {
+    setActionError((current) => (current?.platform === platform ? null : current));
+  }
 
   async function runConnect(platform: CodingPlatform, handle: string) {
     setBusy(platform);
@@ -258,7 +274,10 @@ export default function ProblemSolving() {
       setHandleDrafts((d) => ({ ...d, [platform]: "" }));
       reload();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Could not connect that profile.");
+      setActionError({
+        platform,
+        message: err instanceof ApiError ? err.message : "Could not connect that profile.",
+      });
     } finally {
       setBusy(null);
     }
@@ -271,7 +290,10 @@ export default function ProblemSolving() {
       await codingProfilesService.sync(platform);
       reload();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Could not sync that profile.");
+      setActionError({
+        platform,
+        message: err instanceof ApiError ? err.message : "Could not sync that profile.",
+      });
     } finally {
       setBusy(null);
     }
@@ -287,7 +309,10 @@ export default function ProblemSolving() {
       await codingProfilesService.disconnect(platform);
       reload();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Could not disconnect that profile.");
+      setActionError({
+        platform,
+        message: err instanceof ApiError ? err.message : "Could not disconnect that profile.",
+      });
     } finally {
       setBusy(null);
     }
@@ -336,6 +361,7 @@ export default function ProblemSolving() {
         onDisconnect: () => void runDisconnect(platform),
         isSyncing: busy === platform,
         isDisconnecting: busy === platform,
+        errorMessage: actionError?.platform === platform ? actionError.message : null,
       };
     }
     
@@ -347,8 +373,15 @@ export default function ProblemSolving() {
         connectDisabled: draft === "",
         connectHint: draft === "" ? "Enter your LeetCode username above first" : undefined,
         usernameValue: handleDrafts["LEETCODE"] ?? "",
-        onUsernameChange: (value: string) => setHandleDrafts((d) => ({ ...d, LEETCODE: value })),
+        onUsernameChange: (value: string) => {
+          clearActionError("LEETCODE");
+          setHandleDrafts((d) => ({ ...d, LEETCODE: value }));
+        },
         usernamePlaceholder: "Enter your LeetCode username",
+        // `busy` also covers a sync or disconnect on the other card, so the
+        // in-flight state is reported per platform rather than globally.
+        isConnecting: busy === "LEETCODE",
+        errorMessage: actionError?.platform === "LEETCODE" ? actionError.message : null,
       };
     }
     if (card.platform === "GeeksforGeeks" && !gfg) {
@@ -358,8 +391,13 @@ export default function ProblemSolving() {
         connectDisabled: draft === "",
         connectHint: draft === "" ? "Enter your GFG username above first" : undefined,
         usernameValue: handleDrafts["GEEKSFORGEEKS"] ?? "",
-        onUsernameChange: (value: string) => setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: value })),
+        onUsernameChange: (value: string) => {
+          clearActionError("GEEKSFORGEEKS");
+          setHandleDrafts((d) => ({ ...d, GEEKSFORGEEKS: value }));
+        },
         usernamePlaceholder: "Enter your GFG username",
+        isConnecting: busy === "GEEKSFORGEEKS",
+        errorMessage: actionError?.platform === "GEEKSFORGEEKS" ? actionError.message : null,
       };
     }
     return {};
@@ -529,13 +567,7 @@ export default function ProblemSolving() {
       </div>
 
       {!anyConnected && (
-        <NotConnectedNotice what="No coding platform is connected yet, so there is nothing to measure. Connect LeetCode below and these sections fill with your real solve history." />
-      )}
-
-      {actionError && (
-        <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/[0.08] px-5 py-3.5">
-          <p className="text-[13px] text-red-300">{actionError}</p>
-        </div>
+        <NotConnectedNotice what="No coding platform is connected yet, so there is nothing to measure. Enter your public GeeksforGeeks or LeetCode username in a card below and these sections fill with your real solve history." />
       )}
 
       {/* ── 1. Overall overview ── */}
