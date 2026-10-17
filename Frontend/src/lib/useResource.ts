@@ -19,6 +19,14 @@ export interface Resource<T> {
  * Background refreshes (via `reload`) preserve the current `data` while the new
  * value loads, so a successful action like connecting a platform does not replace
  * the whole dashboard with a loading block. The initial mount still shows loading.
+ *
+ * `setLoading(false)` runs on every settle, not only the first: `isInitialMount`
+ * is already false by the time the promise resolves (it flips synchronously at
+ * the end of the effect), so gating the clear on it left the initial load stuck
+ * on the loading state forever in a production build. React StrictMode's
+ * dev-only double effect run used to mask this by re-running the effect with
+ * `isInitialMount === false`, which cleared loading immediately — so the bug
+ * only ever appeared in `vite build` output (found by the browser E2E suite).
  */
 export function useResource<T>(load: () => Promise<T>, deps: DependencyList = []): Resource<T> {
   const [data, setData] = useState<T | null>(null);
@@ -48,17 +56,13 @@ export function useResource<T>(load: () => Promise<T>, deps: DependencyList = []
       .then((result) => {
         if (active) {
           setData(result);
-          if (isInitialMount.current) {
-            setLoading(false);
-          }
+          setLoading(false);
         }
       })
       .catch((err) => {
         if (!active) return;
         setError(err instanceof ApiError ? err.message : "Something went wrong loading this data.");
-        if (isInitialMount.current) {
-          setLoading(false);
-        }
+        setLoading(false);
       });
 
     isInitialMount.current = false;

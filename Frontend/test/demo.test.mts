@@ -619,18 +619,30 @@ test("useResource preserves data during background refreshes", () => {
   // On background refresh (non-initial mount), loading is not set to true.
   assert.match(useResource, /if \(\!isInitialMount\.current\) \{\s*setLoading\(false\)/);
 
-  // On successful refresh, data is updated but loading stays false.
+  // Loading is cleared on EVERY settle. It must NOT be gated on isInitialMount:
+  // that ref is already false by the time the promise resolves (it flips
+  // synchronously at the end of the effect), so a guard there left the initial
+  // load stuck on the loading state forever in a production build. React
+  // StrictMode's dev-only double effect run used to mask this by re-running the
+  // effect with isInitialMount === false, which is why the bug only ever
+  // appeared in `vite build` output. The browser E2E suite
+  // (e2e/regressions.spec.ts, e2e/repository.spec.ts) pins the real behaviour.
   assert.match(
     useResource,
-    /if \(active\) \{\s*setData\(result\);\s*if \(isInitialMount\.current\) \{\s*setLoading\(false\)/s,
-    "success updates data but only sets loading false on initial mount"
+    /if \(active\) \{\s*setData\(result\);\s*setLoading\(false\)/s,
+    "a successful load always clears loading"
+  );
+  assert.doesNotMatch(
+    useResource,
+    /setData\(result\);\s*if \(isInitialMount/,
+    "clearing loading must not be gated on the initial mount"
   );
 
-  // On failed refresh, error is set but loading stays false.
+  // On failed load, the error is set and loading is cleared too.
   assert.match(
     useResource,
-    /setError.*if \(isInitialMount\.current\) \{\s*setLoading\(false\)/s,
-    "error sets message but only sets loading false on initial mount"
+    /setError\(err instanceof ApiError[^;]*;\s*setLoading\(false\)/s,
+    "a failed load always clears loading"
   );
 });
 ;
