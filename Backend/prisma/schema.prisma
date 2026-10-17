@@ -337,6 +337,10 @@ model Certification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Every certification query is user-scoped (list, update, delete, and the
+  // evidence-ladder scans); without this the planner seq-scans the whole table
+  // per request.
+  @@index([userId])
   @@map("certifications")
 }
 
@@ -435,5 +439,8 @@ model AnalysisHistory {
   repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Growth history reads this as `WHERE userId = ? ORDER BY createdAt ASC`
+  // (growth.service#getHistory), so the composite serves both filter and sort.
+  @@index([userId, createdAt])
   @@map("analysis_histories")
 }
