@@ -8,7 +8,9 @@
 
 import { DEMO_READ_ONLY_MESSAGE, isDemoActive } from "../demo/mode.mts";
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "")
+// `?.` on import.meta.env: under Vite it is always defined, but the API client
+// is also loaded by `node --test` (test/api.test.mts), where it is not.
+const BASE_URL = (import.meta.env?.VITE_API_URL as string | undefined)?.replace(/\/$/, "")
   ?? "http://localhost:5000/api/v1";
 
 /** Field-level validation detail, as produced by the Zod error handler. */
@@ -110,18 +112,21 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path, { method: "GET" }),
-  post: <T>(path: string, payload?: unknown) =>
+  // `<T,>` (trailing comma): in a .mts/.cts file a bare `<T>` at the start of an
+  // arrow function body is reserved syntax — TypeScript reads it as an angle
+  // bracket assertion, which ESM-extension files forbid.
+  get: <T,>(path: string) => request<T>(path, { method: "GET" }),
+  post: <T,>(path: string, payload?: unknown) =>
     request<T>(path, {
       method: "POST",
       ...(payload !== undefined ? { body: JSON.stringify(payload) } : {}),
     }),
-  patch: <T>(path: string, payload?: unknown) =>
+  patch: <T,>(path: string, payload?: unknown) =>
     request<T>(path, {
       method: "PATCH",
       ...(payload !== undefined ? { body: JSON.stringify(payload) } : {}),
     }),
-  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  delete: <T,>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
 export { BASE_URL };

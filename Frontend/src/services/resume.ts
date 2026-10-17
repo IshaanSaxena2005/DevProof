@@ -1,4 +1,4 @@
-import { api, ApiError, BASE_URL } from "../lib/api";
+import { api, ApiError, BASE_URL } from "../lib/api.mts";
 import type {
   ResumeAnalyseResponse,
   ResumeResponse,

@@ -10,7 +10,7 @@ import {
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { ApiError } from "../../lib/api";
+import { ApiError } from "../../lib/api.mts";
 import { githubService } from "../../services/github";
 import type {
   Finding, MetricCategory, RepositoryResponse, SeverityLevel,

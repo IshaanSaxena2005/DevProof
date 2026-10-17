@@ -30,7 +30,7 @@ import ProblemActivityChart from "./ps/ProblemActivityChart";
 import DifficultyDonut, { difficultyPercent } from "./ps/DifficultyDonut";
 import ConsistencyHeatmap, { ConsistencyStats } from "./ps/ConsistencyHeatmap";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { ApiError } from "../../lib/api";
+import { ApiError } from "../../lib/api.mts";
 import { codingProfilesService } from "../../services/codingProfiles";
 import type { CodingPlatform, CodingProfile, CodingProfilesResponse } from "../../lib/types";
 

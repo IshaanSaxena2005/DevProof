@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type DependencyList } from "react";
-import { ApiError } from "./api";
+import { ApiError } from "./api.mts";
 
 export interface Resource<T> {
   data: T | null;

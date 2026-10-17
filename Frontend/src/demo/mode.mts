@@ -5,7 +5,7 @@
  * the frontend, so a demo visitor has no account behind them and no row of their
  * own to create, update or delete. Rather than relying on every page to
  * remember that, the demo turns the *mutating* half of the API client off for as
- * long as it is mounted (see lib/api.ts).
+ * long as it is mounted (see lib/api.mts).
  *
  * This is deliberately a module-scoped flag rather than storage or a cookie: it
  * must not survive a reload (a reloaded demo re-arms it from the route) and it

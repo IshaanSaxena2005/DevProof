@@ -1,4 +1,4 @@
-import { api } from "../lib/api";
+import { api } from "../lib/api.mts";
 import type { AuthResponse, MeResponse } from "../lib/types";
 
 export const authService = {

@@ -163,7 +163,7 @@ test("demo mode is off until the demo shell arms it, and a GET is never blocked 
   assert.equal(isDemoActive(), false);
 
   // The API client refuses writes (not reads) while the flag is set.
-  const api = source("lib/api.ts");
+  const api = source("lib/api.mts");
   assert.match(api, /isDemoActive\(\)/);
   assert.match(api, /method !== "GET" && method !== "HEAD"/);
   assert.match(api, /DEMO_READ_ONLY_MESSAGE/);

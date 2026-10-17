@@ -4,7 +4,7 @@ import GlassCard from "../../components/GlassCard";
 import { Settings as SettingsIcon, Shield, User as UserIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
-import { ApiError, BASE_URL } from "../../lib/api";
+import { ApiError, BASE_URL } from "../../lib/api.mts";
 import { useDemoMode } from "../../demo/DemoContext";
 import { SAMPLE_IDENTITY, SAMPLE_NOTICE, sampleData } from "../../demo/sampleData.mts";
 import { DemoNotice } from "../../demo/DemoNotice";

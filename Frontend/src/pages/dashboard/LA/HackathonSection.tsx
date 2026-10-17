@@ -11,7 +11,7 @@ import {
   ChevronDown,
   Users,
 } from "lucide-react";
-import { ApiError } from "../../../lib/api";
+import { ApiError } from "../../../lib/api.mts";
 import { hackathonsService } from "../../../services/hackathons";
 import { LAStatLabel } from "./shared";
 import type { Hackathon, HackathonInput } from "../../../lib/types";

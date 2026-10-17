@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertCircle, FolderGit2, Star, GitFork, Users, Activity, Code2 } from "lucide-react";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api } from "../../lib/api";
+import { api } from "../../lib/api.mts";
 import type { Developer360Response, EvidenceLevel, SkillCategory } from "../../lib/types";
 import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
 import { sampleData } from "../../demo/sampleData.mts";

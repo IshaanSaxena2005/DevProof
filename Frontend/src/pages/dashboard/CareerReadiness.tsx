@@ -14,7 +14,7 @@ import {
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api } from "../../lib/api";
+import { api } from "../../lib/api.mts";
 import { certificationsService } from "../../services/certifications";
 import { careerService } from "../../services/career";
 import type { Developer360Response, RoleReadiness } from "../../lib/types";

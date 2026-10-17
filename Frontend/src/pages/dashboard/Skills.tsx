@@ -14,7 +14,7 @@ import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { ApiError } from "../../lib/api";
+import { ApiError } from "../../lib/api.mts";
 import { skillsService } from "../../services/skills";
 import type {
   EvidenceLevel,

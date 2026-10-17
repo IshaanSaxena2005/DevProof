@@ -12,7 +12,7 @@ import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api } from "../../lib/api";
+import { api } from "../../lib/api.mts";
 import type { AiInsightsResponse, InsightPriority } from "../../lib/types";
 import { useDashboardBase, useDemoMode, useDemoResource } from "../../demo/DemoContext";
 import { sampleData } from "../../demo/sampleData.mts";

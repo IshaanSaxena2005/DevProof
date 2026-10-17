@@ -25,7 +25,7 @@ const DemoContext = createContext<DemoContextValue>({ isDemo: false, sample: nul
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   /**
-   * While the demo is mounted, the API client refuses writes (see lib/api.ts).
+   * While the demo is mounted, the API client refuses writes (see lib/api.mts).
    * This is belt-and-braces on top of the per-page guards: a demo visitor has no
    * session, so a write could only ever 401 — but a request that cannot be
    * issued at all is a guarantee rather than an expectation.

@@ -4,7 +4,7 @@ import { FolderGit2, Code2, Award, Activity, Plus, ArrowRight, AlertCircle, Refr
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
-import { api, ApiError } from "../../lib/api";
+import { api, ApiError } from "../../lib/api.mts";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
 import type { Developer360Response } from "../../lib/types";

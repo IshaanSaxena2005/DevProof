@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Loader2, ExternalLink, ShieldQuestion, Check } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
-import { ApiError } from "../../../lib/api";
+import { ApiError } from "../../../lib/api.mts";
 import { useDemoResource } from "../../../demo/DemoContext";
 import { sampleData } from "../../../demo/sampleData.mts";
 import { resumeService } from "../../../services/resume";

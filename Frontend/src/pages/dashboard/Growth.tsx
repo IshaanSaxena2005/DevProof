@@ -12,7 +12,7 @@ import {
   Minus,
   Flag,
 } from "lucide-react";
-import { api } from "../../lib/api";
+import { api } from "../../lib/api.mts";
 import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { ApiError } from "../../../lib/api";
+import { ApiError } from "../../../lib/api.mts";
 import type { CourseInput, CertificationInput, Course, Certification } from "../../../lib/types";
 
 type RecordKind = "course" | "certification";
