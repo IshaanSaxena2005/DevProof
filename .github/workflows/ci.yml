@@ -154,6 +154,75 @@ jobs:
         continue-on-error: true
         run: npm audit
 
+  browser-e2e:
+    name: Browser E2E — Playwright journeys
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: devproof
+          POSTGRES_PASSWORD: devproof_ci
+          POSTGRES_DB: devproof_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U devproof -d devproof_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Dedicated and disposable: e2e/start-backend.mjs drops and recreates
+      # devproof_e2e_ci on every run, applying the committed migrations.
+      E2E_DATABASE_URL: postgresql://devproof:devproof_ci@localhost:5432/devproof_e2e_ci?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            Frontend/package-lock.json
+            Backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: Backend
+        run: npm ci
+
+      # The suite runs the compiled server (dist/server.js), never ts-node.
+      - name: Build backend
+        working-directory: Backend
+        run: npm run build
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: Frontend
+        run: npx playwright install --with-deps chromium
+
+      # test:e2e builds the isolated bundle (dist-e2e) first, then Playwright
+      # starts the backend wrapper (isolated DB, GitHub/Groq disabled) and the
+      # vite preview server, and runs the six journey specs.
+      - name: Run browser E2E suite
+        working-directory: Frontend
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            Frontend/playwright-report
+            Frontend/test-results
+          retention-days: 7
+
   docker:
     name: Docker images build
     runs-on: ubuntu-latest

@@ -668,6 +668,7 @@ Open it locally at `http://localhost:5173/demo` once the frontend is running, or
 |---|---|
 | **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift check, build + 130 tests, dependency audit |
 | **Frontend** | `npm ci`, typecheck, production build, 59 tests, dependency audit |
+| **Browser E2E** | Playwright Chromium drives the production build + the compiled backend against a disposable Postgres: 20 journeys (homepage, auth, dashboard, demo, mocked repository flow, regressions) |
 | **Docker** | Both images build |
 
 Migrations run against a fresh PostgreSQL service container, so one that only
@@ -699,6 +700,47 @@ cd Frontend
 npm test              # 59 tests: UTC date logic, difficulty fallbacks,
                       # demo isolation, API-client envelope & demo guard
 ```
+
+### Browser end-to-end tests (Playwright)
+
+The E2E suite drives the **production build** (`vite preview`) with real Chromium
+against the **compiled backend**, on an isolated stack — its own
+`devproof_e2e_test` database (recreated per run on the local Postgres), its own
+port (5399), and GitHub OAuth + Groq disabled. Nothing in it can touch
+`devproof_db` or any live external service.
+
+```bash
+# One-time setup
+cd Backend && npm run build     # the suite runs dist/server.js, not ts-node
+cd ../Frontend
+npx playwright install chromium # one-time browser download (--with-deps on Linux)
+
+# Every run (builds the e2e bundle, then runs Playwright)
+npm run test:e2e
+```
+
+Prerequisite: the local Postgres from `docker compose up -d postgres` (port
+5434), or point the suite at any disposable Postgres with `E2E_DATABASE_URL`.
+To test an already-running stack instead of the managed one, set `E2E_BASE_URL`
+(and `E2E_API_ORIGIN`) — Playwright then starts no servers.
+
+What it covers: the public homepage (console-clean, lazy dashboard chunks,
+Spline device/reduced-motion gating, 390px overflow), signed-out redirects and
+login error states, register → dashboard → logout, every dashboard section for
+a signed-in user, nested-route deep links, cross-account data isolation, demo
+mode (synthetic-data badge, no write request ever reaches the API, Exit Demo),
+the repository connect/analysis UI with GitHub mocked at the browser network
+layer (loading, success, empty, error), and resume upload error handling.
+
+The login rate limit (10 attempts / 15 min per IP) is a real security control
+and is **not** relaxed for tests: global setup signs each test account in once
+and saves the session as Playwright storage state, which every other spec
+injects; only `auth.spec.ts` drives the login form itself.
+
+**What the mocks do not prove:** a browser test with mocked GitHub responses
+does not verify live GitHub OAuth, the GitHub App installation flow, webhook
+delivery, or real repository analysis. Those need real credentials and stay
+outside the automated suite.
 
 **Service tests** stub Prisma and cover the rules: skill derivation and its
 confidence ceilings, certification and course matching, LeetCode and
