@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const jwt = require('jsonwebtoken');
 
-const { startServer, createClient, registerUser, cleanup } = require('./setup');
+const { startServer, createClient, registerUser, uniqueEmail, cleanup } = require('./setup');
 // Built by `npm run build`, which both this suite's setup (dist/app.js) and the
 // test:unit script already depend on.
 const { COOKIE_NAME } = require('../../dist/config/cookies.js');
@@ -598,6 +598,35 @@ test('one user cannot see, download or re-analyse another user\'s resume', async
   // Alice is untouched.
   assert.ok((await alice.get('/resume')).body.data.resume);
   assert.equal((await alice.get('/resume/download')).status, 200);
+});
+
+/* ── login rate limiting (last: it exhausts the shared per-IP budget) ─── */
+
+test('repeated failed logins hit a dedicated 429 limiter without breaking other auth routes', async () => {
+  const client = createClient(server.baseUrl);
+  const email = uniqueEmail('ratelimit');
+  assert.equal((await client.post('/auth/register', { email, password: 'IntegrationTest123!' })).status, 201);
+
+  // Exhaust the login budget with wrong passwords. Earlier tests already used
+  // two of the ten allowed attempts, so this must reach 429 well within 12.
+  let saw429 = false;
+  for (let attempt = 0; attempt < 12 && !saw429; attempt++) {
+    const response = await client.post('/auth/login', { email, password: 'NotThePassword1!' });
+    assert.ok(
+      response.status === 401 || response.status === 429,
+      `attempt ${attempt}: expected 401 or 429, got ${response.status}`
+    );
+    if (response.status === 429) {
+      saw429 = true;
+      assert.match(response.body.message, /too many login attempts/i);
+    }
+  }
+  assert.ok(saw429, 'the limiter must eventually refuse further attempts from this IP');
+
+  // The budget is scoped to login: session inspection and logout still work,
+  // so a throttled user is never locked out of ending their session.
+  assert.equal((await client.get('/auth/me')).status, 200);
+  assert.equal((await client.post('/auth/logout')).status, 200);
 });
 
 test('a record from before structured analysis stays usable and gains one on demand', async () => {
