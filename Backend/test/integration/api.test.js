@@ -36,6 +36,14 @@ test('health reports the database it is actually connected to', async () => {
   assert.equal(body.data.database, 'connected', 'the app must reach Postgres, not merely boot');
 });
 
+test('the server does not trust forwarded proxy headers by default', () => {
+  // TRUST_PROXY is unset in the test environment (see setup.js). Express's
+  // default must hold: without an operator-specified hop count, an attacker's
+  // X-Forwarded-For must not influence req.ip — which the rate limiters key.
+  const app = require('../../dist/app.js').default;
+  assert.equal(app.get('trust proxy'), false);
+});
+
 test('an unknown route returns a 404 rather than hanging or crashing', async () => {
   const { status } = await createClient(server.baseUrl).get('/not-a-real-endpoint');
   assert.equal(status, 404);

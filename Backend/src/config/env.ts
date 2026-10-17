@@ -21,6 +21,12 @@ const envSchema = z.object({
   GITHUB_PRIVATE_KEY: z.string().optional().default(''),
   GITHUB_WEBHOOK_SECRET: z.string().optional().default(''),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+  // Number of reverse proxies in front of this server ("" = directly exposed,
+  // the default). Only a positive integer is honoured — never "true" — so an
+  // operator cannot accidentally trust X-Forwarded-For from arbitrary clients.
+  // Affects req.ip, which the rate limiters key on, and the Secure cookie
+  // decision behind TLS-terminating proxies.
+  TRUST_PROXY: z.string().optional().default(''),
   // Optional like the GitHub OAuth vars above - the server must still boot
   // without it. AiService checks for it at call time and fails with a clear
   // 503 rather than the app refusing to start.

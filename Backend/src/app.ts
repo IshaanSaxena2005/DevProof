@@ -11,6 +11,16 @@ import { AppError } from './utils/appError';
 
 const app: Application = express();
 
+// Reverse-proxy topology (see TRUST_PROXY in .env.example). Only a hop COUNT
+// is accepted: `trust proxy = true` would trust X-Forwarded-For from any
+// client, letting an attacker spoof the IP that the rate limiters key on.
+// Left unset when the server is directly exposed, which is the local and
+// docker-compose default.
+const trustProxyHops = Number.parseInt(env.TRUST_PROXY, 10);
+if (Number.isInteger(trustProxyHops) && trustProxyHops > 0) {
+  app.set('trust proxy', trustProxyHops);
+}
+
 // Security Headers
 app.use(helmet());
 

@@ -195,9 +195,11 @@ at all — installation is required only for private ones.
 
 **Known limitations, stated plainly:** a session is a single JWT cookie with a fixed
 lifetime (7 days by default) and there is deliberately no refresh-token endpoint —
-logging in again issues a fresh token; the rate limiter keys on the client IP, which
-means an API deployed behind a reverse proxy needs `trust proxy` configured first; and
-secure cookies assume the deployment terminates TLS in front of the backend.
+logging in again issues a fresh token; the rate limiters key on the client IP, so an
+API deployed behind a reverse proxy must set `TRUST_PROXY` to its hop count first;
+and secure cookies assume the deployment terminates TLS in front of the backend.
+Credential guessing has its own tighter budget: 10 attempts per 15 minutes on
+`POST /auth/login`, scoped so OAuth callbacks and logout are never throttled.
 
 ---
 
@@ -407,6 +409,11 @@ GITHUB_PRIVATE_KEY=
 GITHUB_WEBHOOK_SECRET=
 
 FRONTEND_URL=http://localhost:5173
+
+# Reverse proxy only — set to the hop count (usually 1) when TLS terminates at
+# a proxy in front of the API. Leave empty when directly exposed; only a
+# positive integer is accepted, never "true".
+TRUST_PROXY=
 
 # AI insights (optional — endpoint returns 503 when unset)
 GROQ_API_KEY=
