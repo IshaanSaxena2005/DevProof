@@ -1,0 +1,14 @@
+{
+  "name": "DevProof",
+  "short_name": "DevProof",
+  "description": "Developer intelligence and growth analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
+  "icons": [
+    { "src": "/favicon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-180x180.png", "sizes": "180x180", "type": "image/png", "purpose": "maskable" }
+  ]
+}
