@@ -101,6 +101,61 @@ test('registering the same email twice is refused', async () => {
   assert.ok(status === 409 || status === 400, `expected a conflict, got ${status}`);
 });
 
+/* ── GitHub OAuth callback forgery ───────────────────── */
+
+/**
+ * The OAuth callback is a top-level browser navigation that GitHub redirects
+ * to, so anyone can hit it directly. The state cookie is the only thing that
+ * ties a callback to an authorization this server actually started — and the
+ * check runs BEFORE the code is exchanged with GitHub, so these tests never
+ * leave the machine.
+ */
+
+const { env } = require('../../dist/config/env.js');
+
+/** Drives the callback directly with full control over cookies and redirects. */
+async function hitCallback(query, cookieHeader) {
+  return fetch(`${server.baseUrl}/auth/github/callback${query}`, {
+    redirect: 'manual',
+    headers: cookieHeader ? { Cookie: cookieHeader } : {}
+  });
+}
+
+/** Asserts the attempt was bounced to the login page without minting a session. */
+function assertBouncedToLogin(response, label) {
+  assert.equal(response.status, 302, `${label}: must redirect, not render`);
+  const location = response.headers.get('location') || '';
+  assert.ok(
+    location.startsWith(`${env.FRONTEND_URL}/login?error=`),
+    `${label}: must land on the login page with an explanation, got ${location}`
+  );
+
+  const setCookie = response.headers.get('set-cookie') || '';
+  assert.ok(!new RegExp(`${COOKIE_NAME}=`).test(setCookie.replace(/token=;/, '')),
+    `${label}: a rejected callback must never set a session cookie`);
+  assert.match(setCookie, /github_oauth_state=;/, `${label}: the state cookie must be consumed`);
+}
+
+test('an OAuth callback with no state is bounced, not processed', async () => {
+  const response = await hitCallback('?code=some-forged-code');
+  assertBouncedToLogin(response, 'missing state');
+});
+
+test('an OAuth callback whose state does not match the cookie is bounced', async () => {
+  const response = await hitCallback(
+    '?code=some-forged-code&state=' + 'a'.repeat(48),
+    `github_oauth_state=${'b'.repeat(48)}`
+  );
+  assertBouncedToLogin(response, 'mismatched state');
+});
+
+test('an OAuth callback with a state the server never issued is bounced', async () => {
+  // Valid-looking length, correct shape — but no matching cookie at all, which
+  // is what a CSRF attempt from another site looks like.
+  const response = await hitCallback('?code=some-forged-code&state=' + 'c'.repeat(48));
+  assertBouncedToLogin(response, 'state without cookie');
+});
+
 /* ── validation ───────────────────────────────────────── */
 
 test('validation failures return 400 with field-level detail', async () => {
