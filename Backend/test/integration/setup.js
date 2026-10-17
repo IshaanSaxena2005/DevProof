@@ -90,6 +90,11 @@ prepareDatabase();
 // Must be set before the app is required: config/env.ts reads it at import.
 process.env.DATABASE_URL = TEST_DATABASE_URL;
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'integration-test-secret-value';
+// The webhook endpoint fails closed when this is unset, which would make its
+// signed-payload paths untestable end to end. A dedicated test-only value lets
+// the suite sign payloads exactly the way GitHub does.
+process.env.GITHUB_WEBHOOK_SECRET =
+  process.env.GITHUB_WEBHOOK_SECRET || 'integration-test-webhook-secret';
 process.env.NODE_ENV = 'test';
 
 const app = require('../../dist/app.js').default;

@@ -8,13 +8,26 @@ type GitHubWebhookRequest = Request & {
 };
 
 function parseWebhookBody(body: GitHubWebhookRequest['body']): Record<string, any> {
+  // Runs only AFTER signature verification (see receive below), so a malformed
+  // body here means a *correctly signed* payload that is not the JSON GitHub
+  // promised — a bad request, not a server fault. Letting JSON.parse throw
+  // used to surface as a 500 through the global handler, which reads as a
+  // crash for what is the caller's formatting mistake.
+  const parseJson = (text: string): Record<string, any> => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw AppError.badRequest('Malformed JSON payload.');
+    }
+  };
+
   if (Buffer.isBuffer(body)) {
     const text = body.toString('utf8');
-    return text ? JSON.parse(text) : {};
+    return text ? parseJson(text) : {};
   }
 
   if (typeof body === 'string') {
-    return body ? JSON.parse(body) : {};
+    return body ? parseJson(body) : {};
   }
 
   return body ?? {};

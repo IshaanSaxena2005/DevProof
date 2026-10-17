@@ -156,6 +156,66 @@ test('an OAuth callback with a state the server never issued is bounced', async 
   assertBouncedToLogin(response, 'state without cookie');
 });
 
+/* ── GitHub webhook intake ──────────────────────────── */
+
+const crypto = require('node:crypto');
+
+/** Signs a raw payload exactly the way GitHub does: HMAC-SHA256, hex, sha256= prefix. */
+function signWebhookPayload(payload) {
+  return `sha256=${crypto
+    .createHmac('sha256', process.env.GITHUB_WEBHOOK_SECRET)
+    .update(payload)
+    .digest('hex')}`;
+}
+
+/** Posts a raw (unstringified) body to the webhook endpoint with GitHub's headers. */
+function deliverWebhook(payload, { signature, event = 'push' } = {}) {
+  return fetch(`${server.baseUrl}/webhooks/github`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-github-event': event,
+      ...(signature !== undefined ? { 'x-hub-signature-256': signature } : {})
+    },
+    body: payload
+  }).then(async (response) => ({
+    status: response.status,
+    body: await response.json().catch(() => null)
+  }));
+}
+
+test('a correctly signed webhook payload is acknowledged', async () => {
+  const payload = JSON.stringify({ zen: 'Keep it logically awesome.', hook_id: 1 });
+  const { status, body } = await deliverWebhook(payload, {
+    signature: signWebhookPayload(payload),
+    event: 'ping'
+  });
+
+  assert.equal(status, 200);
+  assert.equal(body.success, true);
+  assert.equal(body.data.zen, 'Keep it logically awesome.');
+});
+
+test('a signed but malformed JSON payload is a 400, not a server error', async () => {
+  // Correctly signed — so this is a caller formatting mistake after a valid
+  // HMAC, which must read as a client error rather than a crash.
+  const { status, body } = await deliverWebhook('{not json', {
+    signature: signWebhookPayload('{not json')
+  });
+
+  assert.equal(status, 400);
+  assert.match(body.message, /malformed json/i);
+  assert.ok(!JSON.stringify(body).includes(process.env.GITHUB_WEBHOOK_SECRET), 'the secret must never appear in a response');
+});
+
+test('an invalid signature is rejected before the payload is even parsed', async () => {
+  const { status } = await deliverWebhook('{not json', {
+    signature: 'sha256=0000000000000000000000000000000000000000000000000000000000000000'
+  });
+
+  assert.equal(status, 401, 'signature verification must run before JSON parsing');
+});
+
 /* ── validation ───────────────────────────────────────── */
 
 test('validation failures return 400 with field-level detail', async () => {
