@@ -40,7 +40,7 @@ what is still scaffolding.
 | GitHub App JWT + webhook signature verification | ✅ Built |
 | Dashboard: Overview, Repositories, Repository Details, Developer 360, AI Insights, Skills | ✅ Live backend data |
 | Dashboard: Problem Solving, Growth, Career Readiness | ✅ Live backend data |
-| Dashboard: Learning & Achievements | ⚠️ Certifications live; courses and hackathons not wired |
+| Dashboard: Learning & Achievements | ✅ Live backend data (courses, certifications, hackathons) |
 | Skill intelligence endpoints (derived from repo evidence) | ✅ Built |
 | Certification endpoints (with evidence-ladder promotion) | ✅ Built |
 | Course endpoints (with LEARNED promotion) | ✅ Built |
@@ -61,6 +61,13 @@ LinkedIn is not a missing feature so much as an unavailable one. Its self-serve 
 returns only name, picture, locale and email; experience, education, skills and certifications
 are not exposed at any self-serve tier, so there is nothing to ingest. Certifications are
 entered through the certification endpoints instead.
+
+**Externally unverified:** the live GitHub OAuth round trip, real webhook deliveries from
+GitHub, and Groq-generated insights need real credentials and external services. They are
+pinned by local tests that exercise the same code paths (state-mismatch rejection, HMAC
+signature verification, provider-missing and provider-unreachable handling), but no live
+round trip has been run — treat those three as requiring a staging check with real
+credentials before launch.
 
 The AI Insights page reads `GET /api/v1/ai/insights` directly, so it shows a real Groq-generated
 summary of your stored analyses — or an empty state when nothing has been analyzed yet. It renders
@@ -83,10 +90,10 @@ plus the measured average score; no projected career trajectory or invented sub-
 
 ### Planned
 
-Every area in the status table above is served by the API. The course and hackathon endpoints
-are the last ones with no UI reading them — Learning & Achievements still offers both as "coming
-soon". After that it is deployment: the Dockerfiles and CI exist, but the resume upload directory
-still needs persistent storage in whatever environment hosts it.
+Every area in the status table above is served by the API **and** read by its dashboard
+page. What remains is deployment: the Dockerfiles and CI exist, but the resume upload
+directory (`Backend/uploads/`) still needs persistent storage in whatever environment
+hosts it.
 
 ---
 
@@ -186,6 +193,12 @@ at all — installation is required only for private ones.
 - Webhook payloads verified with a timing-safe HMAC SHA-256 comparison
 - All repository and analysis data is scoped to the authenticated user
 
+**Known limitations, stated plainly:** a session is a single JWT cookie with a fixed
+lifetime (7 days by default) and there is deliberately no refresh-token endpoint —
+logging in again issues a fresh token; the rate limiter keys on the client IP, which
+means an API deployed behind a reverse proxy needs `trust proxy` configured first; and
+secure cookies assume the deployment terminates TLS in front of the backend.
+
 ---
 
 ## 🏗️ System Architecture
@@ -249,8 +262,10 @@ DevProof/
 │   │   ├── layouts/
 │   │   ├── context/         # AuthContext
 │   │   ├── hooks/
-│   │   ├── services/        # auth.ts, github.ts
-│   │   └── lib/             # api.ts, types.ts, useResource.ts
+│   │   ├── services/        # typed API clients (auth, skills, courses, hackathons, …)
+│   │   ├── demo/            # public demo mode: synthetic fixtures, routes, shell
+│   │   └── lib/             # api.mts, types.ts, useResource.ts
+│   ├── test/                # node --test suites (no browser needed)
 │   ├── Dockerfile
 │   └── package.json
 │
@@ -411,7 +426,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 VITE_API_URL=http://localhost:5000/api/v1
 ```
 
-Optional — `src/lib/api.ts` falls back to that exact value when unset.
+Optional — `src/lib/api.mts` falls back to that exact value when unset.
 
 > Never commit `.env` files, OAuth secrets, JWT secrets, or API credentials.
 
@@ -519,6 +534,7 @@ GET    /api/v1/career/readiness
 GET    /api/v1/resume
 POST   /api/v1/resume            (multipart, field name "resume")
 GET    /api/v1/resume/download
+POST   /api/v1/resume/analyse
 DELETE /api/v1/resume
 ```
 
@@ -594,21 +610,43 @@ POST   /api/v1/webhooks/github
 ## 🖥️ Frontend Routes
 
 ```text
-/                              Landing page
+/                              Landing page (Spline background)
 /login                         Login / register
 
-/dashboard/overview            🔒 live data
-/dashboard/repositories        🔒 live data
-/dashboard/repositories/:id    🔒 live data
-/dashboard/developer-360       🔒 live data
-/dashboard/skills              🔒 live data
-/dashboard/problem-solving     🔒 sample data
-/dashboard/credentials         🔒
-/dashboard/growth              🔒 sample data
-/dashboard/career-readiness    🔒 sample data
-/dashboard/ai-insights         🔒 live data
-/dashboard/settings            🔒
+/demo                          Public read-only demo → /demo/overview
+/demo/:section                 Sample-data mirror of every dashboard section
+
+/dashboard/overview            🔒 live backend data
+/dashboard/repositories        🔒 live backend data
+/dashboard/repositories/:id    🔒 live backend data
+/dashboard/developer-360       🔒 live backend data
+/dashboard/skills              🔒 live backend data
+/dashboard/problem-solving     🔒 live backend data
+/dashboard/learning            🔒 live backend data
+/dashboard/growth              🔒 live backend data
+/dashboard/career-readiness    🔒 live backend data
+/dashboard/ai-insights         🔒 live backend data
+/dashboard/settings            🔒 GitHub connect / sync / disconnect
 ```
+
+---
+
+## 🎮 Demo Mode
+
+`/demo` renders the same ten dashboard pages against synthetic fixtures — no account,
+no backend, no real personal data. It exists so anyone can evaluate the product before
+connecting anything.
+
+- **Public by design:** the demo routes sit outside the auth guard deliberately; nothing
+  below `/dashboard` changed to make them public.
+- **Read-only:** while the demo is mounted, the API client refuses every write
+  (POST/PATCH/DELETE) with a clear explanation — no request is even sent, so a demo
+  visitor cannot touch an account they do not have.
+- **Honest:** sample screens are labelled as sample data on screen, and the fixtures
+  are deterministic for a given day.
+
+Open it locally at `http://localhost:5173/demo` once the frontend is running, or click
+**Explore Demo** on the landing page.
 
 ---
 
@@ -618,8 +656,8 @@ POST   /api/v1/webhooks/github
 
 | Job | Checks |
 |---|---|
-| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift, typecheck, 88 tests, dependency audit |
-| **Frontend** | `npm ci`, typecheck, production build, dependency audit |
+| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift check, build + 128 tests, dependency audit |
+| **Frontend** | `npm ci`, typecheck, production build, 59 tests, dependency audit |
 | **Docker** | Both images build |
 
 Migrations run against a fresh PostgreSQL service container, so one that only
@@ -636,13 +674,20 @@ push on it would only teach everyone to ignore the step.
 
 ## 🧪 Testing
 
-Both suites run on the built output via `node --test`, so `npm test` compiles first:
+The backend suites run on the compiled output (`npm test` builds first); the frontend
+suite runs its `.mts` sources directly with `node --test`.
 
 ```bash
 cd Backend
-npm test              # 100 tests: service + integration
-npm run test:unit     # 85 service tests, database stubbed
-npm run test:integration  # 15 tests over real HTTP, Prisma and PostgreSQL
+npm test              # 128 tests: 98 service + 30 integration
+npm run test:unit     # 98 service tests, database stubbed
+npm run test:integration  # 30 tests over real HTTP, Prisma and PostgreSQL
+```
+
+```bash
+cd Frontend
+npm test              # 59 tests: UTC date logic, difficulty fallbacks,
+                      # demo isolation, API-client envelope & demo guard
 ```
 
 **Service tests** stub Prisma and cover the rules: skill derivation and its
@@ -670,6 +715,23 @@ npm run build
 cd Frontend
 npm run build
 ```
+
+---
+
+## 🧯 Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Backend exits immediately on start | Postgres not running, or wrong port | `cd Backend && docker compose up -d`; the local port is **5434**, not 5432 |
+| `Cannot find module …` after a pull | New dependency | `cd Backend && npm install` |
+| Missing table / column after a pull | New migration | `npx prisma migrate deploy` |
+| Type errors about columns that exist in `schema.prisma` | Stale generated client | `npx prisma generate` |
+| `DATABASE_URL is required` at boot | `Backend/.env` missing | Copy `Backend/.env.example` to `Backend/.env` and fill it in |
+| "GitHub OAuth is not configured…" or a bounce back to `/login?error=` | Missing or wrong GitHub credentials | Use a **GitHub App** client id (`Iv1.` / `Iv23` prefix) and secret; an OAuth App id is rejected on purpose |
+| Webhook POSTs return 503 | `GITHUB_WEBHOOK_SECRET` unset | Set it to the same value configured on the GitHub App |
+| AI Insights returns 503 | `GROQ_API_KEY` unset | Set it — or ignore it; the rest of the app works without it |
+| Landing page loads but every dashboard request fails | Backend not running, or wrong API URL | Start the backend; point `Frontend/.env` (`VITE_API_URL`) at it if it is not on `localhost:5000` |
+| Browser tab still shows the old favicon | Browser icon cache | Icon URLs are versioned (`?v=…`); hard-refresh the page |
 
 ---
 
@@ -725,6 +787,19 @@ DevProof should be able to show the evidence behind it.
          │  Intelligence │
          └───────────────┘
 ```
+
+---
+
+## 🤝 Contributing
+
+1. Branch from `main` (`git checkout -b fix/short-description`).
+2. Keep commits conventional (`feat:`, `fix:`, `test:`, `docs:`, `ci:`).
+3. Behaviour changes need tests; both suites must pass locally
+   (`cd Backend && npm test`, `cd Frontend && npm test`).
+4. Add new migrations with `npx prisma migrate dev` and commit the generated
+   migration folder — never edit an already-applied migration.
+5. Open a pull request. CI re-runs the migrations, both test suites, both builds,
+   the dependency audit and the Docker builds.
 
 ---
 
