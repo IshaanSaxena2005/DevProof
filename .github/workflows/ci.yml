@@ -131,6 +131,14 @@ jobs:
         working-directory: Frontend
         run: npm run build
 
+      # The frontend suite is plain node:test over extracted logic (UTC date
+      # handling, difficulty fallbacks, demo fixtures, the API client's
+      # envelope/demo guarantees) — no browser or backend needed, so it can run
+      # right after the build on every push.
+      - name: Run frontend tests
+        working-directory: Frontend
+        run: npm test
+
       # Fails on a high or critical advisory in anything that actually ships.
       # devDependencies are excluded deliberately: a ReDoS in the hot-reload
       # file watcher is a different risk class from one in a request path, and
