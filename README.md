@@ -656,7 +656,7 @@ Open it locally at `http://localhost:5173/demo` once the frontend is running, or
 
 | Job | Checks |
 |---|---|
-| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift check, build + 128 tests, dependency audit |
+| **Backend** | `npm ci`, migrations applied to an empty database, schema/migration drift check, build + 130 tests, dependency audit |
 | **Frontend** | `npm ci`, typecheck, production build, 59 tests, dependency audit |
 | **Docker** | Both images build |
 
@@ -679,8 +679,8 @@ suite runs its `.mts` sources directly with `node --test`.
 
 ```bash
 cd Backend
-npm test              # 128 tests: 98 service + 30 integration
-npm run test:unit     # 98 service tests, database stubbed
+npm test              # 130 tests: 100 service + 30 integration
+npm run test:unit     # 100 service tests, database stubbed
 npm run test:integration  # 30 tests over real HTTP, Prisma and PostgreSQL
 ```
 
