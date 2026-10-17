@@ -91,9 +91,10 @@ plus the measured average score; no projected career trajectory or invented sub-
 ### Planned
 
 Every area in the status table above is served by the API **and** read by its dashboard
-page. What remains is deployment: the Dockerfiles and CI exist, but the resume upload
-directory (`Backend/uploads/`) still needs persistent storage in whatever environment
-hosts it.
+page. What remains is deployment: `docker-compose.yml` now provides a named volume for
+`Backend/uploads` (so resumes survive container recreation), but whatever environment
+hosts staging/production needs the equivalent mount — plus backups of both that volume
+and Postgres — and the live OAuth, webhook and Groq checks recorded in the sections above.
 
 ---
 
@@ -319,7 +320,9 @@ Create `Backend/.env` first (see below), then:
 docker compose up -d --build
 ```
 
-This starts PostgreSQL, the backend and the frontend together.
+This starts PostgreSQL, the backend and the frontend together. The backend service
+includes a healthcheck that probes the real `/api/v1/health` endpoint (which itself
+checks the database), and the frontend waits for it to report healthy before starting.
 
 ### Option B — Postgres in Docker, apps on the host
 

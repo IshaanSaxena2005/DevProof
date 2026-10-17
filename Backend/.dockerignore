@@ -3,3 +3,6 @@ dist
 dist.failed-build
 .env
 *.log
+# User uploads belong on the compose volume, never baked into an image —
+# shipping local resume files in an image would leak them to whoever pulls it.
+uploads
