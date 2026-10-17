@@ -4,11 +4,18 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+dist-e2e/
+
+# Playwright (browser E2E suite)
+playwright-report/
+test-results/
+e2e/.auth/
 
 # Environment — keep the committed template only
 .env
 .env.*
 !.env.example
+!.env.e2e
 
 # Logs
 *.log
