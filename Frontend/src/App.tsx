@@ -1,5 +1,7 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import GlobalBackground from "./components/GlobalBackground";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
@@ -18,8 +20,6 @@ import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
-import Login from "./pages/Login";
-import DemoShell from "./demo/DemoShell";
 import {
   DASHBOARD_BASE,
   DASHBOARD_SECTIONS,
@@ -30,17 +30,46 @@ import {
 
 // Dashboard imports
 import DashboardLayout from "./layouts/DashboardLayout";
-import Overview from "./pages/dashboard/Overview";
-import Repositories from "./pages/dashboard/Repositories";
-import RepositoryDetails from "./pages/dashboard/RepositoryDetails";
-import Developer360 from "./pages/dashboard/Developer360";
-import Skills from "./pages/dashboard/Skills";
-import ProblemSolving from "./pages/dashboard/ProblemSolving";
-import LearningAchievements from "./pages/dashboard/LearningAchievements";
-import Growth from "./pages/dashboard/Growth";
-import CareerReadiness from "./pages/dashboard/CareerReadiness";
-import AiInsights from "./pages/dashboard/AiInsights";
-import Settings from "./pages/dashboard/Settings";
+
+/**
+ * Every page behind the landing page is lazily loaded.
+ *
+ * The landing page is the entry point for visitors who may never sign in, and
+ * the dashboard pages plus demo fixtures were statically imported here — which
+ * put all ten of them, their services and the sample dataset into the main
+ * chunk every first paint downloaded. The Spline scene was already its own
+ * lazy chunk (see GlobalBackground); this is the same idea one level up.
+ *
+ * `lazy()` keeps the compile-time exhaustiveness of SECTION_PAGES: a new
+ * section id still fails to typecheck until it is listed below.
+ */
+const Login = lazy(() => import("./pages/Login"));
+const DemoShell = lazy(() => import("./demo/DemoShell"));
+const Overview = lazy(() => import("./pages/dashboard/Overview"));
+const Repositories = lazy(() => import("./pages/dashboard/Repositories"));
+const RepositoryDetails = lazy(() => import("./pages/dashboard/RepositoryDetails"));
+const Developer360 = lazy(() => import("./pages/dashboard/Developer360"));
+const Skills = lazy(() => import("./pages/dashboard/Skills"));
+const ProblemSolving = lazy(() => import("./pages/dashboard/ProblemSolving"));
+const LearningAchievements = lazy(() => import("./pages/dashboard/LearningAchievements"));
+const Growth = lazy(() => import("./pages/dashboard/Growth"));
+const CareerReadiness = lazy(() => import("./pages/dashboard/CareerReadiness"));
+const AiInsights = lazy(() => import("./pages/dashboard/AiInsights"));
+const Settings = lazy(() => import("./pages/dashboard/Settings"));
+
+/** Spinner matching the session-restore one in ProtectedRoute. */
+function RouteLoading() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center" role="status" aria-label="Loading page">
+      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    </div>
+  );
+}
+
+/** Boundary for one lazily-loaded route element. */
+function PageBoundary({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteLoading />}>{children}</Suspense>;
+}
 
 /**
  * One page per section id. Both route tables read from this, so a section added to
@@ -53,16 +82,56 @@ import Settings from "./pages/dashboard/Settings";
  * each table.
  */
 const SECTION_PAGES: Record<DashboardSectionId, ReactElement> = {
-  overview: <Overview />,
-  repositories: <Repositories />,
-  "developer-360": <Developer360 />,
-  skills: <Skills />,
-  "problem-solving": <ProblemSolving />,
-  learning: <LearningAchievements />,
-  growth: <Growth />,
-  "career-readiness": <CareerReadiness />,
-  "ai-insights": <AiInsights />,
-  settings: <Settings />,
+  overview: (
+    <PageBoundary>
+      <Overview />
+    </PageBoundary>
+  ),
+  repositories: (
+    <PageBoundary>
+      <Repositories />
+    </PageBoundary>
+  ),
+  "developer-360": (
+    <PageBoundary>
+      <Developer360 />
+    </PageBoundary>
+  ),
+  skills: (
+    <PageBoundary>
+      <Skills />
+    </PageBoundary>
+  ),
+  "problem-solving": (
+    <PageBoundary>
+      <ProblemSolving />
+    </PageBoundary>
+  ),
+  learning: (
+    <PageBoundary>
+      <LearningAchievements />
+    </PageBoundary>
+  ),
+  growth: (
+    <PageBoundary>
+      <Growth />
+    </PageBoundary>
+  ),
+  "career-readiness": (
+    <PageBoundary>
+      <CareerReadiness />
+    </PageBoundary>
+  ),
+  "ai-insights": (
+    <PageBoundary>
+      <AiInsights />
+    </PageBoundary>
+  ),
+  settings: (
+    <PageBoundary>
+      <Settings />
+    </PageBoundary>
+  ),
 };
 
 function LandingPage() {
@@ -102,7 +171,14 @@ export default function App() {
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
+          <Route
+            path="/login"
+            element={
+              <PageBoundary>
+                <Login />
+              </PageBoundary>
+            }
+          />
 
           {/* Public demo.
 
@@ -111,12 +187,26 @@ export default function App() {
               ProtectedRoute: the demo is public because its route and its data
               are public, not because a guard was weakened. Nothing below
               /dashboard changed. */}
-          <Route path={DEMO_BASE} element={<DemoShell />}>
+          <Route
+            path={DEMO_BASE}
+            element={
+              <PageBoundary>
+                <DemoShell />
+              </PageBoundary>
+            }
+          >
             <Route index element={<Navigate to={sectionPath(DEMO_BASE, "overview")} replace />} />
             {DASHBOARD_SECTIONS.map((section) => (
               <Route key={section.id} path={section.id} element={SECTION_PAGES[section.id]} />
             ))}
-            <Route path="repositories/:repoId" element={<RepositoryDetails />} />
+            <Route
+              path="repositories/:repoId"
+              element={
+                <PageBoundary>
+                  <RepositoryDetails />
+                </PageBoundary>
+              }
+            />
             <Route path="*" element={<Navigate to={sectionPath(DEMO_BASE, "overview")} replace />} />
           </Route>
 
@@ -128,7 +218,7 @@ export default function App() {
               {DASHBOARD_SECTIONS.map((section) => (
                 <Route key={section.id} path={section.id} element={SECTION_PAGES[section.id]} />
               ))}
-              <Route path="repositories/:repoId" element={<RepositoryDetails />} />
+              <Route path="repositories/:repoId" element={<PageBoundary><RepositoryDetails /></PageBoundary>} />
               <Route path="*" element={<Navigate to={sectionPath(DASHBOARD_BASE, "overview")} replace />} />
             </Route>
           </Route>
