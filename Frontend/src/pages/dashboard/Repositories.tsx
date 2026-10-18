@@ -294,7 +294,7 @@ export default function Repositories() {
         {/* Sync bar — only when a GitHub account is linked */}
         {hasGitHub && (
           <div className="flex flex-wrap items-center justify-between gap-3 -mt-2">
-            <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
               {syncState.kind === "ok" ? (
                 <span className="flex items-center gap-1.5 text-primary">
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -549,15 +549,15 @@ export default function Repositories() {
                         </div>
                       </div>
 
-                      <h3 className="text-base font-bold text-white tracking-tight truncate" title={repo.fullName}>
+                      <h2 className="text-base font-bold text-white tracking-tight truncate" title={repo.fullName}>
                         {repo.name}
-                      </h3>
+                      </h2>
                       <p className="text-xs text-white/35 mb-1.5">{repo.language ?? "Unknown language"}</p>
                       <p className="text-xs line-clamp-2" style={{ color: "var(--text-tertiary)" }}>
                         {repo.description ?? "No description provided."}
                       </p>
 
-                      <div className="flex items-center gap-4 mt-3 text-[11px] text-white/35">
+                      <div className="flex items-center gap-4 mt-3 text-[12px] text-white/35">
                         <span className="flex items-center gap-1">
                           <Star className="w-3 h-3" /> {repo.starsCount}
                         </span>
