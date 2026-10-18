@@ -181,3 +181,106 @@ test('an empty resume fabricates nothing', () => {
   assert.deepEqual(empty.certifications, []);
   assert.deepEqual(empty.achievements, []);
 });
+
+/* ── section splitting: the summary must never swallow the document ────── */
+
+/** Private, reached the same way the extraction path uses it. */
+function split(lines) {
+  return ResumeService['splitSections'](lines);
+}
+
+test('standard headings split cleanly and the summary holds only summary text', () => {
+  const { header, sections } = split([
+    'Jane Doe',
+    'jane@example.com | +1 555 010 0100',
+    'Professional Summary',
+    'Backend engineer with five years of experience building APIs.',
+    'Education',
+    'B.Tech in Computer Science, Example Institute, 2015 - 2019',
+    'Technical Skills',
+    'TypeScript, React, Node.js, PostgreSQL',
+    'Experience',
+    'Senior Engineer, Acme Corp, 2021 - Present',
+    '- Built the billing service'
+  ]);
+
+  assert.deepEqual(header, ['Jane Doe', 'jane@example.com | +1 555 010 0100']);
+  assert.equal(sections.summary, 'Backend engineer with five years of experience building APIs.');
+  assert.match(sections.education, /B\.Tech/);
+  assert.match(sections.skills, /TypeScript/);
+  assert.match(sections.experience, /Senior Engineer/);
+});
+
+test('headings split by PDF letter-spacing still bound their sections', () => {
+  // The shape pdfjs produced for a real upload: each heading's first letter
+  // arrives as its own text fragment, so the joined line reads "E DUCATION".
+  // None of those headings matched, so the whole resume collapsed into the
+  // summary section and the UI rendered the document as one paragraph.
+  const { sections } = split([
+    'ISHAAN SAXENA',
+    '+91-7300000000 • saxena@example.com',
+    'PROFESSIONAL SUMMARY',
+    'Student building full-stack and ML systems.',
+    'E DUCATION',
+    'SRM INSTITUTE OF SCIENCE AND TECHNOLOGY 2024-2028',
+    'S KILLS',
+    'Python, React',
+    'E XPERIENCE',
+    'Research Intern - UROP, SRMIST 2025-Present',
+    'P ROJECTS',
+    'SpendWise - finance platform',
+    'C ERTIFICATIONS',
+    'AWS Certified Cloud Practitioner'
+  ]);
+
+  assert.equal(sections.summary, 'Student building full-stack and ML systems.');
+  assert.match(sections.education, /SRM INSTITUTE/);
+  assert.match(sections.skills, /Python/);
+  assert.match(sections.experience, /Research Intern/);
+  assert.match(sections.projects, /SpendWise/);
+  assert.match(sections.certifications, /AWS/);
+});
+
+test('a fully letter-spaced heading is still recognised', () => {
+  const { sections } = split([
+    'Summary',
+    'Full-stack developer.',
+    'P R O J E C T S',
+    'TaskFlow - task manager',
+    'W ORK H ISTORY',
+    'Engineer, Acme Corp, 2021 - Present'
+  ]);
+
+  assert.equal(sections.summary, 'Full-stack developer.');
+  assert.equal(sections.projects, 'TaskFlow - task manager');
+  assert.equal(sections.experience, 'Engineer, Acme Corp, 2021 - Present');
+});
+
+test('a resume without a summary section has no summary', () => {
+  const { sections } = split([
+    'Jane Doe',
+    'Education',
+    'B.Sc., Example University, 2018 - 2022',
+    'Skills',
+    'TypeScript, React'
+  ]);
+
+  assert.equal(sections.summary, undefined);
+  assert.match(sections.education, /Example University/);
+  assert.match(sections.skills, /TypeScript/);
+});
+
+test('a resume with no recognised headings keeps everything out of sections', () => {
+  const lines = [
+    'Jane Doe',
+    'jane@example.com',
+    'A narrative resume without any recognised section heading,',
+    'told as one continuous story about the work.'
+  ];
+  const { header, sections } = split(lines);
+
+  assert.deepEqual(sections, {}, 'nothing was recognised, so nothing is claimed');
+  assert.deepEqual(header, lines);
+});
+
+

@@ -25,6 +25,24 @@ const UPLOAD_ROOT = path.resolve(__dirname, '../../uploads/resumes');
 const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_MIME = 'application/pdf';
 
+/** A heading is short; a sentence beginning "Experience building X" is not
+ * one, so anything longer than this is treated as content. */
+const MAX_HEADING_LENGTH = 40;
+
+/**
+ * PDF text extraction can emit a heading's first letter — or every letter —
+ * as its own text fragment, so the joined line reads "E DUCATION",
+ * "S KILLS" or "P R O J E C T S". A literal heading match then fails and,
+ * because sections only break at recognised headings, every line after the
+ * first matching heading collapses into that one section (in practice the
+ * professional summary swallows the whole resume). Rejoining
+ * single-letter-spaced runs recovers the heading. Only short lines are
+ * candidates, and only when the literal match already failed.
+ */
+function joinFragmentedHeading(line: string): string {
+  return line.replace(/([A-Za-z]) (?=[A-Za-z])/g, '$1');
+}
+
 /** Section headings recognised in a resume, in the order they usually appear. */
 const SECTION_PATTERNS: { key: string; pattern: RegExp }[] = [
   { key: 'summary', pattern: /^(professional\s+)?(summary|profile|objective|about)\b/i },
@@ -35,6 +53,20 @@ const SECTION_PATTERNS: { key: string; pattern: RegExp }[] = [
   { key: 'certifications', pattern: /^(certifications?|licenses?|credentials)\b/i },
   { key: 'achievements', pattern: /^(achievements|awards|honors|honours)\b/i }
 ];
+
+/**
+ * The same headings with inter-word spacing optional, tried against the
+ * rejoined line so a heading whose fragments were both split and letterspaced
+ * ("W ORK H ISTORY") still bounds its section instead of leaking its content
+ * into the previous section.
+ */
+const LENIENT_SECTION_PATTERNS = SECTION_PATTERNS.map(({ key, pattern }) => ({
+  key,
+  pattern: new RegExp(
+    pattern.source.replace(/\\s\+/g, '\\s*').replace(/ /g, '\\s*'),
+    pattern.flags
+  )
+}));
 
 export interface ParsedResume {
   /** Text under each recognised heading. Absent keys were not found. */
@@ -300,10 +332,16 @@ export class ResumeService {
     let current: string | null = null;
 
     for (const line of lines) {
-      const heading = SECTION_PATTERNS.find(({ pattern }) => pattern.test(line));
-      // A heading is short; a sentence beginning "Experience building X" is not
-      // one, so anything long is treated as content.
-      if (heading && line.length <= 40) {
+      let heading: { key: string } | undefined;
+      if (line.length <= MAX_HEADING_LENGTH) {
+        heading =
+          SECTION_PATTERNS.find(({ pattern }) => pattern.test(line)) ??
+          SECTION_PATTERNS.find(({ pattern }) => pattern.test(joinFragmentedHeading(line))) ??
+          LENIENT_SECTION_PATTERNS.find(({ pattern }) =>
+            pattern.test(joinFragmentedHeading(line))
+          );
+      }
+      if (heading) {
         current = heading.key;
         sections[current] ??= [];
         continue;
