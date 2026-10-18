@@ -384,7 +384,7 @@ export default function LearningAchievements() {
               <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40">
                 <Award className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-white">
                 {activeFilter === "courses"
                   ? "No courses added yet"
                   : activeFilter === "certifications"
