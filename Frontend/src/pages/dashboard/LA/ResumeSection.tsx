@@ -512,7 +512,7 @@ function SkillsChips({ detectedSkills }: { detectedSkills: string[] }) {
                   ? `In your skills inventory at ${recorded.currentLevel.replace("_", " ").toLowerCase()}`
                   : "Mentioned in your resume only — not a recorded skill"
               }
-              className={`text-[11px] px-2.5 py-1 rounded-full border ${
+              className={`text-[12px] px-2.5 py-1 rounded-full border ${
                 recorded
                   ? "border-primary/25 bg-primary/[0.06] text-primary/90"
                   : "border-white/[0.08] bg-white/[0.03] text-white/55"
@@ -520,7 +520,7 @@ function SkillsChips({ detectedSkills }: { detectedSkills: string[] }) {
             >
               {s}
               {!loading && (
-                <span className="text-[9px] uppercase tracking-wider ml-1.5 opacity-70">
+                <span className="text-[12px] uppercase tracking-wider ml-1.5 opacity-70">
                   {recorded ? recorded.currentLevel.replace("_", " ").toLowerCase() : "mentioned"}
                 </span>
               )}
