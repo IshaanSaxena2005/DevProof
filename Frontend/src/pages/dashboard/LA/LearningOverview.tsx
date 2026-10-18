@@ -44,7 +44,7 @@ export function OverviewMetrics({ metrics }: { metrics: OverviewMetric[] }) {
             <p className="text-[26px] leading-none font-extrabold text-white tracking-tight tabular-nums">
               {hasValue ? value.toLocaleString() : "—"}
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mt-2.5">{m.label}</p>
+            <p className="text-[10px] font-bold text-white/35 mt-2.5">{m.label}</p>
             <p className="text-[12px] text-white/30 mt-0.5">{m.sub}</p>
           </motion.div>
         );
