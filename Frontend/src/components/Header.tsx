@@ -46,7 +46,7 @@ const TITLE_MAP: Record<string, string> = {
  * same title in title case stays legible at the existing size. Per-path, so a
  * one-page readability fix never restyles every other page title.
  */
-const TITLE_CASE_PATHS = new Set(["/dashboard/learning"]);
+const TITLE_CASE_PATHS = new Set(["/dashboard/learning", "/dashboard/career-readiness"]);
 
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
