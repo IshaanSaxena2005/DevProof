@@ -383,7 +383,7 @@ export default function CareerReadiness() {
                           <span className={`text-[12px] block ${r.met ? "text-white/70" : "text-white/45"}`}>
                             {r.label}
                           </span>
-                          <span className="text-[11px] text-white/25 block">{r.evidence}</span>
+                          <span className="text-[12px] text-white/25 block">{r.evidence}</span>
                         </span>
                         <span className="text-[10px] text-white/20 shrink-0 mt-0.5 uppercase tracking-widest">
                           {WEIGHT_LABEL[r.weight] ?? `weight ${r.weight}`}
