@@ -616,7 +616,7 @@ function ResumeAnalysisView({
               </a>
             ))}
           </p>
-          <p className="text-[10px] text-white/25 mt-1.5">
+          <p className="text-[12px] text-white/25 mt-1.5">
             Read from your resume header. Visible only to you.
           </p>
         </div>
