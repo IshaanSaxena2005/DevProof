@@ -107,7 +107,7 @@ export default function Settings() {
         <GlassCard hover={false} className="p-6">
           <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-white/[0.06]">
             <SettingsIcon className="w-5 h-5 text-primary" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-white tracking-normal">
               Connected Accounts
             </h3>
           </div>
