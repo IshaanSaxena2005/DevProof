@@ -84,7 +84,7 @@ export default function Settings() {
         <GlassCard hover={false} className="p-6">
           <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-white/[0.06]">
             <UserIcon className="w-5 h-5 text-primary" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Account</h3>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Account</h2>
           </div>
           <div className="space-y-1">
             <Row label="Name">{displayUser?.name || "—"}</Row>
@@ -107,9 +107,9 @@ export default function Settings() {
         <GlassCard hover={false} className="p-6">
           <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-white/[0.06]">
             <SettingsIcon className="w-5 h-5 text-primary" />
-            <h3 className="text-sm font-bold text-white tracking-normal">
+            <h2 className="text-sm font-bold text-white tracking-normal">
               Connected Accounts
-            </h3>
+            </h2>
           </div>
 
           {github ? (
@@ -209,9 +209,9 @@ export default function Settings() {
         <GlassCard hover={false} className="p-6">
           <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-white/[0.06]">
             <Shield className="w-5 h-5 text-primary" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
               Privacy &amp; Permissions
-            </h3>
+            </h2>
           </div>
           <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             {isDemo
