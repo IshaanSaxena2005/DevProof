@@ -358,7 +358,7 @@ export default function CareerReadiness() {
                       </p>
                     </div>
                     <Bar score={role.score} color={scoreColor(role.score)} />
-                    <p className="text-[10px] text-white/25 mt-2">
+                    <p className="text-[12px] text-white/25 mt-2">
                       {role.requirementsMet} of {role.requirementsTotal} requirements met
                     </p>
                   </div>
