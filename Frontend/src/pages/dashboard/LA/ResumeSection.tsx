@@ -37,9 +37,9 @@ export function ResumeGlyph({ className = "w-6 h-6" }: { className?: string }) {
 /** Section micro-heading inside the resume card. */
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/35 mb-3">
+    <h3 className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/35 mb-3">
       {children}
-    </h4>
+    </h3>
   );
 }
 
@@ -272,7 +272,7 @@ function ResumeEmpty({ uploading, onUpload }: { uploading: boolean; onUpload: ()
               <ResumeGlyph className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-base font-bold text-white tracking-tight">Resume</h3>
+              <h2 className="text-base font-bold text-white tracking-tight">Resume</h2>
               <p className="text-[12px] text-white/40 leading-snug">
                 Upload your latest resume so DevProof can read what it contains.
               </p>
@@ -365,7 +365,7 @@ function ResumeCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h3 className="text-base font-bold text-white tracking-tight">{resume.fileName}</h3>
+            <h2 className="text-base font-bold text-white tracking-tight">{resume.fileName}</h2>
             <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/25 bg-primary/10 text-primary">
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Uploaded
