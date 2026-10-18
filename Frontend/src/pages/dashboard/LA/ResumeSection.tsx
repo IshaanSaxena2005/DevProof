@@ -371,7 +371,7 @@ function ResumeCard({
               Uploaded
             </span>
           </div>
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] mt-1" style={{ color: "var(--text-tertiary)" }}>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] mt-1" style={{ color: "var(--text-tertiary)" }}>
             {resume.pageCount !== null && <span>{resume.pageCount} page{resume.pageCount === 1 ? "" : "s"}</span>}
             <span>{Math.max(1, Math.round(resume.fileSize / 1024))} KB</span>
             <span>Uploaded {new Date(resume.uploadedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
@@ -381,7 +381,7 @@ function ResumeCard({
             {/* No stored file exists behind the sample resume, so download and
                 removal are absent rather than pointing at nothing. */}
             {readOnly ? (
-              <span className="text-[11px] text-white/30">Sample resume — no stored file</span>
+              <span className="text-[12px] text-white/30">Sample resume — no stored file</span>
             ) : (
               <>
                 <a
