@@ -128,9 +128,9 @@ export default function Overview() {
         {/* Engineering index */}
         <GlassCard hover={false} className="p-6 lg:col-span-2 flex flex-col justify-between min-h-[300px]">
           <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2">
+            <h2 className="text-sm font-bold text-white mb-2">
               Engineering Quality Index
-            </h3>
+            </h2>
             <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
               Averaged across documentation, testing, security, code quality, maintainability and
               dependency health for every analyzed repository.
@@ -170,9 +170,9 @@ export default function Overview() {
         {/* Quick actions */}
         <GlassCard hover={false} className="p-6 flex flex-col justify-between min-h-[300px]">
           <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               Quick Actions
-            </h3>
+            </h2>
             <div className="space-y-2.5">
               <button
                 onClick={() => navigate(`${base}/repositories`)}
@@ -254,9 +254,9 @@ export default function Overview() {
       <div className="mt-6">
         <div className="flex items-center gap-2 mb-4">
           <FolderGit2 className="w-4 h-4 text-white/40" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Repository Intelligence</h3>
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Repository Intelligence</h2>
           {o.github.connected && o.github.lastSyncedAt && (
-            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            <span className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
               · synced {formatWhen(o.github.lastSyncedAt)}
             </span>
           )}

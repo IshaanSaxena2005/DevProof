@@ -107,7 +107,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           {/* Title & Subtitle stacked vertically */}
           <div className="flex flex-col min-w-0">
             <span className="text-[15px] font-bold tracking-tight text-white/95">DevProof</span>
-            <span className="text-[9px] font-semibold text-primary uppercase tracking-widest leading-none mt-0.5">
+            <span className="text-[12px] font-semibold text-primary uppercase tracking-widest leading-none mt-0.5">
               {isDemo ? "Sample profile" : "Developer Intelligence"}
             </span>
           </div>
