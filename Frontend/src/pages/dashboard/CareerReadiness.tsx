@@ -240,7 +240,7 @@ export default function CareerReadiness() {
           <SLabel>Measured Skill Standing</SLabel>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <GlassCard hover={false} className="p-6">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-primary" /> Strongest Categories
               </h3>
               <div className="space-y-3">
@@ -265,7 +265,7 @@ export default function CareerReadiness() {
             </GlassCard>
 
             <GlassCard hover={false} className="p-6">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400" /> Development Areas
               </h3>
               {weakestCategories.length > 0 ? (
