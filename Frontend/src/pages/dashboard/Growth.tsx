@@ -75,7 +75,7 @@ function Bar({ score, color }: { score: number; color: string }) {
 }
 
 function SLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
+  return <p className={`text-[12px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
 }
 
 /** "2026-10" -> "Oct 2026". */
