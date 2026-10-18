@@ -325,7 +325,7 @@ function GrowthOverTime({ resource }: { resource: Resource<GrowthHistoryResponse
                 </span>
                 <span className="min-w-0">
                   <span className="text-[12px] text-white/70 block">{m.label}</span>
-                  <span className="text-[11px] text-white/30 block truncate" title={m.detail}>
+                  <span className="text-[12px] text-white/30 block truncate" title={m.detail}>
                     {m.detail} · {dateLabel(m.date)}
                   </span>
                 </span>
