@@ -528,7 +528,7 @@ function SkillsChips({ detectedSkills }: { detectedSkills: string[] }) {
           );
         })}
       </div>
-      <p className="text-[11px] text-white/30 mt-2.5 leading-relaxed max-w-2xl">
+      <p className="text-[12px] text-white/30 mt-2.5 leading-relaxed max-w-2xl">
         Names found in your resume text — claims from the document, not evidence. They never change
         your verified skills; green chips are names already in your inventory. To record one
         deliberately,{" "}
