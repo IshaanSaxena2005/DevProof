@@ -298,7 +298,7 @@ export default function PlatformCard({
             ) : profile.difficultyUnavailable ? (
               <div className="flex items-center gap-2 rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-white/20 shrink-0" aria-hidden="true" />
-                <span className="text-[11px] leading-relaxed text-white/35">
+                <span className="text-[12px] leading-relaxed text-white/35">
                   {profile.platform} publishes no Easy / Medium / Hard split, so those counts are
                   unknown here — not zero.
                 </span>
