@@ -773,7 +773,7 @@ export default function ProblemSolving() {
 
               {/* Says which platforms the counts came from, or that none of them
                   publish a split — the difference between 0 and unknown. */}
-              <p className="text-[11px] text-white/30 pt-1 leading-relaxed">
+              <p className="text-[12px] text-white/30 pt-1 leading-relaxed">
                 {isDemo
                   ? "A LeetCode-shaped sample profile written for the demo — no platform was queried, and this handle is not a real account."
                   : !anyConnected
