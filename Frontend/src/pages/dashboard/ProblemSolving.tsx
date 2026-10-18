@@ -668,7 +668,7 @@ export default function ProblemSolving() {
 
       {/* ── 2. Platform cards ── */}
       <Reveal delay={0.1}>
-        <SectionLabel titleCase right={<span className="text-[10px] font-semibold uppercase tracking-widest text-white/25">Sources: competitive programming</span>}>
+        <SectionLabel titleCase right={<span className="text-[12px] font-semibold uppercase tracking-widest text-white/25">Sources: competitive programming</span>}>
           Connected Platforms
         </SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
