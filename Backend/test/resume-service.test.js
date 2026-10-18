@@ -283,4 +283,18 @@ test('a resume with no recognised headings keeps everything out of sections', ()
   assert.deepEqual(header, lines);
 });
 
+test('a document-sized "summary" is not presented as a professional summary', () => {
+  // What the splitter yields when the summary heading matched but the rest of
+  // the document's structure was never recognised: the whole document. The
+  // UI must fall back to "not detected" instead.
+  const wholeDocument = Array(200).fill('word').join(' ');
+  const analysis = ResumeAnalysisService.analyse([], { summary: wholeDocument });
+  assert.equal(analysis.summary, null);
+});
 
+test('a real-sized summary survives the document-size guard', () => {
+  const summary =
+    'Full-stack developer with two years of experience building React and TypeScript front ends on Node.js APIs.';
+  const analysis = ResumeAnalysisService.analyse([], { summary });
+  assert.equal(analysis.summary, summary);
+});

@@ -119,6 +119,15 @@ const ISSUER_PATTERNS: { pattern: RegExp; name: string }[] = [
 
 const MONTHS = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec';
 
+/**
+ * A professional summary is a short paragraph. Past this many words the
+ * "summary" section has swallowed structure the splitter did not recognise
+ * (unrecognised headings, decorative layouts), and presenting it would label
+ * the rest of the resume as the summary. Null is the honest value: the UI
+ * shows its "not detected" fallback instead of the document text.
+ */
+const MAX_SUMMARY_WORDS = 120;
+
 /** A month-year or year range, as people write them: "2018 - 2022",
  * "Jun 2020 – Aug 2020", "2021 to Present". */
 const PERIOD_RE = new RegExp(
@@ -308,7 +317,10 @@ export class ResumeAnalysisService {
   private static analyseSummary(text: string | undefined): string | null {
     if (!text) return null;
     const summary = text.replace(/\s+/g, ' ').trim();
-    return summary || null;
+    if (!summary) return null;
+    // A "summary" this long is the document, not a summary of it.
+    if (summary.split(/\s+/).length > MAX_SUMMARY_WORDS) return null;
+    return summary;
   }
 
   private static analyseEducation(text: string | undefined): ResumeEducationEntry[] {
