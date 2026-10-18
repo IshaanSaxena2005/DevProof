@@ -471,7 +471,7 @@ export default function Growth() {
               return (
                 <div key={c.category} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 flex flex-col gap-3 hover:border-white/[0.16] transition-all duration-300">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-white/85">{humanize(c.category)}</h3>
+                    <h2 className="text-sm font-semibold text-white/85">{humanize(c.category)}</h2>
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color, background: `${color}15` }}>
                       {c.skillCount}
                     </span>
