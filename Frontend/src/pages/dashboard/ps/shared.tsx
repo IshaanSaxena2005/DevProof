@@ -51,13 +51,15 @@ export function Reveal({
 export function SectionLabel({
   children,
   right,
+  titleCase = false,
 }: {
   children: React.ReactNode;
   right?: React.ReactNode;
+  titleCase?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">{children}</p>
+      <p className={titleCase ? "text-[11px] font-bold text-white/30" : "text-[11px] font-bold uppercase tracking-[0.2em] text-white/30"}>{children}</p>
       {right}
     </div>
   );
