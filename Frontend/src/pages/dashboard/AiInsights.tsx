@@ -90,6 +90,7 @@ export default function AiInsights() {
           ? "Sample insights over the demo's sample repositories — no model is called in the demo."
           : "AI-powered engineering analysis, generated only from your analyzed repositories."
       }
+      headingClassName="text-xl md:text-2xl font-bold text-white"
     >
       {isDemo && (
         <div className="mb-6">
