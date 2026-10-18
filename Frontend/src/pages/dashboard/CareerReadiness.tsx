@@ -53,7 +53,7 @@ function Bar({ score, color }: { score: number; color: string }) {
 }
 
 function SLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-bold text-white/30 mb-4">{children}</p>;
+  return <p className="text-[12px] font-bold text-white/30 mb-4">{children}</p>;
 }
 
 /** Explains why a panel shows nothing: the source has no data yet. */
