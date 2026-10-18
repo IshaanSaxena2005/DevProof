@@ -37,7 +37,7 @@ export function ResumeGlyph({ className = "w-6 h-6" }: { className?: string }) {
 /** Section micro-heading inside the resume card. */
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35 mb-3">
+    <h4 className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/35 mb-3">
       {children}
     </h4>
   );
