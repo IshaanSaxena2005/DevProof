@@ -38,6 +38,16 @@ const TITLE_MAP: Record<string, string> = {
   "/dashboard/settings": "Settings",
 };
 
+/**
+ * Page titles rendered in title case instead of the header's default all-caps.
+ * 
+ * Long, multi-word titles read poorly in uppercase with wide tracking —
+ * "LEARNING & ACHIEVEMENTS" wraps to two dense lines on tablets, while the
+ * same title in title case stays legible at the existing size. Per-path, so a
+ * one-page readability fix never restyles every other page title.
+ */
+const TITLE_CASE_PATHS = new Set(["/dashboard/learning"]);
+
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
   const { user } = useAuth();
@@ -78,7 +88,11 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h2 className="text-base md:text-lg font-bold text-white uppercase tracking-wider hidden sm:block">
+        <h2
+          className={`text-base md:text-lg font-bold text-white hidden sm:block ${
+            TITLE_CASE_PATHS.has(path) ? "" : "uppercase tracking-wider"
+          }`}
+        >
           {pageTitle}
         </h2>
         {isDemo && <DemoBadge compact />}
