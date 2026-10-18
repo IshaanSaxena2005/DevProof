@@ -173,7 +173,7 @@ export default function Developer360() {
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">Developer Score</p>
             <ScoreRing score={score} />
             <p
-              className="text-[12px] font-bold uppercase tracking-widest text-center"
+              className="text-[12px] font-bold text-center"
               style={{ color: score !== null ? scoreColor(score) : "rgba(255,255,255,0.3)" }}
             >
               {hasAnalyses ? "Average across analyses" : "No data yet"}
@@ -224,7 +224,7 @@ export default function Developer360() {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}88` }} />
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 leading-tight">
+                  <p className="text-[12px] font-bold uppercase tracking-widest text-white/35 leading-tight">
                     {humanize(tier)}
                   </p>
                 </div>
@@ -425,7 +425,7 @@ export default function Developer360() {
                   >
                     <span className="text-sm font-semibold text-white/80">{skill.name}</span>
                     <span
-                      className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border"
+                      className="text-[12px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border"
                       style={{ color, borderColor: `${color}44`, background: `${color}12` }}
                     >
                       {humanize(skill.currentLevel)}
@@ -445,7 +445,7 @@ export default function Developer360() {
             <FolderGit2 className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white uppercase tracking-wider mb-2">
+            <h3 className="text-base font-bold text-white mb-2">
               Nothing to profile yet
             </h3>
             <p className="text-sm max-w-md" style={{ color: "var(--text-secondary)" }}>
