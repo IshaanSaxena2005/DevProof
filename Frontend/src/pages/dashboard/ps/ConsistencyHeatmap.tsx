@@ -108,7 +108,7 @@ export default function ConsistencyHeatmap({
         </div>
 
         <div className="overflow-x-auto main-scroll pb-1">
-          <div className="min-w-max">
+          <div className="ps-heatmap-grid">
             {!active || !hasCalendarData ? (
               <div className="flex items-center justify-center py-12">
                 <p className="text-[12px] text-white/40">
@@ -117,62 +117,61 @@ export default function ConsistencyHeatmap({
               </div>
             ) : (
               <>
-                {/* Month labels */}
-                <div className="flex gap-[3px] mb-1.5">
+                {/* Month labels — positioned above their week columns */}
+                <div className="ps-heatmap-months">
                   {columns.map((_, idx) => {
                     const mark = monthMarks.find((m) => m.index === idx);
                     return (
-                      <div key={idx} className="w-3 shrink-0 relative">
+                      <div key={idx} className="ps-heatmap-month">
                         {mark && (
-                          <span className="absolute left-0 top-0 text-[9px] font-semibold text-white/30 whitespace-nowrap">
-                            {mark.label}
-                          </span>
+                          <span className="ps-heatmap-month-label">{mark.label}</span>
                         )}
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="flex gap-[3px]">
+                <div className="ps-heatmap-body">
                   {/* Day labels — computed from the actual first column's weekday */}
-                  <div className="flex flex-col gap-[3px] pr-1.5 shrink-0">
+                  <div className="ps-heatmap-day-labels">
                     {dayLabels.map((d, i) => (
-                      <div key={i} className="w-6 h-3 flex items-center">
-                        <span className="text-[9px] font-medium text-white/25 leading-none">{d}</span>
+                      <div key={i} className="ps-heatmap-day-label">
+                        {d && <span className="ps-heatmap-day-label-text">{d}</span>}
                       </div>
                     ))}
                   </div>
 
-                  {/* Cells */}
-                  {columns.map((col, ci) => (
-                    <div key={ci} className="flex flex-col gap-[3px]">
-                      {col.map((level, ri) => {
-                        const idx = ci * 7 + ri;
-                        const date = addUtcDays(today, -(totalDays - 1 - idx));
-                        const key = utcDayKey(date);
-                        const count = activity[key] ?? 0;
-                        return (
-                          <motion.div
-                            key={ri}
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.25, delay: 0.05 + ci * 0.008 + ri * 0.004 }}
-                            className="w-3 h-3 rounded-[3px] shrink-0 hover:ring-1 hover:ring-white/30 transition-shadow"
-                            style={{ background: level === null ? "transparent" : ACTIVITY_RAMP[level] }}
-                            title={
-                              level === null
-                                ? "No data"
-                                : `${formatUtcDay(date, { month: "short", day: "numeric", year: "numeric" })} — ${count} submission${count === 1 ? "" : "s"}`
-                            }
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-
+                  {/* Cells — 26 equal columns across the full available width */}
+                  <div className="ps-heatmap-cells">
+                    {columns.map((col, ci) => (
+                      <div key={ci} className="ps-heatmap-week">
+                        {col.map((level, ri) => {
+                          const idx = ci * 7 + ri;
+                          const date = addUtcDays(today, -(totalDays - 1 - idx));
+                          const key = utcDayKey(date);
+                          const count = activity[key] ?? 0;
+                          return (
+                            <motion.div
+                              key={ri}
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.25, delay: 0.05 + ci * 0.008 + ri * 0.004 }}
+                              className="ps-heatmap-cell"
+                              style={{ background: level === null ? "transparent" : ACTIVITY_RAMP[level] }}
+                              title={
+                                level === null
+                                  ? "No data"
+                                  : `${formatUtcDay(date, { month: "short", day: "numeric", year: "numeric" })} — ${count} submission${count === 1 ? "" : "s"}`
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Legend */}
+                {/* Legend — aligned to bottom-right of the grid area */}
                 <div className="flex items-center justify-end gap-1.5 mt-3">
                   <span className="text-[9px] text-white/25 mr-1">Less</span>
                   {ACTIVITY_RAMP.map((c) => (

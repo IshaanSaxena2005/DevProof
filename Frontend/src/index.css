@@ -68,6 +68,144 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 2px rgba(22, 255, 0, 0.15), 0 0 12px rgba(22, 255, 0, 0.05) !important;
 }
 
+/* ─── Problem-Solving Activity Heatmap ─────────────────────────────────────
+   Full-width GitHub-style contribution calendar.
+
+   The grid distributes all week columns evenly across the card's available
+   width using CSS Grid `1fr` columns, so the calendar fills the card instead
+   of collapsing to a 12px-minimum grid pinned to the left.
+
+   Desktop: cells grow with the card width.
+   Tablet: cells scale down with the card.
+   Mobile: cells have a floor so they never get too small; the calendar area
+   scrolls horizontally inside its card when the viewport is narrower than the
+   minimum comfortable grid width, while month/day labels stay pinned to the
+   left so they remain readable.
+   ─────────────────────────────────────────────────────────────────────────── */
+.ps-heatmap-grid {
+  width: 100%;
+}
+
+.ps-heatmap-months {
+  display: grid;
+  grid-template-columns: repeat(26, 1fr);
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.ps-heatmap-month {
+  position: relative;
+  height: 0;
+}
+.ps-heatmap-month-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.30);
+  white-space: nowrap;
+  line-height: 1;
+  padding: 0 1px;
+}
+
+.ps-heatmap-body {
+  display: flex;
+  gap: 3px;
+  align-items: stretch;
+}
+
+.ps-heatmap-day-labels {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  align-content: start;
+}
+.ps-heatmap-day-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+}
+.ps-heatmap-day-label-text {
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 1;
+}
+
+.ps-heatmap-cells {
+  display: grid;
+  grid-template-columns: repeat(26, 1fr);
+  grid-template-rows: repeat(7, minmax(10px, 1fr));
+  gap: 3px;
+  align-content: start;
+  min-height: 76px;
+  flex: 1;
+}
+
+.ps-heatmap-week {
+  display: grid;
+  grid-template-rows: repeat(7, minmax(10px, 1fr));
+  gap: 3px;
+}
+
+.ps-heatmap-cell {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  transition: box-shadow 0.15s ease;
+  cursor: default;
+}
+.ps-heatmap-cell:hover {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.30);
+}
+
+/* Tablet/medium: keep the 26-column distribution but let the grid breathe
+   a little less aggressively so very wide cards do not produce giant cells. */
+@media (max-width: 1023px) {
+  .ps-heatmap-cells {
+    gap: 2.5px;
+  }
+  .ps-heatmap-body {
+    gap: 2.5px;
+  }
+  .ps-heatmap-months {
+    gap: 2.5px;
+  }
+}
+
+/* Mobile: floor the cell size so they stay readable; the calendar scrolls
+   inside its card when narrower than the comfortable minimum. */
+@media (max-width: 639px) {
+  .ps-heatmap-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ps-heatmap-months,
+  .ps-heatmap-body,
+  .ps-heatmap-cells {
+    grid-template-columns: repeat(26, minmax(10px, 1fr));
+  }
+  .ps-heatmap-cells {
+    grid-template-rows: repeat(7, 10px);
+    min-height: 70px;
+  }
+  .ps-heatmap-week {
+    grid-template-rows: repeat(7, 10px);
+  }
+  .ps-heatmap-cell {
+    min-width: 10px;
+    min-height: 10px;
+    border-radius: 2px;
+  }
+  .ps-heatmap-day-labels {
+    grid-template-rows: repeat(7, 10px);
+  }
+  .ps-heatmap-months {
+    margin-bottom: 3px;
+  }
+}
+
 /* ─── Minimal Custom Scrollbar ─── */
 .main-scroll::-webkit-scrollbar {
   width: 6px;
