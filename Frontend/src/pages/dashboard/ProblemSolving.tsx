@@ -659,7 +659,7 @@ export default function ProblemSolving() {
               >
                 {c.value === null ? "—" : c.value.toLocaleString()}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mt-2.5">{c.label}</p>
+              <p className="text-[12px] font-bold uppercase tracking-widest text-white/35 mt-2.5">{c.label}</p>
               <p className="text-[11px] text-white/30 mt-0.5">{c.sub}</p>
             </motion.div>
           ))}
