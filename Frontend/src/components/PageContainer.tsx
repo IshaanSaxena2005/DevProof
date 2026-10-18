@@ -5,10 +5,12 @@ export default function PageContainer({
   title,
   description,
   children,
+  headingClassName,
 }: {
   title: string;
   description: string;
   children: ReactNode;
+  headingClassName?: string;
 }) {
   return (
     <motion.div
@@ -19,7 +21,7 @@ export default function PageContainer({
       className="w-full flex flex-col gap-6"
     >
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">
+        <h1 className={headingClassName ?? "text-xl md:text-2xl font-bold text-white uppercase tracking-wider"}>
           {title}
         </h1>
         <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>

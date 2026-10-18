@@ -180,6 +180,7 @@ export default function Skills() {
           ? "The sample profile's skills, with the evidence each one rests on."
           : "Technologies your repositories actually demonstrate, and the evidence behind each one."
       }
+      headingClassName="text-xl md:text-2xl font-bold text-white"
     >
       {loading && <LoadingBlock label="Loading your skills…" />}
 
