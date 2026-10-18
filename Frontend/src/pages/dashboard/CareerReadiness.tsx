@@ -317,7 +317,7 @@ export default function CareerReadiness() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-2 h-2 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}88` }} />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">{label}</span>
+                <span className="text-[12px] font-bold text-white/35">{label}</span>
               </div>
               <p className="text-3xl font-bold tabular-nums" style={{ color }}>{o.evidenceTiers[tier] ?? 0}</p>
               <p className="text-[11px] text-white/25 mt-1">{(o.evidenceTiers[tier] ?? 0) === 1 ? "skill" : "skills"}</p>
