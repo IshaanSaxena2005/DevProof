@@ -37,3 +37,25 @@ export const loginSchema = z.object({
     password: z.string({ required_error: 'Password is required' }).min(1, 'Password is required')
   })
 });
+
+/**
+ * Updateable fields on the current user. Deliberately narrow: email is not
+ * editable here (it is the primary identifier and is used by OAuth linking),
+ * and role is an admin concern. Only the display name is exposed as
+ * user-editable — it is the one field that is both safe to change and does not
+ * collide with any authentication or integration concern.
+ *
+ * When name is provided it must be non-empty. An omitted name leaves the
+ * existing value untouched (the controller only sends the field when it is
+ * defined, so Prisma does not rewrite it to null).
+ */
+export const patchMeSchema = z.object({
+  body: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Name cannot be empty')
+      .max(100, 'Name must be 100 characters or fewer')
+      .optional()
+  })
+});

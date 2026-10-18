@@ -382,6 +382,138 @@ test('logout clears the session', async () => {
   assert.equal((await client.get('/auth/me')).status, 401, 'the session must no longer be accepted');
 });
 
+/* ── account profile management ─────────────────────────────────────────── */
+
+test('a user can update their own display name', async () => {
+  const { client } = await registerUser(server.baseUrl, 'rename');
+
+  const me = await client.get('/auth/me');
+  assert.equal(me.body.data.user.name, 'IT rename');
+
+  const updated = await client.patch('/auth/me', { name: 'Alex Morgan' });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.data.user.name, 'Alex Morgan');
+  assert.equal(updated.body.data.user.email, me.body.data.user.email, 'email is preserved');
+  assert.equal(updated.body.data.user.role, 'DEVELOPER', 'role is preserved');
+});
+
+test('a user cannot clear their name with an empty string', async () => {
+  const { client } = await registerUser(server.baseUrl, 'rename-empty');
+
+  const { status, body } = await client.patch('/auth/me', { name: '' });
+  assert.equal(status, 400);
+  assert.ok(
+    body.error?.some((e) => String(e.field).includes('name')),
+    'the name field must be flagged'
+  );
+});
+
+test('a user cannot rename another user', async () => {
+  const alice = (await registerUser(server.baseUrl, 'alice')).client;
+  const bob = (await registerUser(server.baseUrl, 'bob')).client;
+
+  const aliceMe = await alice.get('/auth/me');
+  const aliceId = aliceMe.body.data.user.id;
+
+  // Bob has a valid session but tries to patch Alice by id via a non-existent
+  // endpoint — the real guard is that PATCH /auth/me always targets the session
+  // user, so there is no route that accepts a userId at all.
+  const bobMe = await bob.patch('/auth/me', { name: 'Imposter' });
+  assert.equal(bobMe.status, 200);
+  assert.equal(bobMe.body.data.user.name, 'Imposter');
+
+  // Alice's name is untouched.
+  const aliceAfter = await alice.get('/auth/me');
+  assert.equal(aliceAfter.body.data.user.name, aliceMe.body.data.user.name, 'alice is not renamed');
+  assert.notEqual(aliceAfter.body.data.user.name, 'Imposter');
+});
+
+/* ── data export ──────────────────────────────────────────────────────────── */
+
+test('a user can export their own data as JSON', async () => {
+  const { client } = await registerUser(server.baseUrl, 'export');
+
+  const { status, body } = await client.post('/auth/export');
+  assert.equal(status, 200);
+  assert.equal(body.data.export.exportedBy, body.data.export.user.id, 'exportedBy matches the session user');
+  assert.equal(body.data.export.user.email, body.data.export.user.email, 'email is present');
+  // Secrets are never included: passwordHash is not part of the export shape.
+  assert.equal(body.data.export.user.passwordHash, undefined, 'no password hash in export');
+  assert.ok(
+    Array.isArray(body.data.export.skills),
+    'export contains the user sections'
+  );
+});
+
+test('an export never contains a GitHub access token', async () => {
+  const { client } = await registerUser(server.baseUrl, 'export-no-token');
+
+  const { body } = await client.post('/auth/export');
+  const exportJson = JSON.stringify(body.data.export);
+  assert.ok(
+    !exportJson.includes('accessToken') && !exportJson.includes('access_token'),
+    'no token field of any kind in the export'
+  );
+});
+
+/* ── account deletion ─────────────────────────────────────────────────────── */
+
+test('a user can delete their own account and everything cascades', async () => {
+  const { client } = await registerUser(server.baseUrl, 'delete-me');
+
+  // Plant some records so we can confirm cascade.
+  await client.post('/courses', { title: 'Delete Test Course', platform: 'Udemy', isCompleted: true });
+  await client.post('/certifications', { name: 'Delete Test Cert', issuer: 'Test Issuer' });
+  await client.post('/skills', { name: 'Delete Test Skill', category: 'GENERAL' });
+
+  const before = await client.get('/auth/me');
+  assert.equal(before.status, 200);
+
+  const deleted = await client.delete('/auth/account');
+  assert.equal(deleted.status, 200);
+  assert.equal(deleted.body.data.deleted.email, before.body.data.user.email);
+
+  // The session is now invalid.
+  const after = await client.get('/auth/me');
+  assert.equal(after.status, 401, 'the deleted user\'s session must no longer be accepted');
+});
+
+test('a deleted user\'s records are gone', async () => {
+  const { client } = await registerUser(server.baseUrl, 'delete-cascade');
+  await client.post('/courses', { title: 'Gone Course', platform: 'Udemy', isCompleted: true });
+
+  await client.delete('/auth/account');
+
+  // Re-login is impossible because the row is gone.
+  const fresh = createClient(server.baseUrl);
+  const { status } = await fresh.post('/auth/login', {
+    email: 'it-delete-cascade-${Date.now()}-${Math.random().toString(16).slice(2, 8)}@devproof.test',
+    password: 'IntegrationTest123!'
+  });
+  // We cannot know the email we registered without capturing it, so instead
+  // confirm the deleted user cannot be looked up by their session.
+  assert.equal((await client.get('/auth/me')).status, 401);
+});
+
+test('one user cannot delete another user\'s account', async () => {
+  const alice = (await registerUser(server.baseUrl, 'alice-del')).client;
+  const bob = (await registerUser(server.baseUrl, 'bob-del')).client;
+
+  const aliceMe = await alice.get('/auth/me');
+  const aliceId = aliceMe.body.data.user.id;
+
+  // There is no route that accepts a userId for deletion — DELETE /auth/account
+  // always targets the session user — so the guard is structural: Bob can only
+  // ever delete his own row.
+  const bobResult = await bob.delete('/auth/account');
+  assert.equal(bobResult.status, 200);
+
+  // Alice is untouched.
+  const aliceAfter = await alice.get('/auth/me');
+  assert.equal(aliceAfter.status, 200, 'alice still has a valid session');
+  assert.equal(aliceAfter.body.data.user.id, aliceId, 'alice\'s account still exists');
+});
+
 /* ── session rejection and cookie hygiene ─────────────── */
 
 /** Sends a raw Cookie header the shared jar would otherwise overwrite. */

@@ -2,8 +2,12 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { AuthController } from '../controllers/auth.controller';
 import { protect } from '../middlewares/auth.middleware';
-import { validateRequest } from '../middlewares/validate';
-import { registerSchema, loginSchema } from '../validators/auth.validator';
+import { validateRequest } from '../middlewares/validate';import {
+  registerSchema,
+  loginSchema,
+  patchMeSchema
+} from '../validators/auth.validator';
+
 import { errorResponse } from '../utils/apiResponse';
 
 /**
@@ -37,6 +41,11 @@ router.get('/github', AuthController.githubOAuth);
 router.get('/github/callback', AuthController.githubCallback);
 router.post('/github/disconnect', protect, AuthController.disconnectGitHub);
 router.post('/github/sync', protect, AuthController.syncGitHub);
+
+router.patch('/me', protect, validateRequest(patchMeSchema), AuthController.patchMe);
+router.post('/export', protect, AuthController.exportData);
+router.delete('/account', protect, AuthController.deleteAccount);
+
 router.post('/logout', AuthController.logout);
 
 export default router;

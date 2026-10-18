@@ -361,4 +361,342 @@ export class AuthController {
     res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
     return successResponse(res, 200, 'Logged out successfully');
   };
+
+  /**
+   * Update the current user's editable profile fields.
+   *
+   * Only the display name is user-editable. Email is the primary identifier and
+   * is used by the GitHub OAuth linking flow, and role is an admin concern, so
+   * neither is exposed here.
+   *
+   * Owner-scoped: the userId comes from the session cookie, never from the
+   * request body, so a caller cannot rename another user.
+   */
+  static patchMe = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      const { name } = req.body as { name?: string };
+
+      // Only rewrite name when the caller actually supplied one. An omitted
+      // field leaves the existing value untouched rather than nulling it.
+      const data: { name?: string } = name !== undefined ? { name } : {};
+
+      const updated = await prisma.user.update({
+        where: { id: user.id },
+        data,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarUrl: true,
+          role: true,
+          createdAt: true
+        }
+      });
+
+      return successResponse(res, 200, 'Profile updated successfully', {
+        user: sanitizeUser(updated, true)
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Export the current user's own data as a JSON document.
+   *
+   * Contains everything the user could see in the dashboard about themselves —
+   * profile, GitHub account summary (never the access token), repositories,
+   * analyses, skills, courses, certifications, coding profiles, hackathons,
+   * growth history and career readiness — but never another user's records and
+   * never secrets (passwords, tokens, keys).
+   *
+   * The file is generated on demand and returned inline as a JSON response, not
+   * stored on disk.
+   */
+  static exportData = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+
+      const [githubAccount, repositories, analyses, skills, courses, certifications, codingProfiles, hackathons, growthHistory, careerReadiness] =
+        await Promise.all([
+          prisma.gitHubAccount.findUnique({ where: { userId: user.id } }),
+          prisma.repository.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            include: {
+              analyses: {
+                orderBy: { createdAt: 'desc' },
+                include: { metrics: true, findings: true }
+              }
+            }
+          }),
+          prisma.repositoryAnalysis.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' }
+          }),
+          prisma.skill.findMany({
+            where: { userId: user.id },
+            orderBy: { name: 'asc' },
+            include: { evidences: { orderBy: { createdAt: 'asc' } } }
+          }),
+          prisma.course.findMany({
+            where: { userId: user.id },
+            orderBy: [{ completedAt: 'desc' }, { createdAt: 'desc' }]
+          }),
+          prisma.certification.findMany({
+            where: { userId: user.id },
+            orderBy: { issueDate: 'desc' }
+          }),
+          prisma.codingProfile.findMany({
+            where: { userId: user.id },
+            orderBy: { platform: 'asc' }
+          }),
+          prisma.hackathon.findMany({
+            where: { userId: user.id },
+            orderBy: { heldAt: 'desc' }
+          }),
+          // Reuse the growth service for a normalized history snapshot.
+          (async () => {
+            try {
+              const { GrowthService } = await import('../services/growth.service');
+              return await GrowthService.getHistory(user.id);
+            } catch {
+              return null;
+            }
+          })(),
+          (async () => {
+            try {
+              const { CareerReadinessService } = await import('../services/careerReadiness.service');
+              return await CareerReadinessService.getReadiness(user.id);
+            } catch {
+              return null;
+            }
+          })()
+        ]);
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        exportedBy: user.id,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+          role: user.role,
+          createdAt: user.createdAt.toISOString()
+        },
+        githubAccount: githubAccount
+          ? {
+              id: githubAccount.id,
+              githubId: githubAccount.githubId,
+              username: githubAccount.username,
+              profileUrl: githubAccount.profileUrl,
+              avatarUrl: githubAccount.avatarUrl,
+              totalRepos: githubAccount.totalRepos,
+              totalStars: githubAccount.totalStars,
+              totalFollowers: githubAccount.totalFollowers,
+              totalFollowing: githubAccount.totalFollowing,
+              linkedAt: githubAccount.linkedAt.toISOString(),
+              lastSyncedAt: githubAccount.lastSyncedAt?.toISOString() ?? null
+            }
+          : null,
+        repositories: repositories.map((r) => ({
+          id: r.id,
+          name: r.name,
+          fullName: r.fullName,
+          owner: r.owner,
+          url: r.url,
+          description: r.description,
+          isPrivate: r.isPrivate,
+          isFork: r.isFork,
+          isArchived: r.isArchived,
+          defaultBranch: r.defaultBranch,
+          language: r.language,
+          topics: r.topics,
+          starsCount: r.starsCount,
+          forksCount: r.forksCount,
+          watchersCount: r.watchersCount,
+          openIssuesCount: r.openIssuesCount,
+          sizeKb: r.sizeKb,
+          githubCreatedAt: r.githubCreatedAt?.toISOString() ?? null,
+          githubUpdatedAt: r.githubUpdatedAt?.toISOString() ?? null,
+          pushedAt: r.pushedAt?.toISOString() ?? null,
+          createdAt: r.createdAt.toISOString(),
+          updatedAt: r.updatedAt.toISOString(),
+          analyses: r.analyses.map((a) => ({
+            id: a.id,
+            status: a.status,
+            overallScore: a.overallScore,
+            healthStatus: a.healthStatus,
+            analyzedAt: a.analyzedAt?.toISOString() ?? null,
+            createdAt: a.createdAt.toISOString(),
+            metrics: a.metrics?.map((m) => ({
+              id: m.id,
+              category: m.category,
+              name: m.name,
+              score: m.score,
+              detail: m.detail
+            })),
+            findings: a.findings?.map((f) => ({
+              id: f.id,
+              severity: f.severity,
+              category: f.category,
+              title: f.title,
+              description: f.description,
+              filePath: f.filePath,
+              lineNumber: f.lineNumber,
+              snippet: f.snippet,
+              recommendation: f.recommendation
+            }))
+          }))
+        })),
+        analyses: analyses.map((a) => ({
+          id: a.id,
+          repositoryId: a.repositoryId,
+          status: a.status,
+          overallScore: a.overallScore,
+          healthStatus: a.healthStatus,
+          analyzedAt: a.analyzedAt?.toISOString() ?? null,
+          createdAt: a.createdAt.toISOString()
+        })),
+        skills: skills.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: s.category,
+          confidence: s.confidence,
+          currentLevel: s.currentLevel,
+          createdAt: s.createdAt.toISOString(),
+          evidences: s.evidences.map((e) => ({
+            id: e.id,
+            evidenceType: e.evidenceType,
+            title: e.title,
+            snippet: e.snippet,
+            sourceUrl: e.sourceUrl,
+            level: e.level,
+            createdAt: e.createdAt.toISOString()
+          }))
+        })),
+        courses: courses.map((c) => ({
+          id: c.id,
+          title: c.title,
+          platform: c.platform,
+          isCompleted: c.isCompleted,
+          completedAt: c.completedAt?.toISOString() ?? null,
+          certificateUrl: c.certificateUrl,
+          learnedSkills: c.learnedSkills,
+          createdAt: c.createdAt.toISOString(),
+          updatedAt: c.updatedAt.toISOString()
+        })),
+        certifications: certifications.map((c) => ({
+          id: c.id,
+          name: c.name,
+          issuer: c.issuer,
+          credentialId: c.credentialId,
+          credentialUrl: c.credentialUrl,
+          issueDate: c.issueDate?.toISOString() ?? null,
+          createdAt: c.createdAt.toISOString()
+        })),
+        codingProfiles: codingProfiles.map((p) => ({
+          id: p.id,
+          platform: p.platform,
+          handle: p.handle,
+          profileUrl: p.profileUrl,
+          totalSolved: p.totalSolved,
+          easySolved: p.easySolved,
+          mediumSolved: p.mediumSolved,
+          hardSolved: p.hardSolved,
+          acceptanceRate: p.acceptanceRate,
+          ranking: p.ranking,
+          rating: p.rating,
+          contestsAttended: p.contestsAttended,
+          globalRanking: p.globalRanking,
+          topPercentage: p.topPercentage,
+          streakDays: p.streakDays,
+          totalActiveDays: p.totalActiveDays,
+          lastSyncedAt: p.lastSyncedAt?.toISOString() ?? null,
+          createdAt: p.createdAt.toISOString(),
+          updatedAt: p.updatedAt.toISOString()
+        })),
+        hackathons: hackathons.map((h) => ({
+          id: h.id,
+          name: h.name,
+          organizer: h.organizer,
+          role: h.role,
+          projectName: h.projectName,
+          projectUrl: h.projectUrl,
+          result: h.result,
+          teamSize: h.teamSize,
+          heldAt: h.heldAt?.toISOString() ?? null,
+          technologies: h.technologies,
+          createdAt: h.createdAt.toISOString(),
+          updatedAt: h.updatedAt.toISOString()
+        })),
+        growthHistory: growthHistory
+          ? {
+              points: growthHistory.points,
+              months: growthHistory.months,
+              milestones: growthHistory.milestones,
+              trends: growthHistory.trends,
+              totals: growthHistory.totals
+            }
+          : null,
+        careerReadiness: careerReadiness
+          ? {
+              hasEvidence: careerReadiness.hasEvidence,
+              bestMatch: careerReadiness.bestMatch,
+              roles: careerReadiness.roles
+            }
+          : null
+      };
+
+      return successResponse(res, 200, 'Your data export is ready', { export: exportData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Permanently delete the current user's account and all of their data.
+   *
+   * Because the Prisma schema cascades from User to every related model
+   * (GitHubAccount, Repository, RepositoryAnalysis, Metric, Finding, Skill,
+   * Course, Certification, CodingProfile, Hackathon, Resume, TargetRole,
+   * AnalysisHistory), one delete removes the entire tree for this user. No other
+   * user's records are touched: every relation is scoped by userId and the
+   * delete is performed with the session user's id.
+   *
+   * This is intentionally separate from disconnecting an integration: removing
+   * GitHub does not delete repositories or analyses, but removing the account
+   * removes everything.
+   *
+   * Returns the deleted user's id so the caller can confirm which account was
+   * removed, then the session is invalid (the row no longer exists).
+   */
+  static deleteAccount = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      const userId = user.id;
+
+      // The session is still valid right up until this call. The caller has
+      // already confirmed intent (the frontend requires a typed confirmation),
+      // so no second factor is enforced here — but the action is idempotent in
+      // the sense that a second call for the same user will 404 rather than
+      // deleting someone else's account.
+      await prisma.user.delete({
+        where: { id: userId },
+        select: { id: true, email: true, name: true }
+      });
+
+      // The user no longer exists, so their session cookie is now orphaned.
+      // Clear it so the browser does not keep sending an invalid token.
+      res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
+
+      return successResponse(res, 200, 'Account deleted successfully', {
+        deleted: { id: userId, email: user.email, name: user.name }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
