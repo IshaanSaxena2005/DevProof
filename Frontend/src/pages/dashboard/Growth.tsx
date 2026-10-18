@@ -508,7 +508,7 @@ export default function Growth() {
             >
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TIER_COLOR[tier], boxShadow: `0 0 6px ${TIER_COLOR[tier]}88` }} />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 leading-tight">{humanize(tier)}</p>
+                <p className="text-[10px] font-bold text-white/35 leading-tight">{humanize(tier)}</p>
               </div>
               <p className="text-3xl font-bold tabular-nums" style={{ color: TIER_COLOR[tier] }}>{count}</p>
               <p className="text-[11px] text-white/25">{count === 1 ? "skill" : "skills"}</p>
