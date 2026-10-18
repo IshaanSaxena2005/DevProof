@@ -687,7 +687,7 @@ export default function ProblemSolving() {
               <BarChart3 className="w-3.5 h-3.5 text-primary" />
               {/* The plotted series is the platforms' submission calendars:
                   submissions recorded in the window, not distinct solves. */}
-              <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">Submissions — Last {period}</h3>
+              <h3 className="text-xs font-bold text-white/70">Submissions — Last {period}</h3>
             </div>
 
             {/* Period selector */}
@@ -729,7 +729,7 @@ export default function ProblemSolving() {
         <GlassCard hover={false} className="p-6 mb-8">
           <div className="flex items-center gap-2 mb-5">
             <PieChart className="w-3.5 h-3.5 text-primary" />
-            <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider">How your solves split across difficulty</h3>
+            <h3 className="text-xs font-bold text-white/70">How your solves split across difficulty</h3>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-8">

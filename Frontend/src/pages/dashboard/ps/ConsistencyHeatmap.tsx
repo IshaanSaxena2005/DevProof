@@ -98,7 +98,7 @@ export default function ConsistencyHeatmap({
         <div className="flex items-center justify-between mb-5 gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
-            <h3 className="text-xs font-bold text-white/70 uppercase tracking-wider truncate">
+            <h3 className="text-xs font-bold text-white/70 truncate">
               Problem-Solving Activity
             </h3>
           </div>
