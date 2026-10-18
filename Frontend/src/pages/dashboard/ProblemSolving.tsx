@@ -172,7 +172,7 @@ export default function ProblemSolving() {
 
   const isDemo = useDemoMode();
   const { data, loading, error, reload } = useDemoResource<CodingProfilesResponse>(
-    () => codingProfilesService.list(),
+    () => codingProfilesService.getProfiles(),
     sampleData.codingProfilesResponse,
     []
   );

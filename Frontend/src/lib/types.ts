@@ -41,6 +41,8 @@ export interface GitHubAccount {
   totalRepos: number;
   totalStars: number;
   totalFollowers: number;
+  totalFollowing: number;
+  lastSyncedAt: string | null;
 }
 
 export interface User {
@@ -827,4 +829,63 @@ export interface CareerReadiness {
 
 export interface CareerReadinessResponse {
   readiness: CareerReadiness;
+}
+
+/* ── Account management (PATCH /auth/me, POST /auth/export, DELETE /auth/account) ── */
+
+export interface AccountExport {
+  exportedAt: string;
+  exportedBy: string;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    avatarUrl: string | null;
+    role: UserRole;
+    createdAt: string;
+  };
+  githubAccount: {
+    id: string;
+    githubId: string;
+    username: string;
+    profileUrl: string | null;
+    avatarUrl: string | null;
+    totalRepos: number;
+    totalStars: number;
+    totalFollowers: number;
+    totalFollowing: number;
+    linkedAt: string;
+    lastSyncedAt: string | null;
+  } | null;
+  repositories: Repository[];
+  analyses: {
+    id: string;
+    repositoryId: string;
+    status: AnalysisStatus;
+    overallScore: number;
+    healthStatus: string;
+    analyzedAt: string | null;
+    createdAt: string;
+  }[];
+  skills: SkillWithEvidence[];
+  courses: Course[];
+  certifications: Certification[];
+  codingProfiles: CodingProfile[];
+  hackathons: Hackathon[];
+  growthHistory: GrowthHistoryResponse | null;
+  careerReadiness: CareerReadinessResponse | null;
+}
+
+export interface AccountExportResponse {
+  export: AccountExport;
+}
+
+export interface DeletedAccount {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+export interface DeleteAccountResponse {
+  deleted: DeletedAccount;
 }

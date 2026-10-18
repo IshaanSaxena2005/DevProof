@@ -1,31 +1,39 @@
 import { api } from "../lib/api.mts";
 import type {
-  CodingPlatform,
-  CodingProfileResponse,
   CodingProfilesResponse,
+  CodingProfileResponse,
+  CodingPlatform,
 } from "../lib/types";
 
-/**
- * Client for /coding-profiles.
- *
- * connect and sync both call out to the platform, so they are slower than a
- * normal request and are rate limited server-side; the UI should disable its
- * trigger while one is in flight.
- */
 export const codingProfilesService = {
-  async list(): Promise<CodingProfilesResponse> {
+  async getProfiles(): Promise<CodingProfilesResponse> {
     return api.get<CodingProfilesResponse>("/coding-profiles");
   },
 
-  async connect(platform: CodingPlatform, handle: string): Promise<CodingProfileResponse> {
+  async connectProfile(platform: CodingPlatform, handle: string): Promise<CodingProfileResponse> {
     return api.post<CodingProfileResponse>("/coding-profiles", { platform, handle });
   },
 
-  async sync(platform: CodingPlatform): Promise<CodingProfileResponse> {
+  /** Legacy name kept for ProblemSolving.tsx. */
+  async connect(platform: CodingPlatform, handle: string): Promise<CodingProfileResponse> {
+    return this.connectProfile(platform, handle);
+  },
+
+  async syncProfile(platform: CodingPlatform): Promise<CodingProfileResponse> {
     return api.post<CodingProfileResponse>(`/coding-profiles/${platform}/sync`);
   },
 
-  async disconnect(platform: CodingPlatform): Promise<void> {
+  /** Legacy name kept for ProblemSolving.tsx. */
+  async sync(platform: CodingPlatform): Promise<CodingProfileResponse> {
+    return this.syncProfile(platform);
+  },
+
+  async disconnectProfile(platform: CodingPlatform): Promise<void> {
     await api.delete(`/coding-profiles/${platform}`);
+  },
+
+  /** Legacy name kept for ProblemSolving.tsx. */
+  async disconnect(platform: CodingPlatform): Promise<void> {
+    return this.disconnectProfile(platform);
   },
 };

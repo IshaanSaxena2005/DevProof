@@ -1563,6 +1563,8 @@ export function buildSampleData(now: Date = new Date()): SampleData {
       totalRepos: repositories.length,
       totalStars: repositories.reduce((sum, repo) => sum + repo.starsCount, 0),
       totalFollowers: 184,
+      totalFollowing: 89,
+      lastSyncedAt: isoDaysAgo(anchor, 2),
     },
     createdAt: isoDaysAgo(anchor, 700),
   };

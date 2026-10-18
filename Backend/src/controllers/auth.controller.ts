@@ -46,6 +46,8 @@ type SerializableGitHubAccount = {
   totalRepos: number;
   totalStars: number;
   totalFollowers: number;
+  totalFollowing: number;
+  lastSyncedAt: Date | null;
   accessToken?: string;
 };
 
@@ -63,7 +65,10 @@ function sanitizeGitHubAccount(account: SerializableGitHubAccount | null | undef
   if (!account) return null;
 
   const { accessToken: _accessToken, ...publicAccount } = account;
-  return publicAccount;
+  return {
+    ...publicAccount,
+    lastSyncedAt: publicAccount.lastSyncedAt?.toISOString() ?? null
+  };
 }
 
 function sanitizeUser(user: SerializableUser, includeCreatedAt = false) {
