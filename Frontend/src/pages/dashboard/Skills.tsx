@@ -399,7 +399,7 @@ export default function Skills() {
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-white text-sm font-medium">{skill.name}</span>
                                 <span
-                                  className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                                  className="text-[12px] px-2.5 py-1 rounded-full font-medium"
                                   style={{
                                     background: `${LEVEL_COLOR[skill.currentLevel]}20`,
                                     color: LEVEL_COLOR[skill.currentLevel],
