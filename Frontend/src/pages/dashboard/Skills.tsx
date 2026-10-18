@@ -327,7 +327,7 @@ export default function Skills() {
                     <div key={tier} className="glass-inset p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full" style={{ background: LEVEL_COLOR[tier] }} />
-                        <span className="text-[11px] uppercase tracking-widest" style={{ color: "var(--text-tertiary)" }}>
+                        <span className="text-[12px] uppercase tracking-widest" style={{ color: "var(--text-tertiary)" }}>
                           {LEVEL_LABEL[tier]}
                         </span>
                       </div>
