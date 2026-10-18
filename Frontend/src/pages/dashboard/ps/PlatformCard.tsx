@@ -230,7 +230,7 @@ export default function PlatformCard({
               {brand.icon}
             </div>
             <div className="min-w-0">
-              <h3 className="text-base font-bold text-white tracking-tight truncate">{brand.name}</h3>
+              <h2 className="text-base font-bold text-white tracking-tight truncate">{brand.name}</h2>
               <p className="text-[12px] text-white/40 truncate">
                 {profile.connected ? `@${profile.username}` : "Not connected"}
               </p>
