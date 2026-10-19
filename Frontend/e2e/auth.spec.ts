@@ -7,7 +7,7 @@
  * no authorization bypass exists in these tests.
  */
 import { expect, test } from "@playwright/test";
-import { API_V1, collectPageErrors, MAIN_USER, uiLogin } from "./helpers";
+import { API_V1, collectPageErrors, generatedTestPassword, MAIN_USER, uiLogin } from "./helpers";
 
 test("signed-out access to protected dashboard routes redirects to login", async ({ page }) => {
   for (const path of ["/dashboard", "/dashboard/overview", "/dashboard/skills"]) {
@@ -52,7 +52,8 @@ test("register → dashboard → logout clears the session and returns to the pu
   const newUser = {
     name: `E2E Register ${stamp}`,
     email: `e2e-register-${stamp}@devproof.test`,
-    password: "e2e-register-pw!"
+    // One-off account, one-off password: generated per run, never committed.
+    password: generatedTestPassword()
   };
 
   await page.goto("/login");

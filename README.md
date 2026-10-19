@@ -737,6 +737,17 @@ and is **not** relaxed for tests: global setup signs each test account in once
 and saves the session as Playwright storage state, which every other spec
 injects; only `auth.spec.ts` drives the login form itself.
 
+Test-account passwords are **never committed**. Each run generates fresh ones
+and stores them in the git-ignored `e2e/.auth/credentials.json` (alongside the
+saved sessions), so global setup and every worker agree on one password per
+run. Against the managed stack nothing needs configuring: the database — and
+with it the accounts — is recreated from scratch on every run. When pointing
+the suite at an already-running stack (`E2E_BASE_URL`) whose accounts predate
+the run, set `E2E_MAIN_PASSWORD` / `E2E_ISOLATION_PASSWORD` to those accounts’
+passwords; the suite fails with an explicit message rather than an unexplained
+login error if it cannot create or log in the test users. These passwords only
+ever authenticate against the disposable E2E database, never a real one.
+
 **What the mocks do not prove:** a browser test with mocked GitHub responses
 does not verify live GitHub OAuth, the GitHub App installation flow, webhook
 delivery, or real repository analysis. Those need real credentials and stay

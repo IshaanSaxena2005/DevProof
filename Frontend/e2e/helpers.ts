@@ -13,17 +13,26 @@
  *    correctly by staying signed out.
  */
 import type { APIRequestContext, Page } from "@playwright/test";
+import { resolveAccountPasswords } from "./credentials";
+
+export { generatedTestPassword } from "./credentials";
+
+// Passwords are never committed: each run resolves them from the environment
+// or from the per-run git-ignored store (see e2e/credentials.ts). Global setup
+// resolves them first and registers the accounts, so every worker that imports
+// this module reads the same values back.
+const passwords = resolveAccountPasswords();
 
 export const MAIN_USER = {
   name: "E2E Main",
   email: "e2e-main@devproof.test",
-  password: "e2e-main-passw0rd!"
+  password: passwords.main
 };
 
 export const ISOLATION_USER = {
   name: "E2E Isolation",
   email: "e2e-isolation@devproof.test",
-  password: "e2e-isolation-pw!"
+  password: passwords.isolation
 };
 
 /** Saved sessions created by e2e/global-setup.ts (git-ignored). */
@@ -50,7 +59,9 @@ export async function ensureUser(
   if (!login.ok()) {
     throw new Error(
       `[e2e] Could not create or log in test user ${user.email}: ` +
-        `register=${register.status()} login=${login.status()} ${await login.text()}`
+        `register=${register.status()} login=${login.status()} ${await login.text()}\n` +
+        `If this stack's accounts were created by an earlier run with different ` +
+        `credentials, set E2E_MAIN_PASSWORD / E2E_ISOLATION_PASSWORD to those values.`
     );
   }
 }
