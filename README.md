@@ -388,4 +388,57 @@ their bytes, coding-profile usernames are fetched before anything is written
 (an invalid or private handle leaves no row), and every mutation is Zod
 validated with field-level errors.
 
+## Demo Mode
+
+`/demo` renders the same ten dashboard sections against synthetic fixtures —
+no account, no backend, no real personal data:
+
+- **Public by design** — demo routes sit outside the auth guard; nothing below
+  `/dashboard` was weakened to make them reachable.
+- **Read-only by construction** — while the demo shell is mounted, the API
+  client refuses every write (POST/PATCH/DELETE) before any request is sent,
+  so a visitor cannot touch an account they do not have.
+- **Honest on screen** — sample screens carry a sample-data badge and a
+  notice explaining the fixtures are fictional; the sample identity is the
+  only identity the shell renders, even when a signed-in visitor opens the
+  demo.
+
+Open `http://localhost:5173/demo` or click **Explore Demo** on the landing
+page. The browser E2E suite asserts the badge, the write-refusal, and that
+demo navigation never escapes its prefix.
+
+## Testing and CI
+
+Three suites, all executed locally as part of this documentation pass:
+
+| Suite | Count | What it proves |
+|---|---|---|
+| Backend service | 107 | Business rules with Prisma stubbed: skill derivation and confidence ceilings, certification matching, LeetCode/GFG mapping, growth arithmetic, readiness scoring, resume validation, webhook signature handling |
+| Backend integration | 43 | The real HTTP stack over real PostgreSQL: anonymous callers rejected on every protected route, field-level validation errors, cross-user isolation, skill promotion end to end |
+| Frontend | 63 | Extracted logic under `node --test`: UTC date handling, difficulty fallbacks, demo fixtures and isolation, API-client envelope, page render-state rules |
+| Browser E2E | 20 | Playwright Chromium against the production build + compiled backend: auth journeys, every dashboard section, demo mode, mocked repository flows, 390 px overflow, console cleanliness |
+
+```bash
+cd Backend  && npm test          # builds, then service + integration suites
+cd Frontend && npm test          # node --test over .mts sources
+cd Frontend && npm run test:e2e  # builds the e2e bundle, runs Playwright
+```
+
+Isolation guarantees: integration tests use a dedicated `<database>_test`
+schema derived from your `DATABASE_URL`; the browser suite runs against a
+dropped-and-recreated `devproof_e2e_test` database on port 5399 with GitHub
+and Groq disabled; E2E account passwords are generated per run and never
+committed.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs four jobs on every push and
+pull request to `main`: **backend** (migrations on an empty disposable
+Postgres, schema-drift check, build + 150 tests, production-dependency
+audit), **frontend** (typecheck, build, 63 tests, audit), **browser E2E**
+(20 journeys), and **docker** (both images build).
+
+**What the automated suite does not prove:** live GitHub OAuth, the GitHub
+App installation flow, real webhook delivery, and live Groq responses need
+real credentials and stay outside CI — the same code paths are exercised
+with stubs, which is not the same as a live round trip.
+
 <!-- next-section -->
