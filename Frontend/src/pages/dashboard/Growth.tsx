@@ -357,11 +357,7 @@ export default function Growth() {
 
   if (loading) {
     return (
-      <PageContainer
-        title="Growth & Analytics"
-        description="Your measured engineering growth across repositories and skills."
-        headingClassName="text-xl md:text-2xl font-bold text-white"
-      >
+      <PageContainer description="Your measured engineering growth across repositories and skills.">
         <LoadingBlock label="Loading your growth evidence…" />
       </PageContainer>
     );
@@ -369,11 +365,7 @@ export default function Growth() {
 
   if (error || !data?.overview) {
     return (
-      <PageContainer
-        title="Growth & Analytics"
-        description="Your measured engineering growth across repositories and skills."
-        headingClassName="text-xl md:text-2xl font-bold text-white"
-      >
+      <PageContainer description="Your measured engineering growth across repositories and skills.">
         <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
       </PageContainer>
     );
@@ -395,13 +387,11 @@ export default function Growth() {
 
   return (
     <PageContainer
-      title="Growth & Analytics"
       description={
         isDemo
           ? "The sample profile's measured history, reconstructed from its own analysis records."
           : "Your measured engineering growth across repositories, analyses, and skills."
       }
-      headingClassName="text-xl md:text-2xl font-bold text-white"
     >
       {isDemo && (
         <div className="mb-6">

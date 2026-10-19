@@ -91,11 +91,7 @@ export default function CareerReadiness() {
 
   if (loading || certsLoading) {
     return (
-      <PageContainer
-        title="Career Readiness"
-        description="Role readiness matching and evidence-based career signals."
-        headingClassName="text-xl md:text-2xl font-bold text-white"
-      >
+      <PageContainer description="Role readiness matching and evidence-based career signals.">
         <LoadingBlock label="Loading your career evidence…" />
       </PageContainer>
     );
@@ -103,11 +99,7 @@ export default function CareerReadiness() {
 
   if (error || !data?.overview) {
     return (
-      <PageContainer
-        title="Career Readiness"
-        description="Role readiness matching and evidence-based career signals."
-        headingClassName="text-xl md:text-2xl font-bold text-white"
-      >
+      <PageContainer description="Role readiness matching and evidence-based career signals.">
         <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
       </PageContainer>
     );
@@ -163,13 +155,11 @@ export default function CareerReadiness() {
 
   return (
     <PageContainer
-      title="Career Readiness"
       description={
         isDemo
           ? "The sample profile's readiness against each role — illustrative output, computed from its own sample evidence."
           : "Role readiness matching and evidence-based career signals."
       }
-      headingClassName="text-xl md:text-2xl font-bold text-white"
     >
       {sampleNotice}
 

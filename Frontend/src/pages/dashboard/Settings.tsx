@@ -668,7 +668,6 @@ export default function Settings() {
 
   return (
     <PageContainer
-      title="Settings"
       description={isDemo ? "How the sample profile's settings look — read-only." : "Your profile, connected accounts, and data controls."}
     >
       {isDemo && (

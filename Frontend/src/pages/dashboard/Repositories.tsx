@@ -213,11 +213,11 @@ export default function Repositories() {
 
   return (
     <PageContainer
-      title="Repositories"            description={
-              isDemo
-                ? "Six sample repositories, with the engineering metrics the analyzer measured for each."
-                : "Connect a GitHub repository to generate evidence-based analysis metrics."
-            }
+      description={
+        isDemo
+          ? "Six sample repositories, with the engineering metrics the analyzer measured for each."
+          : "Connect a GitHub repository to generate evidence-based analysis metrics."
+      }
     >
       <div className="flex flex-col gap-6">
         {isDemo && (

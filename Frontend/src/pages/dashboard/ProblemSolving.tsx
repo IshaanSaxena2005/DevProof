@@ -593,7 +593,6 @@ export default function ProblemSolving() {
   if (view === "error" && error) {
     return (
       <PageContainer
-        title="Problem Solving"
         description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
       >
         <ErrorBlock message={error} onRetry={reload} />
@@ -603,23 +602,22 @@ export default function ProblemSolving() {
 
   return (
     <PageContainer
-      title="Problem Solving"
       description={
         isDemo
           ? "The sample profile's coding practice — synthetic records, derived consistently across every chart here."
           : "Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
       }
-    >
-      {/* Header-right status indicator. Pulled up beside the page title to sit
-          top-right, as the title block above only occupies the left side.
+      trailing={
+        /* Status chip sits on the subtitle row, top-right — the page title
+            lives in the shared header, so there is no title block to pull it
+            up beside anymore.
 
-          The chip and the notices below sit outside the section grid, so
-          without their own Reveal they reached full opacity while every
-          section was still at opacity 0 behind its staggered entrance — the
-          ~1s "empty page with a Not connected warning" flash seen when
-          navigating here. Sharing the first section's entrance (Reveal,
-          delay 0) puts the chrome and the content on one timeline. */}
-      <div className="-mt-16 mb-4 flex justify-end">
+            It keeps its own Reveal: the chip and the notices below sit outside
+            the section grid, so without one they reached full opacity while
+            every section was still at opacity 0 behind its staggered entrance
+            — the ~1s "empty page with a Not connected warning" flash seen when
+            navigating here. Sharing the first section's entrance (Reveal,
+            delay 0) puts the chrome and the content on one timeline. */
         <Reveal>
           <span className="glass-chip px-3 py-1.5 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -628,7 +626,8 @@ export default function ProblemSolving() {
             </span>
           </span>
         </Reveal>
-      </div>
+      }
+    >
 
       {isDemo && (
         <Reveal>
@@ -975,25 +974,23 @@ export default function ProblemSolving() {
  * settled the page jumped from a nearly empty frame (title + card) into the
  * staggered entrance of a much taller layout — with the amber "Not connected"
  * notice already sharp while every section was still invisible. These
- * placeholders occupy the settled layout's real footprint — the pulled-up chip
- * row, the five-card overview grid, the two platform cards — so no frame of the
+ * placeholders occupy the settled layout's real footprint — the subtitle-row
+ * chip, the five-card overview grid, the two platform cards — so no frame of the
  * navigation ever shows an empty page, and the swap into real content reads as
  * the entrance it is. Screen readers still get the explicit loading text.
  */
 function ProblemSolvingSkeleton() {
   return (
     <PageContainer
-      title="Problem Solving"
       description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
+      trailing={
+        /* Same row and alignment as the real status chip, so nothing shifts
+           when the page arrives. */
+        <span className="glass-chip h-[26px] w-[7.5rem] animate-pulse" aria-hidden="true" />
+      }
     >
       <div role="status" aria-live="polite" className="sr-only">
         Loading your coding profiles…
-      </div>
-
-      {/* Chip placeholder — same -mt-16 pull and right alignment as the real
-          status chip, so the title row never shifts when it arrives. */}
-      <div className="-mt-16 mb-4 flex justify-end" aria-hidden="true">
-        <span className="glass-chip h-[26px] w-[7.5rem] animate-pulse" />
       </div>
 
       {/* Overview row — five cards on the real grid tracks. */}

@@ -129,9 +129,10 @@ export default function Developer360() {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="w-full flex flex-col gap-8 pb-8"
     >
+      {/* The page title — "Developer 360" — lives in the shared header; this
+          block opens with the subtitle instead of repeating it. */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">Developer 360</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
           {isDemo
             ? "The sample profile's engineering evidence, compiled from its six fictional repositories."
             : "Your engineering profile, compiled from analyzed repositories and recorded skill evidence."}
