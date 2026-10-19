@@ -97,8 +97,16 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label above each block.
+ *
+ * An h2, not a <p>: these are the page's section headings, and they sit under
+ * the header's h1 (the page title) in the document outline. Preflight keeps
+ * the h2 inheriting the surrounding font metrics, so the classes — not the
+ * tag — decide how it looks.
+ */
 function SLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
+  return <h2 className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</h2>;
 }
 
 /* ── page ────────────────────────────────────────────── */
