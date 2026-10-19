@@ -238,4 +238,73 @@ DevProof/
 └── package.json              # root scripts delegating into Backend/Frontend
 ```
 
+## Local Development and Setup
+
+### Prerequisites
+
+Node.js 20+, npm, Docker Desktop, Git.
+
+### 1. Clone and configure
+
+```bash
+git clone https://github.com/IshaanSaxena2005/DevProof.git
+cd DevProof
+
+cp Backend/.env.example Backend/.env      # then set JWT_SECRET (required)
+# Frontend/.env is optional — the API client defaults to localhost:5000
+```
+
+Generate the one required secret:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+# paste the output as JWT_SECRET in Backend/.env
+```
+
+All other variables are optional integrations — see
+[Environment Variables](#environment-variables).
+
+### 2. Start the full stack with Docker
+
+```bash
+docker compose up -d --build
+```
+
+This starts PostgreSQL, the backend (healthchecked against the real
+`/api/v1/health` endpoint) and the frontend, in that order.
+
+### 3. Or run the apps on the host
+
+```bash
+cd Backend
+docker compose up -d        # just PostgreSQL — host port 5434, not 5432
+npm install
+npm run prisma:migrate       # apply all committed migrations
+npm run dev                  # http://localhost:5000
+```
+
+```bash
+cd Frontend
+npm install
+npm run dev                  # http://localhost:5173
+```
+
+Open http://localhost:5173 — register an account, or explore the public demo
+at http://localhost:5173/demo without one.
+
+### After every pull
+
+Three things can arrive with a pull, and each fails at runtime with an error
+that does not name its cause:
+
+```bash
+cd Backend
+npm install                 # new dependencies
+npx prisma migrate deploy   # new migrations
+npx prisma generate         # regenerate the client
+```
+
+Root-level shortcuts (`npm run dev:backend`, `dev:frontend`, `build`, `test`)
+delegate into the two apps.
+
 <!-- next-section -->
