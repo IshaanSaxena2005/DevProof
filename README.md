@@ -106,4 +106,22 @@ the AI layer generated.
 | **Public demo mode** | Every dashboard section with synthetic, labelled fixtures; writes are refused before any request is sent | Synthetic |
 | **Responsive dashboard** | Ten route-split lazy-loaded sections, overflow-free at 390 px (browser-tested) | — |
 
+## Product Screenshots
+
+The fastest way to see the product is the [live local demo](#live-demo). The
+captured screenshot set is being assembled against the running stack; every
+planned shot and what must be visible in it is tracked in
+[docs/screenshots.md](docs/screenshots.md). As each file lands in
+`screenshots/`, it is embedded here with a caption — this section never links
+an image that does not exist.
+
+| Planned capture | Shows |
+|---|---|
+| `01-landing-page` → `02-login-register` | Public site and authentication |
+| `03-demo-overview` → `04-dashboard-overview` | Sample data vs. live data |
+| `05-repositories` → `06-repository-analysis` | Repository intelligence and findings |
+| `07-developer-360` → `08-skills-intelligence` | Aggregation and the evidence ladder |
+| `09-problem-solving` → `12-career-readiness` | Activity, learning, growth, readiness |
+| `13-ai-insights` → `15-mobile-responsive` | AI layer, settings, 390 px layout |
+
 <!-- next-section -->
