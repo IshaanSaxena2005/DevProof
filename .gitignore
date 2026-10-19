@@ -32,3 +32,5 @@ Frontend/.env
 
 # Claude Code: per-machine settings, not shared
 .claude/settings.local.json
+# Dev-server launch config: paths and ports are whatever each machine runs.
+.claude/launch.json
