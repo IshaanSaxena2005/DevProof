@@ -304,8 +304,8 @@ npx prisma migrate deploy   # new migrations
 npx prisma generate         # regenerate the client
 ```
 
-Root-level shortcuts (`npm run dev:backend`, `dev:frontend`, `build`, `test`)
-delegate into the two apps.
+Root-level shortcuts (`npm run dev:backend`, `dev:frontend`, `build`, `test`,
+`docs:check`) delegate into the two apps and the documentation validator.
 
 ### Troubleshooting
 
