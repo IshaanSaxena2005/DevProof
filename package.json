@@ -7,6 +7,7 @@
     "dev:backend": "npm --prefix Backend run dev",
     "start": "npm --prefix Backend start",
     "build:frontend": "npm --prefix Frontend run build",
-    "dev:frontend": "npm --prefix Frontend run dev"
+    "dev:frontend": "npm --prefix Frontend run dev",
+    "docs:check": "node scripts/check-docs.mjs"
   }
 }

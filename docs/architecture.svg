@@ -1,0 +1,137 @@
+<svg width="1440" height="1060" viewBox="0 0 1440 1060" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8fb98f"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16ff00"/>
+    </marker>
+  </defs>
+
+  <style>
+    text { font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  </style>
+
+  <!-- background -->
+  <rect width="1440" height="1060" fill="#0a0f0a"/>
+
+  <!-- title -->
+  <text x="56" y="62" fill="#f2f7f2" font-size="28" font-weight="700">DevProof — System Architecture</text>
+  <text x="56" y="92" fill="#7d8f7d" font-size="15">Evidence-based developer intelligence: request, response and webhook flow</text>
+
+  <!-- external services boundary -->
+  <rect x="1096" y="180" width="304" height="610" rx="16" fill="none" stroke="#3a4a3a" stroke-width="1.5" stroke-dasharray="7 6"/>
+  <text x="1116" y="212" fill="#7d8f7d" font-size="14" font-weight="600" letter-spacing="0.06em">EXTERNAL SERVICES</text>
+
+  <!-- application boundary: backend + database behind cookie auth -->
+  <rect x="672" y="176" width="400" height="830" rx="18" fill="none" stroke="#28402a" stroke-width="1.5" stroke-dasharray="3 5"/>
+  <text x="692" y="200" fill="#5d7a5d" font-size="11.5" font-weight="600" letter-spacing="0.08em">APP BOUNDARY — HTTP-ONLY JWT COOKIE · USER-SCOPED DATA</text>
+
+  <!-- Developer -->
+  <rect x="56" y="330" width="200" height="150" rx="14" fill="#121a12" stroke="#2e402e" stroke-width="1.5"/>
+  <text x="156" y="384" fill="#f2f7f2" font-size="20" font-weight="700" text-anchor="middle">Developer</text>
+  <text x="156" y="414" fill="#9db39d" font-size="14" text-anchor="middle">Browser session</text>
+  <text x="156" y="436" fill="#9db39d" font-size="14" text-anchor="middle">Sign in · browse · upload</text>
+
+  <!-- Frontend -->
+  <rect x="330" y="250" width="292" height="310" rx="14" fill="#121a12" stroke="#2e402e" stroke-width="1.5"/>
+  <text x="476" y="292" fill="#f2f7f2" font-size="20" font-weight="700" text-anchor="middle">Frontend</text>
+  <text x="476" y="318" fill="#16ff00" font-size="14" text-anchor="middle">React 19 · TypeScript · Vite</text>
+  <line x1="360" y1="336" x2="592" y2="336" stroke="#2e402e" stroke-width="1"/>
+  <text x="476" y="366" fill="#c8d6c8" font-size="14.5" text-anchor="middle">Dashboard SPA — 10 sections</text>
+  <text x="476" y="394" fill="#c8d6c8" font-size="14.5" text-anchor="middle">Public read-only demo mode</text>
+  <text x="476" y="422" fill="#c8d6c8" font-size="14.5" text-anchor="middle">Resume upload UI</text>
+  <text x="476" y="450" fill="#c8d6c8" font-size="14.5" text-anchor="middle">Tailwind CSS · Motion · Spline</text>
+  <text x="476" y="504" fill="#7d8f7d" font-size="12.5" text-anchor="middle">route-level code splitting · static build</text>
+
+  <!-- Backend -->
+  <rect x="704" y="216" width="344" height="490" rx="14" fill="#121a12" stroke="#2e402e" stroke-width="1.5"/>
+  <text x="876" y="258" fill="#f2f7f2" font-size="20" font-weight="700" text-anchor="middle">Backend API</text>
+  <text x="876" y="284" fill="#16ff00" font-size="14" text-anchor="middle">Express · Node.js · TypeScript</text>
+  <line x1="732" y1="302" x2="1020" y2="302" stroke="#2e402e" stroke-width="1"/>
+
+  <rect x="732" y="320" width="288" height="46" rx="8" fill="#0d130d" stroke="#263626" stroke-width="1"/>
+  <text x="876" y="342" fill="#c8d6c8" font-size="13.5" text-anchor="middle">Auth — http-only JWT cookie, bcrypt</text>
+  <text x="876" y="359" fill="#7d8f7d" font-size="11.5" text-anchor="middle">rate limiting · Zod validation · CORS</text>
+
+  <rect x="732" y="376" width="288" height="60" rx="8" fill="#0d130d" stroke="#263626" stroke-width="1"/>
+  <text x="876" y="398" fill="#c8d6c8" font-size="13.5" text-anchor="middle">Repository analysis engine</text>
+  <text x="876" y="416" fill="#7d8f7d" font-size="11.5" text-anchor="middle">static analysis → metrics + severity-ranked findings</text>
+  <text x="876" y="431" fill="#7d8f7d" font-size="11.5" text-anchor="middle">scores derived from real repository evidence</text>
+
+  <rect x="732" y="446" width="288" height="46" rx="8" fill="#0d130d" stroke="#263626" stroke-width="1"/>
+  <text x="876" y="468" fill="#c8d6c8" font-size="13.5" text-anchor="middle">Skill &amp; evidence services</text>
+  <text x="876" y="485" fill="#7d8f7d" font-size="11.5" text-anchor="middle">skills · certifications · growth · readiness</text>
+
+  <rect x="732" y="502" width="288" height="60" rx="8" fill="#0d130d" stroke="#263626" stroke-width="1"/>
+  <text x="876" y="524" fill="#c8d6c8" font-size="13.5" text-anchor="middle">Resume upload &amp; parsing</text>
+  <text x="876" y="542" fill="#7d8f7d" font-size="11.5" text-anchor="middle">PDF stored on server disk, text extracted locally</text>
+  <text x="876" y="557" fill="#7d8f7d" font-size="11.5" text-anchor="middle">with pdfjs-dist — no external service</text>
+
+  <rect x="732" y="572" width="288" height="46" rx="8" fill="#0d130d" stroke="#263626" stroke-width="1"/>
+  <text x="876" y="594" fill="#c8d6c8" font-size="13.5" text-anchor="middle">Webhook intake</text>
+  <text x="876" y="611" fill="#7d8f7d" font-size="11.5" text-anchor="middle">timing-safe HMAC SHA-256 signature verification</text>
+
+  <text x="876" y="664" fill="#7d8f7d" font-size="12.5" text-anchor="middle">every row scoped to the authenticated user · tokens never reach the browser</text>
+
+  <!-- PostgreSQL -->
+  <rect x="748" y="850" width="248" height="104" rx="14" fill="#121a12" stroke="#2e402e" stroke-width="1.5"/>
+  <text x="872" y="892" fill="#f2f7f2" font-size="18" font-weight="700" text-anchor="middle">PostgreSQL 16</text>
+  <text x="872" y="920" fill="#9db39d" font-size="14" text-anchor="middle">accessed through Prisma</text>
+
+  <!-- GitHub -->
+  <rect x="1124" y="236" width="248" height="140" rx="14" fill="#101610" stroke="#2a3a2a" stroke-width="1.5"/>
+  <text x="1248" y="278" fill="#f2f7f2" font-size="17" font-weight="700" text-anchor="middle">GitHub App / API</text>
+  <text x="1248" y="306" fill="#9db39d" font-size="13.5" text-anchor="middle">App JWT · installations</text>
+  <text x="1248" y="328" fill="#9db39d" font-size="13.5" text-anchor="middle">repository contents (REST)</text>
+  <text x="1248" y="354" fill="#7d8f7d" font-size="12" text-anchor="middle">public repos analyzable by URL alone</text>
+
+  <!-- Coding platforms -->
+  <rect x="1124" y="420" width="248" height="164" rx="14" fill="#101610" stroke="#2a3a2a" stroke-width="1.5"/>
+  <text x="1248" y="462" fill="#f2f7f2" font-size="17" font-weight="700" text-anchor="middle">Coding Platforms</text>
+  <text x="1248" y="494" fill="#9db39d" font-size="13.5" text-anchor="middle">LeetCode — GraphQL API</text>
+  <text x="1248" y="518" fill="#9db39d" font-size="13.5" text-anchor="middle">GeeksforGeeks — page payload</text>
+  <text x="1248" y="548" fill="#7d8f7d" font-size="12" text-anchor="middle">undocumented, unversioned endpoints;</text>
+  <text x="1248" y="566" fill="#7d8f7d" font-size="12" text-anchor="middle">absent statistics render as unavailable</text>
+
+  <!-- Groq -->
+  <rect x="1124" y="628" width="248" height="124" rx="14" fill="#101610" stroke="#2a3a2a" stroke-width="1.5"/>
+  <text x="1248" y="670" fill="#f2f7f2" font-size="17" font-weight="700" text-anchor="middle">Groq AI</text>
+  <text x="1248" y="698" fill="#9db39d" font-size="13.5" text-anchor="middle">openai/gpt-oss-120b</text>
+  <text x="1248" y="724" fill="#7d8f7d" font-size="12" text-anchor="middle">optional — insights return 503 without it</text>
+
+  <!-- Developer -> Frontend -->
+  <line x1="256" y1="405" x2="322" y2="405" stroke="#8fb98f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="289" y="388" fill="#9db39d" font-size="12.5" text-anchor="middle">sign in</text>
+
+  <!-- Frontend -> Backend (request + session) -->
+  <line x1="622" y1="370" x2="698" y2="370" stroke="#8fb98f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="660" y="346" fill="#9db39d" font-size="12.5" text-anchor="middle">REST + JSON</text>
+  <text x="660" y="364" fill="#7d8f7d" font-size="11.5" text-anchor="middle">httpOnly cookie</text>
+  <text x="660" y="390" fill="#7d8f7d" font-size="11.5" text-anchor="middle">resume PDF</text>
+
+  <!-- Backend <-> GitHub (outbound read, request+response) -->
+  <line x1="1052" y1="280" x2="1118" y2="280" stroke="#8fb98f" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="1085" y="264" fill="#9db39d" font-size="12" text-anchor="middle">read</text>
+
+  <!-- GitHub -> Backend (inbound webhooks) -->
+  <line x1="1118" y1="340" x2="1052" y2="340" stroke="#16ff00" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="1085" y="362" fill="#16ff00" font-size="12" text-anchor="middle">webhooks</text>
+
+  <!-- Backend <-> Coding platforms -->
+  <line x1="1052" y1="502" x2="1118" y2="502" stroke="#8fb98f" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="1085" y="486" fill="#9db39d" font-size="12" text-anchor="middle">fetch stats</text>
+  <text x="1085" y="524" fill="#7d8f7d" font-size="11" text-anchor="middle">public profiles</text>
+
+  <!-- Backend <-> Groq -->
+  <line x1="1052" y1="690" x2="1118" y2="690" stroke="#8fb98f" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="1085" y="674" fill="#9db39d" font-size="12" text-anchor="middle">prompts</text>
+  <text x="1085" y="712" fill="#7d8f7d" font-size="11" text-anchor="middle">JSON ⇄ Zod</text>
+
+  <!-- Backend <-> PostgreSQL -->
+  <line x1="872" y1="706" x2="872" y2="844" stroke="#8fb98f" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="890" y="782" fill="#9db39d" font-size="12.5">Prisma queries</text>
+
+  <!-- footer legend -->
+  <text x="56" y="1030" fill="#5d6f5d" font-size="12.5">Solid arrow: request · Double-headed: request + response · Green: inbound webhook (HMAC-verified) · Dashed panels: trust boundaries — external services and the cookie-authenticated application</text>
+</svg>
