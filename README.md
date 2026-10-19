@@ -152,4 +152,26 @@ Data moves one way per request: the browser asks the API, the API queries
 Prisma, and only the API talks outward — an external service never reaches
 the database or the browser directly.
 
+## Technology Stack
+
+Versions below are read from the lockfiles — nothing is listed because it
+merely “would fit”.
+
+| Layer | Technology | Role |
+|---|---|---|
+| UI | React 19, TypeScript (strict) | Component model and type safety across both apps |
+| Build | Vite 8 | Dev server and production bundler; `--mode e2e` builds the browser-test bundle |
+| Styling | Tailwind CSS 4, custom glass-panel design tokens | Utility styling and the dark dashboard theme |
+| Routing | React Router 7 | Route tables shared between `/dashboard` and `/demo` |
+| Animation | Motion (`motion/react`), Lucide icons, Spline | Entrance animations, iconography, WebGL landing background |
+| API | Node.js 20+, Express 4, TypeScript | HTTP server, routing, middleware pipeline |
+| Validation | Zod | Request schemas and AI-response validation |
+| Security | bcryptjs, jsonwebtoken, Helmet, CORS, express-rate-limit | Hashing, sessions, headers, origin policy, throttling |
+| Logging | Morgan + Winston | Request and application logging |
+| Data | PostgreSQL 16, Prisma ORM 5 | Persistence, migrations, typed queries |
+| Files | Multer (uploads), `pdfjs-dist` (local text extraction) | Resume intake and parsing without external services |
+| Integrations | GitHub App (REST + webhooks), LeetCode GraphQL, GeeksforGeeks page payloads, Groq (`openai/gpt-oss-120b`) | Evidence sources and the optional AI layer |
+| Testing | node:test (service + integration), Playwright (20 browser journeys) | Unit, over-HTTP integration, and real-browser coverage |
+| Delivery | Docker Compose, GitHub Actions CI | Local full stack and per-push verification |
+
 <!-- next-section -->
