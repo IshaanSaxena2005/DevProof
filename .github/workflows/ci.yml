@@ -24,8 +24,14 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: devproof
-          POSTGRES_PASSWORD: devproof_ci
           POSTGRES_DB: devproof_ci
+          # No password exists to commit or leak. The container accepts
+          # connections without one (trust), is reachable only from this job's
+          # own runner while the job runs, and serves a database that is
+          # created from scratch and thrown away on every run. There is no
+          # credential here for a scanner to flag and nothing to rotate — and
+          # still nothing that any real environment could ever use.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         # Without this the first migration can race the server's startup.
@@ -37,7 +43,7 @@ jobs:
 
     env:
       # CI uses the default port; only local dev needs 5434.
-      DATABASE_URL: postgresql://devproof:devproof_ci@localhost:5432/devproof_ci?schema=public
+      DATABASE_URL: postgresql://devproof@localhost:5432/devproof_ci?schema=public
       # Required by config/env.ts at import, which every test transitively loads.
       # Not a secret: no token signed here is ever accepted anywhere.
       JWT_SECRET: ci-placeholder-secret-not-used-for-real-tokens
@@ -163,8 +169,14 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: devproof
-          POSTGRES_PASSWORD: devproof_ci
           POSTGRES_DB: devproof_ci
+          # No password exists to commit or leak. The container accepts
+          # connections without one (trust), is reachable only from this job's
+          # own runner while the job runs, and serves a database that is
+          # created from scratch and thrown away on every run. There is no
+          # credential here for a scanner to flag and nothing to rotate — and
+          # still nothing that any real environment could ever use.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -176,7 +188,7 @@ jobs:
     env:
       # Dedicated and disposable: e2e/start-backend.mjs drops and recreates
       # devproof_e2e_ci on every run, applying the committed migrations.
-      E2E_DATABASE_URL: postgresql://devproof:devproof_ci@localhost:5432/devproof_e2e_ci?schema=public
+      E2E_DATABASE_URL: postgresql://devproof@localhost:5432/devproof_e2e_ci?schema=public
 
     steps:
       - uses: actions/checkout@v4
