@@ -74,8 +74,13 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label above each block — an h2 so the page keeps a real outline
+ * under the header's h1. Preflight makes the tag visually inert; the classes
+ * below are the whole treatment.
+ */
 function SLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-[12px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
+  return <h2 className={`text-[12px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</h2>;
 }
 
 /** "2026-10" -> "Oct 2026". */
