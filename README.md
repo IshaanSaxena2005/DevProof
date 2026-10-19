@@ -409,7 +409,8 @@ demo navigation never escapes its prefix.
 
 ## Testing and CI
 
-Three suites, all executed locally as part of this documentation pass:
+Four stages of testing, all executed locally against the current source as
+part of this documentation pass:
 
 | Suite | Count | What it proves |
 |---|---|---|
@@ -430,8 +431,9 @@ dropped-and-recreated `devproof_e2e_test` database on port 5399 with GitHub
 and Groq disabled; E2E account passwords are generated per run and never
 committed.
 
-GitHub Actions (`.github/workflows/ci.yml`) runs four jobs on every push and
-pull request to `main`: **backend** (migrations on an empty disposable
+GitHub Actions (`.github/workflows/ci.yml`) runs five jobs on every push and
+pull request to `main`: **docs** (link, anchor and image validation),
+**backend** (migrations on an empty disposable
 Postgres, schema-drift check, build + 150 tests, production-dependency
 audit), **frontend** (typecheck, build, 63 tests, audit), **browser E2E**
 (20 journeys), and **docker** (both images build).
