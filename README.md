@@ -441,4 +441,36 @@ App installation flow, real webhook delivery, and live Groq responses need
 real credentials and stay outside CI — the same code paths are exercised
 with stubs, which is not the same as a live round trip.
 
+## Deployment
+
+Current state, stated precisely:
+
+- **Frontend** — deployed to **Vercel** as a static build. No production URL
+  is recorded in this repository; add it here once the deployment is
+  confirmed.
+- **Backend** — hosted separately; no provider, URL or production database
+  has been confirmed in this repository, so none is claimed. The Dockerfile
+  and `docker-compose.yml` (including the named `uploads` volume so resumes
+  survive container recreation) define the intended deployment shape.
+
+### Production checklist
+
+When a production backend is stood up, the verified configuration surface is
+small and entirely environment-driven:
+
+1. **Secrets** — set a fresh `JWT_SECRET` (never the example value),
+   `GITHUB_WEBHOOK_SECRET`, and real GitHub App + Groq credentials through
+   your secret manager; never bake them into images.
+2. **Database** — a dedicated PostgreSQL instance; apply committed
+   migrations with `npx prisma migrate deploy` on release, and back up both
+   the database and the uploads volume.
+3. **TLS and cookies** — terminate HTTPS in front of the API; secure cookies
+   assume TLS. Set `TRUST_PROXY` to the proxy hop count so rate limiting
+   keys on real client IPs.
+4. **CORS** — set `FRONTEND_URL` to the exact production frontend origin.
+5. **GitHub App** — register the production callback URL on the App; preview
+   and production frontends share one App unless separated deliberately.
+6. **Health** — `/api/v1/health` reports database connectivity and is the
+   compose healthcheck; use it for liveness probes.
+
 <!-- next-section -->
