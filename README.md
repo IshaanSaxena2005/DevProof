@@ -473,4 +473,32 @@ small and entirely environment-driven:
 6. **Health** — `/api/v1/health` reports database connectivity and is the
    compose healthcheck; use it for liveness probes.
 
-<!-- next-section -->
+## Contributing
+
+1. Branch from `main` (`git checkout -b fix/short-description`).
+2. Keep commits conventional (`feat:`, `fix:`, `test:`, `docs:`, `ci:`).
+3. Behaviour changes need tests; both suites must pass locally
+   (`cd Backend && npm test`, `cd Frontend && npm test`).
+4. Add migrations with `npx prisma migrate dev` and commit the generated
+   migration folder — never edit an already-applied migration.
+5. Open a pull request; CI re-runs migrations, tests, builds, the dependency
+   audit, and the Docker builds before anything merges.
+
+## Authors
+
+**Ishaan Saxena**
+
+**Hardesh Agarwal**
+
+Full-stack, AI-powered, and data-driven software systems.
+
+## License
+
+DevProof is proprietary software developed by **Ishaan Saxena and Hardesh
+Agarwal**. Unauthorized copying, redistribution, modification, or commercial
+use is not permitted without prior written permission from the copyright
+holder. (The repository does not currently carry a standalone `LICENSE`
+file; the terms above are the project's statement of record.)
+
+Third-party libraries, frameworks, APIs, fonts, icons, and services remain
+subject to their respective licenses.
