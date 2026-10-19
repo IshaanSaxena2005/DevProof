@@ -27,6 +27,10 @@ const envSchema = z.object({
   // Affects req.ip, which the rate limiters key on, and the Secure cookie
   // decision behind TLS-terminating proxies.
   TRUST_PROXY: z.string().optional().default(''),
+  // Absolute path for uploaded resumes. Empty means the default inside the
+  // app directory, which is correct locally and wrong on any host whose
+  // filesystem is rebuilt on deploy — there it must name a mounted volume.
+  UPLOAD_ROOT: z.string().optional().default(''),
   // Optional like the GitHub OAuth vars above - the server must still boot
   // without it. AiService checks for it at call time and fails with a clear
   // 503 rather than the app refusing to start.

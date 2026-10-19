@@ -1,4 +1,8 @@
-FROM node:20-alpine
+# node 22, not 20: pdfjs-dist calls Promise.withResolvers, which Node 20 does
+# not have. On 20 the import succeeds and every resume parse throws instead —
+# a failure that shows up only as "could not be read" on an uploaded PDF, in
+# production, long after the build went green.
+FROM node:22-alpine
 WORKDIR /app
 
 # Prisma's query/schema engines link against OpenSSL, which alpine's base

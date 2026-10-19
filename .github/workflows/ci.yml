@@ -70,7 +70,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22, not 20, for two reasons that both fail only at runtime on 20:
+          # pdfjs-dist calls Promise.withResolvers, which 20 does not have, so
+          # every resume parse throws; and the frontend suite is .mts, which 20
+          # refuses to load at all. 22 is also the runtime the Docker images
+          # ship, so CI exercises the version production actually runs.
+          node-version: 22
           cache: npm
           cache-dependency-path: Backend/package-lock.json
 
@@ -141,7 +146,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22, not 20, for two reasons that both fail only at runtime on 20:
+          # pdfjs-dist calls Promise.withResolvers, which 20 does not have, so
+          # every resume parse throws; and the frontend suite is .mts, which 20
+          # refuses to load at all. 22 is also the runtime the Docker images
+          # ship, so CI exercises the version production actually runs.
+          node-version: 22
           cache: npm
           cache-dependency-path: Frontend/package-lock.json
 
@@ -212,7 +222,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22, not 20, for two reasons that both fail only at runtime on 20:
+          # pdfjs-dist calls Promise.withResolvers, which 20 does not have, so
+          # every resume parse throws; and the frontend suite is .mts, which 20
+          # refuses to load at all. 22 is also the runtime the Docker images
+          # ship, so CI exercises the version production actually runs.
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             Frontend/package-lock.json
