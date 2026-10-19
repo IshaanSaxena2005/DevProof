@@ -104,11 +104,16 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label on the detail page — an h2, under the entity name it belongs
+ * to. Preflight keeps the tag visually inert, so the classes are the whole
+ * treatment and the rendering does not move.
+ */
 function SectionLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
+    <h2 className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
       {children}
-    </p>
+    </h2>
   );
 }
 
