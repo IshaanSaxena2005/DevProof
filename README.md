@@ -353,4 +353,39 @@ degrades cleanly (clear error at call time, never a startup crash).
 Never commit `.env` files, OAuth secrets, JWT secrets, or API keys — all are
 gitignored, and the committed templates carry placeholders only.
 
+## API Overview
+
+All routes are mounted under `/api/v1`. Endpoints marked **(auth)** require
+the session cookie; everything else is public or webhook-authenticated.
+
+| Group | Endpoints |
+|---|---|
+| Health | `GET /health` |
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` (auth), `GET /auth/github`, `GET /auth/github/callback`, `POST /auth/github/sync` (auth), `POST /auth/github/disconnect` (auth) |
+| Repositories (auth) | `GET /repositories`, `GET /repositories/github`, `GET /repositories/:id`, `POST /repositories/connect`, `POST /repositories/sync`, `DELETE /repositories/:id` |
+| Analysis (auth) | `POST /analysis/trigger`, `GET /analysis/repo/:repositoryId`, `GET /analysis/:id` |
+| Developer 360 (auth) | `GET /developer360/overview` |
+| Skills (auth) | `GET /skills`, `POST /skills`, `POST /skills/derive`, `DELETE /skills/:id` |
+| Certifications (auth) | `GET /certifications`, `POST /certifications`, `PATCH /certifications/:id`, `DELETE /certifications/:id` |
+| Hackathons (auth) | `GET /hackathons`, `POST /hackathons`, `PATCH /hackathons/:id`, `DELETE /hackathons/:id` |
+| Coding profiles (auth) | `GET /coding-profiles`, `POST /coding-profiles`, `POST /coding-profiles/:platform/sync`, `DELETE /coding-profiles/:platform` — platform is `LEETCODE` or `GEEKSFORGEEKS` |
+| Growth (auth) | `GET /growth/history` |
+| Career readiness (auth) | `GET /career/readiness` |
+| Resume (auth) | `GET /resume`, `POST /resume` (multipart field `resume`; PDF only, 5 MB max), `GET /resume/download`, `POST /resume/analyse`, `DELETE /resume` |
+| AI (auth) | `GET /ai/insights` |
+| Webhooks | `POST /webhooks/github` (HMAC-verified), `GET /webhooks/github/status` |
+
+> **Note on Courses.** A courses subsystem (`/courses` CRUD with skill
+> promotion) still exists in the codebase — including a mounted route group —
+> but it is **designated for removal** and is therefore excluded from this
+> documentation and from the feature list. Removing it cleanly requires
+> dropping the `Course` model, its migrations, service, validator, tests and
+> the Learning page section; that has not been done yet, and this README does
+> not pretend otherwise.
+
+Request constraints worth knowing: resumes are PDF-only and validated by
+their bytes, coding-profile usernames are fetched before anything is written
+(an invalid or private handle leaves no row), and every mutation is Zod
+validated with field-level errors.
+
 <!-- next-section -->
