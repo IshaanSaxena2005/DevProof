@@ -15,6 +15,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  docs:
+    name: Docs — links, anchors and images
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # No dependencies to install: the validator is plain Node. It fails on
+      # dead anchors, missing linked files, absent images, and any screenshot
+      # the README references before it exists.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate documentation
+        run: node scripts/check-docs.mjs
+
   backend:
     name: Backend — migrate, typecheck, test
     runs-on: ubuntu-latest
