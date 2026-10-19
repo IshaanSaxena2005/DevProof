@@ -124,4 +124,32 @@ an image that does not exist.
 | `09-problem-solving` → `12-career-readiness` | Activity, learning, growth, readiness |
 | `13-ai-insights` → `15-mobile-responsive` | AI layer, settings, 390 px layout |
 
+## System Architecture
+
+![DevProof system architecture](docs/architecture.png)
+
+*The full diagram, including its arrow legend, lives in
+[docs/architecture.svg](docs/architecture.svg) — the editable source the PNG
+is rendered from.*
+
+The system has three zones, drawn apart on purpose:
+
+- **Client** — the React SPA is the only thing in the browser. It holds no
+  tokens: the session is an HTTP-only cookie the browser attaches
+  automatically, and every dashboard page is a lazy-loaded chunk fetched on
+  navigation.
+- **Application boundary** — the Express API plus PostgreSQL sit behind
+  cookie authentication; every database row is scoped to the authenticated
+  user, and repository access is per GitHub App installation. The backend
+  owns auth, the analysis engine, skill/evidence services, resume storage and
+  local PDF parsing.
+- **External services** — GitHub (App REST reads plus inbound webhooks
+  verified with a timing-safe HMAC SHA-256 comparison), LeetCode and
+  GeeksforGeeks (public statistics from undocumented endpoints), and Groq
+  (optional insight generation).
+
+Data moves one way per request: the browser asks the API, the API queries
+Prisma, and only the API talks outward — an external service never reaches
+the database or the browser directly.
+
 <!-- next-section -->
