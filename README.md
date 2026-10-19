@@ -206,4 +206,36 @@ what automation does **not** prove:
   responses need real credentials and are covered by tests over the same
   code paths — not by live round trips.
 
+## Project Structure
+
+```text
+DevProof/
+├── Frontend/                 # React SPA, public demo, browser E2E suite
+│   ├── src/
+│   │   ├── components/       # landing sections, dashboard primitives, state blocks
+│   │   ├── pages/            # Login + dashboard sections (one folder per section)
+│   │   │   └── dashboard/ps/ # problem-solving logic as pure .mts modules
+│   │   ├── layouts/          # DashboardLayout (sidebar, header, video background)
+│   │   ├── context/          # AuthContext
+│   │   ├── demo/             # demo routes, shell, synthetic fixtures
+│   │   ├── services/         # typed API clients
+│   │   └── lib/              # api client, useResource, shared types
+│   ├── e2e/                  # Playwright journeys (per-run generated credentials)
+│   ├── test/                 # node --test suites over extracted logic
+│   └── Dockerfile
+│
+├── Backend/                  # Express API
+│   ├── prisma/               # schema.prisma + committed migrations
+│   ├── src/
+│   │   ├── controllers/  routes/  services/
+│   │   ├── middlewares/  validators/  config/  utils/
+│   ├── test/                 # service tests (Prisma stubbed) + integration over HTTP
+│   └── Dockerfile
+│
+├── docs/                     # architecture diagram (SVG + PNG), screenshot checklist
+├── screenshots/              # product captures (planned; see docs/screenshots.md)
+├── docker-compose.yml        # full stack: postgres + backend + frontend
+└── package.json              # root scripts delegating into Backend/Frontend
+```
+
 <!-- next-section -->
