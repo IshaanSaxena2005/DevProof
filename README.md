@@ -80,4 +80,30 @@ its isolation is enforced.
 - [Authors](#authors)
 - [License](#license)
 
+## Key Features
+
+Every row below exists in the code today. The **Kind** column keeps the
+positioning honest: what DevProof measured, what the user provided, and what
+the AI layer generated.
+
+| Feature | Description | Kind |
+|---|---|---|
+| **Authentication & sessions** | Email/password with bcrypt hashing; JWT session in an HTTP-only cookie; session restored on refresh | Provided |
+| **GitHub App sign-in** | Authorize and install are separate steps — signing in grants no repository access until the user installs the App and picks repositories; client ids are validated (`Iv1.`/`Iv23`) | Provided |
+| **Repository sync** | Connect, sync and disconnect GitHub repositories per installation, without duplicating rows | Measured |
+| **Repository analysis engine** | Static analysis scores six categories (documentation, testing, security, code quality, maintainability, dependency health) into metrics plus severity-ranked findings; un-analyzed repositories read “Analysis Pending”, never a fabricated score | Measured |
+| **Developer 360** | One aggregated view of repositories, analyses, skills, credentials and target roles | Measured |
+| **Skills intelligence** | Skills derived from repository evidence and certifications on a claimed → learned → proven ladder; self-reported records never outrank measured ones | Mixed |
+| **LeetCode & GeeksforGeeks sync** | Public profile statistics fetched per platform; statistics a platform does not publish render as unavailable, never as zero | Measured |
+| **Problem-solving activity** | 26-week submission heatmap, difficulty donut, activity chart and streaks derived from platform calendars | Measured |
+| **Certifications** | CRUD records that promote skills up the evidence ladder | Provided |
+| **Hackathons** | Self-reported participation records; by design they never promote a skill | Provided |
+| **Resume upload & analysis** | PDF upload (5 MB max, byte-validated), text extracted locally with `pdfjs-dist`; technologies found in the text are reported for confirmation, never written as skills automatically | Provided |
+| **Growth analytics** | History reconstructed from stored timestamps — months without measurements are omitted, not back-filled | Measured |
+| **Career readiness** | Weighted requirement checklists computed on read from stored evidence; every point names the requirement it came from | Measured |
+| **AI insights** | Groq-backed summary of strengths, risks and recommendations, grounded only in stored analyses, Zod-validated before rendering; with no evidence the model is never called | Generated |
+| **Account & platform management** | Settings page for profile updates, data export, account deletion, and GitHub / coding-platform connections | Provided |
+| **Public demo mode** | Every dashboard section with synthetic, labelled fixtures; writes are refused before any request is sent | Synthetic |
+| **Responsive dashboard** | Ten route-split lazy-loaded sections, overflow-free at 390 px (browser-tested) | — |
+
 <!-- next-section -->
