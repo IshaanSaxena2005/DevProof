@@ -24,12 +24,19 @@ export function LAReveal({
   );
 }
 
-/** Section micro-label — matches Developer360/PP label treatment. */
+/**
+ * Section micro-label — matches Developer360/PP label treatment.
+ *
+ * An h2, not a <p>: these labels (Resume, Learning Overview, Courses &
+ * Certifications, …) are the page's section headings, sitting under the
+ * header's h1. Preflight keeps an h2 inheriting the surrounding font
+ * metrics, so the classes below — not the tag — decide how it looks.
+ */
 export function LALabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
+    <h2 className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
       {children}
-    </p>
+    </h2>
   );
 }
 
