@@ -52,8 +52,13 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label above each block — an h2 so the page keeps a real outline
+ * under the header's h1. Preflight makes the tag visually inert; the classes
+ * below are the whole treatment.
+ */
 function SLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[12px] font-bold text-white/30 mb-4">{children}</p>;
+  return <h2 className="text-[12px] font-bold text-white/30 mb-4">{children}</h2>;
 }
 
 /** Explains why a panel shows nothing: the source has no data yet. */
