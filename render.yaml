@@ -1,9 +1,9 @@
 # DevProof — Render Blueprint
 #
-# Defines the backend API and its PostgreSQL database. The dashboard is hosted
-# separately on Vercel (https://devproof-project.vercel.app) and is not described
-# here: a Blueprint owns the services it names, and Render cannot manage a Vercel
-# deployment anyway.
+# Defines the backend API. The dashboard is hosted separately on Vercel
+# (https://devproof-project.vercel.app) and the database on Neon; neither is
+# described here, because a Blueprint owns the services it names and Render
+# cannot manage either one.
 #
 # Create it from the Render dashboard: Blueprints -> New Blueprint Instance, pick
 # this repository, and Render prompts for each value marked `sync: false`. Only
@@ -32,9 +32,13 @@
 #  - The filesystem is ephemeral and free instances cannot mount a disk, so
 #    every uploaded resume is lost on each deploy, restart and spin-down. The
 #    database rows survive and will point at files that no longer exist.
-#  - Free Postgres expires 30 days after creation and is deleted after a
-#    further 14-day grace period. Note the date: upgrading before then is the
-#    only way to keep the data.
+#
+# The database is deliberately NOT Render's. A free Render Postgres expires 30
+# days after creation and is deleted 14 days later, so keeping one alive means
+# dumping, deleting, recreating and repointing it every month — a chore that
+# loses the data the first time anyone forgets. Neon's free plan is permanent,
+# so DATABASE_URL below points there instead. The Render database block is kept
+# at the bottom of this file, commented, for whoever wants it back.
 # ───────────────────────────────────────────────────────────────────────────
 
 services:
@@ -76,10 +80,16 @@ services:
       - key: PORT
         value: 5000
 
+      # Neon connection string, pasted at Blueprint creation. Use the DIRECT
+      # endpoint, not the pooled one: the container runs `prisma migrate deploy`
+      # at boot, and migrations want a real session rather than a PgBouncer
+      # connection. Keep `?sslmode=require` — Neon refuses plaintext.
+      #
+      # Pick the Neon region closest to this service's own (Oregon is AWS
+      # us-west-2); every query crosses that gap, so a mismatched pair adds
+      # latency to each one.
       - key: DATABASE_URL
-        fromDatabase:
-          name: devproof-db
-          property: connectionString
+        sync: false
 
       # Generated once by Render and never written to the repo. Changing it
       # later invalidates every existing session, which is intended.
@@ -139,9 +149,22 @@ services:
     #   mountPath: /var/data
     #   sizeGB: 1
 
-databases:
-  - name: devproof-db
-    databaseName: devproof
-    user: devproof
-    plan: free
-    region: oregon
+# ── Using Render's own Postgres instead ──────────────────────────────────
+# Uncomment this block and swap the DATABASE_URL entry above back to
+#
+#   - key: DATABASE_URL
+#     fromDatabase:
+#       name: devproof-db
+#       property: connectionString
+#
+# On the free plan, note the expiry date the moment it is created: 30 days to
+# expiry, 14 more before deletion, one free database per workspace. Surviving
+# that cycle means `pg_dump` out, delete, recreate, restore, repoint, redeploy
+# — every month, by hand. A paid plan removes the expiry entirely.
+#
+# databases:
+#   - name: devproof-db
+#     databaseName: devproof
+#     user: devproof
+#     plan: free
+#     region: oregon
