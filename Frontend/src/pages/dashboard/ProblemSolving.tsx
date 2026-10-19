@@ -29,7 +29,8 @@ import {
 import ProblemActivityChart from "./ps/ProblemActivityChart";
 import DifficultyDonut, { difficultyPercent } from "./ps/DifficultyDonut";
 import ConsistencyHeatmap, { ConsistencyStats } from "./ps/ConsistencyHeatmap";
-import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
+import { ErrorBlock } from "../../components/StateBlocks";
+import { codingProfilesView, hasConnectedPlatform } from "./ps/viewState.mts";
 import { ApiError } from "../../lib/api.mts";
 import { codingProfilesService } from "../../services/codingProfiles";
 import type { CodingPlatform, CodingProfile, CodingProfilesResponse } from "../../lib/types";
@@ -214,7 +215,7 @@ export default function ProblemSolving() {
   const profiles: CodingProfile[] = data?.profiles ?? [];
   const leetcode = profiles.find((p) => p.platform === "LEETCODE");
   const gfg = profiles.find((p) => p.platform === "GEEKSFORGEEKS");
-  const anyConnected = profiles.length > 0;
+  const anyConnected = hasConnectedPlatform(data);
 
   /**
    * Drop a failure message once its cause is being edited. The message names the
@@ -581,18 +582,15 @@ export default function ProblemSolving() {
     { icon: Flame, label: "Current Streak", value: overview.streak, sub: "Days in a row", color: "text-orange-300", border: "border-orange-500/25", bg: "bg-orange-500/10" },
   ];
 
-  if (loading) {
-    return (
-      <PageContainer
-        title="Problem Solving"
-        description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
-      >
-        <LoadingBlock label="Loading your coding profiles…" />
-      </PageContainer>
-    );
+  const view = codingProfilesView({ loading, error });
+
+  if (view === "loading") {
+    return <ProblemSolvingSkeleton />;
   }
 
-  if (error) {
+  // `view === "error"` implies `error` is set; the extra check exists only so
+  // TypeScript narrows the message to a string without an assertion.
+  if (view === "error" && error) {
     return (
       <PageContainer
         title="Problem Solving"
@@ -613,27 +611,40 @@ export default function ProblemSolving() {
       }
     >
       {/* Header-right status indicator. Pulled up beside the page title to sit
-          top-right, as the title block above only occupies the left side. */}
+          top-right, as the title block above only occupies the left side.
+
+          The chip and the notices below sit outside the section grid, so
+          without their own Reveal they reached full opacity while every
+          section was still at opacity 0 behind its staggered entrance — the
+          ~1s "empty page with a Not connected warning" flash seen when
+          navigating here. Sharing the first section's entrance (Reveal,
+          delay 0) puts the chrome and the content on one timeline. */}
       <div className="-mt-16 mb-4 flex justify-end">
-        <span className="glass-chip px-3 py-1.5 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-            {isDemo ? "Sample data" : anyConnected ? "Data synced" : "Not connected"}
+        <Reveal>
+          <span className="glass-chip px-3 py-1.5 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+              {isDemo ? "Sample data" : anyConnected ? "Data synced" : "Not connected"}
+            </span>
           </span>
-        </span>
+        </Reveal>
       </div>
 
       {isDemo && (
-        <DemoNotice className="mb-4">
-          The sample profile's coding activity is fictional and was never fetched from LeetCode or
-          GeeksforGeeks: 29 solved problems (12 easy, 13 medium, 4 hard) over a written submission
-          calendar, from which the streaks and the activity chart below are derived. No platform handle
-          belongs to a real account, and connecting or syncing is disabled here.
-        </DemoNotice>
+        <Reveal>
+          <DemoNotice className="mb-4">
+            The sample profile's coding activity is fictional and was never fetched from LeetCode or
+            GeeksforGeeks: 29 solved problems (12 easy, 13 medium, 4 hard) over a written submission
+            calendar, from which the streaks and the activity chart below are derived. No platform handle
+            belongs to a real account, and connecting or syncing is disabled here.
+          </DemoNotice>
+        </Reveal>
       )}
 
       {!anyConnected && (
-        <NotConnectedNotice what="No coding platform is connected yet, so there is nothing to measure. Enter your public GeeksforGeeks or LeetCode username in a card below and these sections fill with your real solve history." />
+        <Reveal>
+          <NotConnectedNotice what="No coding platform is connected yet, so there is nothing to measure. Enter your public GeeksforGeeks or LeetCode username in a card below and these sections fill with your real solve history." />
+        </Reveal>
       )}
 
       {/* ── 1. Overall overview ── */}
@@ -945,12 +956,67 @@ export default function ProblemSolving() {
         </GlassCard>
       </Reveal>
 
-      <PendingNotice>
-        <span className="font-semibold text-amber-200/90">GeeksforGeeks reports less than LeetCode.</span>{" "}
-        Enter your username in the platform card above to connect. GeeksforGeeks publishes a solve count,
-        a coding score and a streak, but no difficulty split, no acceptance rate, no contest rating and no
-        daily activity — so those stay empty on its card rather than showing a zero it never measured.
-      </PendingNotice>
+      <Reveal delay={0.45}>
+        <PendingNotice>
+          <span className="font-semibold text-amber-200/90">GeeksforGeeks reports less than LeetCode.</span>{" "}
+          Enter your username in the platform card above to connect. GeeksforGeeks publishes a solve count,
+          a coding score and a streak, but no difficulty split, no acceptance rate, no contest rating and no
+          daily activity — so those stay empty on its card rather than showing a zero it never measured.
+        </PendingNotice>
+      </Reveal>
+    </PageContainer>
+  );
+}
+
+/**
+ * Loading state shaped like the page it becomes.
+ *
+ * The old loading state was one small centred card, so the moment the fetch
+ * settled the page jumped from a nearly empty frame (title + card) into the
+ * staggered entrance of a much taller layout — with the amber "Not connected"
+ * notice already sharp while every section was still invisible. These
+ * placeholders occupy the settled layout's real footprint — the pulled-up chip
+ * row, the five-card overview grid, the two platform cards — so no frame of the
+ * navigation ever shows an empty page, and the swap into real content reads as
+ * the entrance it is. Screen readers still get the explicit loading text.
+ */
+function ProblemSolvingSkeleton() {
+  return (
+    <PageContainer
+      title="Problem Solving"
+      description="Coding performance, consistency, and problem-solving patterns across competitive programming platforms."
+    >
+      <div role="status" aria-live="polite" className="sr-only">
+        Loading your coding profiles…
+      </div>
+
+      {/* Chip placeholder — same -mt-16 pull and right alignment as the real
+          status chip, so the title row never shifts when it arrives. */}
+      <div className="-mt-16 mb-4 flex justify-end" aria-hidden="true">
+        <span className="glass-chip h-[26px] w-[7.5rem] animate-pulse" />
+      </div>
+
+      {/* Overview row — five cards on the real grid tracks. */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8" aria-hidden="true">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="glass-panel p-5 animate-pulse">
+            <div className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.04] mb-4" />
+            <div className="h-6 w-16 rounded bg-white/[0.06] mb-2.5" />
+            <div className="h-3 w-24 rounded bg-white/[0.04]" />
+          </div>
+        ))}
+      </div>
+
+      {/* Platform cards — two half-width placeholders. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8" aria-hidden="true">
+        {[0, 1].map((i) => (
+          <div key={i} className="glass-panel p-6 animate-pulse h-52">
+            <div className="h-4 w-32 rounded bg-white/[0.06] mb-5" />
+            <div className="h-8 w-20 rounded bg-white/[0.06] mb-6" />
+            <div className="h-3 w-40 rounded bg-white/[0.04]" />
+          </div>
+        ))}
+      </div>
     </PageContainer>
   );
 }
