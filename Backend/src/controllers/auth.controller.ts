@@ -14,10 +14,15 @@ const FALLBACK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const GITHUB_OAUTH_STATE_COOKIE = 'github_oauth_state';
 const GITHUB_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
+/**
+ * The state cookie must come back on GitHub's redirect to our callback, which
+ * is a cross-site navigation. It therefore follows the session cookie's
+ * attributes rather than repeating a literal: see config/cookies.ts for why
+ * production needs SameSite=None, and note that None also survives the
+ * top-level redirect that Lax was relied on for here.
+ */
 const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  ...COOKIE_OPTIONS,
   path: '/api/v1/auth',
   maxAge: GITHUB_OAUTH_STATE_TTL_MS
 };
@@ -309,8 +314,9 @@ export class AuthController {
 
       // Redirect back to frontend.
       // The token is intentionally NOT in the query string — it is already in the
-      // httpOnly cookie set above, and sameSite:lax survives a top-level
-      // redirect. A token in the URL leaks into history, logs, and Referer.
+      // httpOnly cookie set above, which survives this top-level redirect under
+      // both of its SameSite settings. A token in the URL leaks into history,
+      // logs, and Referer.
       return res.redirect(`${env.FRONTEND_URL}/dashboard?auth=success`);
     } catch (error) {
       return AuthController.redirectToLoginWithError(res, error);

@@ -1,0 +1,147 @@
+# DevProof — Render Blueprint
+#
+# Defines the backend API and its PostgreSQL database. The dashboard is hosted
+# separately on Vercel (https://devproof-project.vercel.app) and is not described
+# here: a Blueprint owns the services it names, and Render cannot manage a Vercel
+# deployment anyway.
+#
+# Create it from the Render dashboard: Blueprints -> New Blueprint Instance, pick
+# this repository, and Render prompts for each value marked `sync: false`. Only
+# the GitHub App credentials are actually required; the rest have defaults or
+# degrade to a clear error on the one route that needs them.
+#
+# ── After the first deploy, three things still have to be done by hand ─────
+#  1. Set VITE_API_URL on Vercel to https://<this-service>.onrender.com/api/v1
+#     and redeploy. The bundle currently live was built without it, so it calls
+#     http://localhost:5000/api/v1 and works on nobody's machine but a
+#     developer's.
+#  2. Point the GitHub App's callback URL at
+#     https://<this-service>.onrender.com/api/v1/auth/github/callback
+#     and set GITHUB_CALLBACK_URL to the same string.
+#  3. Check FRONTEND_URL below still matches the Vercel production domain. It is
+#     both the CORS allow-list entry and the post-sign-in redirect target, and a
+#     Vercel *preview* deployment has a different hostname that this will not
+#     allow — by design, since previews are not trusted origins.
+#
+# ── What the free plan costs, chosen deliberately ──────────────────────────
+#  - The API sleeps after 15 minutes without traffic and takes about a minute
+#    to wake. The first visitor after a quiet spell sees a page that looks
+#    broken. Nothing in this file changes that: spin-down is a property of the
+#    free instance type, not a setting. Warm it up before a demo, or move to
+#    `plan: starter` below.
+#  - The filesystem is ephemeral and free instances cannot mount a disk, so
+#    every uploaded resume is lost on each deploy, restart and spin-down. The
+#    database rows survive and will point at files that no longer exist.
+#  - Free Postgres expires 30 days after creation and is deleted after a
+#    further 14-day grace period. Note the date: upgrading before then is the
+#    only way to keep the data.
+# ───────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: devproof-api
+    runtime: docker
+    # `starter` is the one-word change that makes this always-on, and the only
+    # thing that does; it also unlocks the `disk:` block at the bottom.
+    plan: free
+    region: oregon
+    # Both paths are relative to the repository root, which is what Render
+    # resolves them against. The context is Backend/ so the Dockerfile's
+    # `COPY . .` picks up the backend alone, exactly as it does locally.
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: ./Backend
+    # Frontend-only commits should not rebuild the API.
+    buildFilter:
+      paths:
+        - Backend/**
+        - render.yaml
+    # The container runs `prisma migrate deploy` before starting, so a new
+    # database is brought up to date on first boot with no release phase.
+    healthCheckPath: /api/v1/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render terminates TLS and proxies to the container, so X-Forwarded-For
+      # carries the real client address. Exactly one hop: a count rather than
+      # `true`, so a client cannot forge the IP the rate limiters key on. Left
+      # unset, every caller would look like the proxy and the 200-request
+      # window would be shared by the whole internet.
+      - key: TRUST_PROXY
+        value: 1
+
+      # Render supplies PORT and the server reads it; set explicitly so the
+      # value is visible in the dashboard rather than implied.
+      - key: PORT
+        value: 5000
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: devproof-db
+          property: connectionString
+
+      # Generated once by Render and never written to the repo. Changing it
+      # later invalidates every existing session, which is intended.
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+      # The dashboard's production origin, no trailing slash — Express compares
+      # the Origin header literally, and a trailing slash never matches.
+      #
+      # vercel.app is on the Public Suffix List, so this is a different *site*
+      # from the API, not merely a different origin: the session cookie has to
+      # be SameSite=None, which config/cookies.ts does whenever NODE_ENV is
+      # production. Pointing this at a same-site host would not undo that.
+      - key: FRONTEND_URL
+        value: https://devproof-project.vercel.app
+
+      # ── GitHub App ───────────────────────────────────────────────────────
+      # Sign-in is through a GitHub App, not an OAuth App: the client id starts
+      # with Iv1. or Iv23 and the server rejects anything else.
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      # Must byte-for-byte match the callback registered on the App itself.
+      - key: GITHUB_CALLBACK_URL
+        sync: false
+      # Optional. The app id and private key are only needed for app-level JWT
+      # calls, and the webhook secret only to accept webhook payloads; without
+      # them the server boots and those routes refuse requests instead.
+      - key: GITHUB_APP_ID
+        sync: false
+      - key: GITHUB_APP_SLUG
+        sync: false
+      - key: GITHUB_PRIVATE_KEY
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+
+      # Optional. Absent, the server still starts and only AI insights fail,
+      # with a 503 that says why.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+
+    # ── Resume uploads ───────────────────────────────────────────────────
+    # Uncomment on a paid instance to keep uploaded files across deploys, then
+    # add UPLOAD_ROOT=/var/data/resumes to the variables above so the service
+    # writes to the mount instead of the container. Files written before the
+    # disk existed are not migrated — they are already gone by then.
+    #
+    # disk:
+    #   name: devproof-uploads
+    #   mountPath: /var/data
+    #   sizeGB: 1
+
+databases:
+  - name: devproof-db
+    databaseName: devproof
+    user: devproof
+    plan: free
+    region: oregon

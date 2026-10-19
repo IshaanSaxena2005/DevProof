@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { Resume, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
+import { env } from '../config/env';
 import { AppError } from '../utils/appError';
 import { skillsNamedIn } from './skill.service';
 import { ResumeAnalysisService, type ResumeAnalysis } from './resumeAnalysis.service';
@@ -19,8 +20,16 @@ import { ResumeAnalysisService, type ResumeAnalysis } from './resumeAnalysis.ser
 // resume mentions technologies in passing, inside job descriptions that may
 // describe a team's stack rather than the author's own work.
 
-/** Where uploaded files live. Outside src so a rebuild never touches them. */
-const UPLOAD_ROOT = path.resolve(__dirname, '../../uploads/resumes');
+/**
+ * Where uploaded files live. Outside src so a rebuild never touches them.
+ *
+ * Overridable because a container's own filesystem does not survive a deploy:
+ * hosted, this points at a mounted volume instead. Stored paths stay relative
+ * to this root, so moving the root relocates the whole store.
+ */
+const UPLOAD_ROOT = env.UPLOAD_ROOT
+  ? path.resolve(env.UPLOAD_ROOT)
+  : path.resolve(__dirname, '../../uploads/resumes');
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_MIME = 'application/pdf';
