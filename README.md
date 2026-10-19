@@ -319,4 +319,38 @@ delegate into the two apps.
 | AI Insights returns 503 | `GROQ_API_KEY` unset | Set it — or ignore it; the rest of the app works without it |
 | Landing loads but every dashboard request fails | Backend not running or wrong API URL | Start the backend; point `Frontend/.env` (`VITE_API_URL`) at it if not on `localhost:5000` |
 
+## Environment Variables
+
+Both apps ship a template — copy `Backend/.env.example` to `Backend/.env` and
+fill in the values. Only two are required; every optional integration
+degrades cleanly (clear error at call time, never a startup crash).
+
+### Backend — `Backend/.env`
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string (local compose: port **5434**) |
+| `JWT_SECRET` | ✅ | Session-token signing key, minimum 8 characters — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `PORT` | no | API port (default `5000`) |
+| `NODE_ENV` | no | `development` / `production` / `test` |
+| `JWT_EXPIRES_IN` | no | Session lifetime (default `7d`) |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | no | GitHub **App** sign-in; the id must start with `Iv1.` or `Iv23` — anything else is rejected |
+| `GITHUB_CALLBACK_URL` | no | OAuth callback registered on the App (default `http://localhost:5000/api/v1/auth/github/callback`) |
+| `GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` | no | App-authenticated calls (installation enumeration, App JWT). The key is the App's `.pem` content pasted verbatim — literal `\n` escapes will not work |
+| `GITHUB_APP_SLUG` | no | Only shapes the “install DevProof” link |
+| `GITHUB_WEBHOOK_SECRET` | no | Shared HMAC secret you invent and paste into the App's webhook settings; without it every webhook is refused with 503 |
+| `FRONTEND_URL` | no | CORS origin (default `http://localhost:5173`) |
+| `TRUST_PROXY` | no | Proxy hop count (positive integer, usually `1`) when TLS terminates in front of the API; empty when directly exposed — `true` is never accepted |
+| `GROQ_API_KEY` | no | Enables AI insights; unset means a clear 503 on that endpoint only |
+| `GROQ_MODEL` | no | Model override (default `openai/gpt-oss-120b`) |
+
+### Frontend — `Frontend/.env`
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `VITE_API_URL` | no | Backend base URL; falls back to `http://localhost:5000/api/v1` |
+
+Never commit `.env` files, OAuth secrets, JWT secrets, or API keys — all are
+gitignored, and the committed templates carry placeholders only.
+
 <!-- next-section -->
