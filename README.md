@@ -174,4 +174,36 @@ merely “would fit”.
 | Testing | node:test (service + integration), Playwright (20 browser journeys) | Unit, over-HTTP integration, and real-browser coverage |
 | Delivery | Docker Compose, GitHub Actions CI | Local full stack and per-push verification |
 
+## Security and Authentication
+
+Verified implementation behaviour — each item exists in the code today:
+
+| Control | Implementation |
+|---|---|
+| Password storage | bcrypt hashes; plaintext passwords never stored or logged |
+| Session | Single JWT in an HTTP-only, SameSite cookie — never in `localStorage` or `sessionStorage`; tokens are never sent to the frontend |
+| GitHub sign-in | GitHub **App** flow: client id validated (`Iv1.`/`Iv23` prefix); access tokens stay server-side; repositories are enumerated per installation, so authorizing alone grants nothing |
+| Data scoping | Every repository, analysis, skill and credential row is owned by one authenticated user; cross-account reads are blocked at the API and covered by integration and browser tests |
+| Request validation | Zod schemas on every mutating endpoint; field-level errors returned |
+| Transport hardening | Helmet security headers; credentialed CORS restricted to the configured frontend origin |
+| Rate limiting | 200 requests / 15 min per IP on `/api`, plus a dedicated 10 attempts / 15 min budget on password login that never throttles OAuth callbacks or logout |
+| Webhook intake | GitHub payloads verified with a timing-safe HMAC SHA-256 comparison; an unverifiable payload is refused, never processed |
+| Resume privacy | PDFs validated by content (not declared type), stored server-side under gitignored `uploads/` with generated filenames; text is extracted locally — no external service sees the document |
+| Demo isolation | Demo routes sit outside the auth guard by design; while mounted, the API client refuses every write before a request is sent, and the demo renders only its synthetic sample identity |
+| Secrets | Everything sensitive arrives via environment variables; `.env` files are gitignored, templates carry placeholders, and no real credential appears in the repository |
+
+Known limitations, stated plainly — see [Testing and CI](#testing-and-ci) for
+what automation does **not** prove:
+
+- A session is one JWT with a fixed lifetime (7 days default) and no
+  refresh-token endpoint; logging in again issues a fresh token.
+- Rate limiters key on client IP: behind a reverse proxy set `TRUST_PROXY` to
+  the hop count; secure cookies assume TLS terminates in front of the API.
+- LeetCode and GeeksforGeeks are read from undocumented, unversioned
+  endpoints; an upstream shape change degrades statistics rather than
+  crashing the sync, and private profiles are simply not readable.
+- The live GitHub OAuth round trip, real webhook deliveries and live Groq
+  responses need real credentials and are covered by tests over the same
+  code paths — not by live round trips.
+
 <!-- next-section -->
