@@ -61,25 +61,7 @@ The product is a full-stack TypeScript application:
 
 ## Product Screenshots
 
-> **Note:** The screenshot gallery is prepared for the following captures. See [docs/screenshots.md](docs/screenshots.md) for the complete checklist. Screenshots will be added as they are captured.
-
-| Screenshot | Description |
-|------------|-------------|
-| `01-landing-page.png` | Hero with Spline background, navigation, primary CTA |
-| `02-login-register.png` | Login form with register option |
-| `03-demo-overview.png` | `/demo/overview` with sample-data badge and demo notice |
-| `04-dashboard-overview.png` | Signed-in Overview with live repository data |
-| `05-repositories.png` | Connected repositories list with sync controls |
-| `06-repository-analysis.png` | Repository detail: six metric categories + severity-ranked findings |
-| `07-developer-360.png` | Developer 360 aggregation of repositories, skills, credentials |
-| `08-skills-intelligence.png` | Skills with evidence ladder (claimed / learned / proven) |
-| `09-problem-solving.png` | Activity heatmap, difficulty donut, platform cards |
-| `10-learning-achievements.png` | Certifications, hackathons, resume panel |
-| `11-growth-analytics.png` | Growth history charts |
-| `12-career-readiness.png` | Readiness score with per-requirement evidence |
-| `13-ai-insights.png` | Groq-backed insights (or honest empty state) |
-| `14-settings.png` | Account management and connected-platform controls |
-| `15-mobile-responsive.png` | Dashboard at 390px viewport, no horizontal overflow |
+Screenshots will be added as they are captured. See [docs/screenshots.md](docs/screenshots.md) for the complete checklist.
 
 ---
 
@@ -87,16 +69,16 @@ The product is a full-stack TypeScript application:
 
 ```mermaid
 flowchart TD
-    subgraph CLIENT["A. CLIENT / FRONTEND"]
+    subgraph CLIENT["Client / Frontend"]
         U[User / Browser]
-        R[React + TypeScript + Vite SPA]
+        R[React + TypeScript + Vite]
         AUTH_UI[Authentication UI]
         DASH[Dashboard Pages]
         API[Typed API Client]
         DEMO[Public Demo Mode]
     end
 
-    subgraph APP["B. APPLICATION / BACKEND"]
+    subgraph APP["Application / Backend"]
         EXPRESS[Express + TypeScript REST API]
         AUTH_MW[Authentication Middleware]
         VALID[Request Validation]
@@ -110,7 +92,7 @@ flowchart TD
         AI[Optional AI Insight Service]
     end
 
-    subgraph DATA["C. DATA LAYER"]
+    subgraph DATA["Data Layer"]
         PG[PostgreSQL]
         PRISMA[Prisma ORM]
         USER[User & Auth Data]
@@ -122,7 +104,7 @@ flowchart TD
         RESUME_DB[Resume Storage]
     end
 
-    subgraph EXTERNAL["D. EXTERNAL SERVICES"]
+    subgraph EXTERNAL["External Services"]
         GH[GitHub App / API]
         GH_WEB[GitHub Webhooks]
         LC[LeetCode]
@@ -130,7 +112,7 @@ flowchart TD
         GROQ[Groq AI]
     end
 
-    subgraph DEPLOY["E. DEPLOYMENT"]
+    subgraph DEPLOY["Deployment"]
         VERCEL[Vercel Frontend]
         RENDER[Render Backend]
         PG_HOST[PostgreSQL Hosting]
@@ -181,17 +163,15 @@ flowchart TD
     PG --> PG_HOST
 
     %% Styling
-    classDef client fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000
-    classDef app fill:#000,stroke:#fff,stroke-width:2px,color:#fff
-    classDef data fill:#4169E1,stroke:#fff,stroke-width:2px,color:#fff
-    classDef external fill:#fff,stroke:#000,stroke-width:2px,color:#000
-    classDef deploy fill:#06B6D4,stroke:#fff,stroke-width:2px,color:#fff
+    classDef base fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px,color:#212529
+    classDef accent fill:#e8f5e9,stroke:#16ff00,stroke-width:1px,color:#212529
+    classDef ext fill:#ffffff,stroke:#dee2e6,stroke-width:1px,color:#212529,stroke-dasharray:3 3
 
-    class CLIENT client
-    class APP app
-    class DATA data
-    class EXTERNAL external
-    class DEPLOY deploy
+    class CLIENT,APP base
+    class DATA base
+    class EXTERNAL ext
+    class DEPLOY base
+    class ANALYSIS,SKILLS,GROWTH accent
 ```
 
 ### Architecture Explanation
