@@ -307,4 +307,16 @@ npx prisma generate         # regenerate the client
 Root-level shortcuts (`npm run dev:backend`, `dev:frontend`, `build`, `test`)
 delegate into the two apps.
 
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Backend exits on start; connection refused | Postgres not running, or wrong port | `cd Backend && docker compose up -d` — the local port is **5434** |
+| `Cannot find module …` after a pull | New dependency | `cd Backend && npm install` |
+| Missing table/column after a pull | New migration or stale client | `npx prisma migrate deploy && npx prisma generate` |
+| `DATABASE_URL is required` at boot | `Backend/.env` missing | Copy `Backend/.env.example` to `Backend/.env` and set `JWT_SECRET` |
+| “GitHub OAuth is not configured…” or bounce to `/login?error=` | OAuth-App credentials where a **GitHub App** is required | Use a GitHub App client id (`Iv1.` / `Iv23`); OAuth-App ids are rejected on purpose |
+| AI Insights returns 503 | `GROQ_API_KEY` unset | Set it — or ignore it; the rest of the app works without it |
+| Landing loads but every dashboard request fails | Backend not running or wrong API URL | Start the backend; point `Frontend/.env` (`VITE_API_URL`) at it if not on `localhost:5000` |
+
 <!-- next-section -->
