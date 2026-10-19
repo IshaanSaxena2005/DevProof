@@ -153,109 +153,42 @@ Screenshots will be added as they are captured. See [docs/screenshots.md](docs/s
 
 ```mermaid
 flowchart TD
-    subgraph CLIENT["Client / Frontend"]
-        U[User / Browser]
-        R[React + TypeScript + Vite]
-        AUTH_UI[Authentication UI]
-        DASH[Dashboard Pages]
-        API[Typed API Client]
-        DEMO[Public Demo Mode]
-    end
-
-    subgraph APP["Application / Backend"]
-        EXPRESS[Express + TypeScript REST API]
-        AUTH_MW[Authentication Middleware]
-        VALID[Request Validation]
-        CONTROLLERS[API Controllers]
-        SERVICES[Services Layer]
-        ANALYSIS[Repository Analysis Engine]
-        SKILLS[Skills & Evidence Services]
-        CODING[Coding-Platform Integrations]
-        RESUME[Resume Processing]
-        GROWTH[Growth & Career-Readiness]
-        AI[Optional AI Insight Service]
-    end
-
-    subgraph DATA["Data Layer"]
-        PG[PostgreSQL]
-        PRISMA[Prisma ORM]
-        USER[User & Auth Data]
-        REPO[Repository Records]
-        ANALYSIS[Analysis Results]
-        SKILL[Skills & Evidence]
-        CERT[Certifications]
-        HACK[Hackathons]
-        RESUME_DB[Resume Storage]
-    end
-
-    subgraph EXTERNAL["External Services"]
-        GH[GitHub App / API]
-        GH_WEB[GitHub Webhooks]
-        LC[LeetCode]
-        GFG[GeeksforGeeks]
-        GROQ[Groq AI]
-    end
-
-    subgraph DEPLOY["Deployment"]
-        VERCEL[Vercel Frontend]
-        RENDER[Render Backend]
-        PG_HOST[PostgreSQL Hosting]
-    end
-
-    %% Client flows
-    U --> AUTH_UI
-    U --> DASH
-    U --> DEMO
-    AUTH_UI --> API
-    DASH --> API
-    DEMO -.-> R
-    API --> EXPRESS
-
-    %% Backend flows
-    EXPRESS --> AUTH_MW
-    AUTH_MW --> VALID
-    VALID --> CONTROLLERS
-    CONTROLLERS --> SERVICES
-    SERVICES --> ANALYSIS
-    SERVICES --> SKILLS
-    SERVICES --> CODING
-    SERVICES --> RESUME
-    SERVICES --> GROWTH
-    SERVICES --> AI
-
-    %% Data flows
-    SERVICES --> PRISMA
-    PRISMA --> PG
-    PRISMA --> USER
-    PRISMA --> REPO
-    PRISMA --> ANALYSIS
-    PRISMA --> SKILL
-    PRISMA --> CERT
-    PRISMA --> HACK
-    PRISMA --> RESUME_DB
-
-    %% External integrations
-    SERVICES <--> GH
-    SERVICES <--> GH_WEB
-    CODING <--> LC
-    CODING <--> GFG
-    AI <--> GROQ
-
-    %% Deployment
-    R --> VERCEL
-    EXPRESS --> RENDER
-    PG --> PG_HOST
-
-    %% Styling
+    U[User / Browser] --> R[React + TypeScript + Vite]
+    R --> API[Typed API Client]
+    API --> EXPRESS[Express + TypeScript REST API]
+    
+    EXPRESS --> AUTH[Authentication Middleware]
+    AUTH --> VALID[Request Validation]
+    VALID --> CONTROLLERS[API Controllers]
+    CONTROLLERS --> SERVICES[Services Layer]
+    
+    SERVICES --> ANALYSIS[Repository Analysis Engine]
+    SERVICES --> SKILLS[Skills & Evidence Services]
+    SERVICES --> CODING[Coding-Platform Integrations]
+    SERVICES --> RESUME[Resume Processing]
+    SERVICES --> GROWTH[Growth & Career-Readiness]
+    SERVICES --> AI[Optional AI Insights]
+    
+    SERVICES --> PRISMA[Prisma ORM]
+    PRISMA --> PG[PostgreSQL]
+    
+    SERVICES <--> GH[GitHub App / API]
+    SERVICES <--> GH_WEB[GitHub Webhooks]
+    CODING <--> LC[LeetCode]
+    CODING <--> GFG[GeeksforGeeks]
+    AI <--> GROQ[Groq AI]
+    
+    R --> VERCEL[Vercel Deployment]
+    EXPRESS --> RENDER[Render Deployment]
+    PG --> PG_HOST[PostgreSQL Hosting]
+    
     classDef base fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px,color:#212529
     classDef accent fill:#e8f5e9,stroke:#16ff00,stroke-width:1px,color:#212529
     classDef ext fill:#ffffff,stroke:#dee2e6,stroke-width:1px,color:#212529,stroke-dasharray:3 3
-
-    class CLIENT,APP base
-    class DATA base
-    class EXTERNAL ext
-    class DEPLOY base
+    
+    class U,R,API,EXPRESS,AUTH,VALID,CONTROLLERS,SERVICES,PRISMA,PG,VERCEL,RENDER,PG_HOST base
     class ANALYSIS,SKILLS,GROWTH accent
+    class GH,GH_WEB,LC,GFG,GROQ ext
 ```
 
 ### Architecture Explanation
