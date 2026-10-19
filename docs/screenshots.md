@@ -32,18 +32,16 @@ The README's [Product Screenshots](../README.md#product-screenshots) section emb
 
 ## Integration with README
 
-When a screenshot file is added:
-1. Mark the corresponding row as captured in this checklist
-2. Add the image to the README's Product Screenshots section with:
-   ```markdown
-   ![Description](screenshots/XX-description.png)
-   
-   <em>Caption text describing what the screenshot shows.</em>
-   ```
-3. Ensure the image link points to an existing file — the README never links a broken image
+The README's Product Screenshots section is prepared with commented-out subsections for each planned screenshot. When you add screenshots:
+
+1. Place the PNG file in the `screenshots/` directory using the exact filename from the checklist
+2. Uncomment the corresponding subsection in README.md (remove the `<!--` and `-->` markers)
+3. Verify the image displays correctly
+
+**Important:** Do not uncomment a screenshot subsection until the actual image file exists in the repository. The documentation validator checks that every non-commented image reference points to an existing file.
 
 ## Status
 
 - **Total planned:** 15 screenshots
 - **Captured:** 0
-- **Remaining:** 15
+- **README status:** Subsections prepared with commented-out image references; ready to uncomment when files are added

@@ -46,10 +46,10 @@ function checkMarkdown(file) {
   const dir = path.dirname(path.join(ROOT, file));
   const ownSlugs = headingSlugs(file);
 
-  // Code spans and fenced blocks document patterns — `![caption]
+  // Code spans, fenced blocks, and HTML comments document patterns — `![caption]
   // (screenshots/…)` in a checklist is an example, not a live link — so
   // link and image scanning runs on the code-stripped text.
-  const scan = text.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+  const scan = text.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "").replace(/<!--[\s\S]*?-->/g, "");
 
   // Links (image links included; images get an existence check below too).
   for (const m of scan.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
@@ -114,7 +114,9 @@ for (const name of PLANNED_SCREENSHOTS) {
 }
 
 const readme = readFileSync(path.join(ROOT, "README.md"), "utf8");
-for (const m of readme.matchAll(/screenshots\/([\w-]+\.png)/g)) {
+// Ignore commented-out screenshot references
+const readmeWithoutComments = readme.replace(/<!--[\s\S]*?-->/g, "");
+for (const m of readmeWithoutComments.matchAll(/screenshots\/([\w-]+\.png)/g)) {
   if (!existsSync(path.join(ROOT, "screenshots", m[1]))) {
     failures.push(`README.md: references a screenshot that does not exist: ${m[1]}`);
   }
