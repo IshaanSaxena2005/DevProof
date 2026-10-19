@@ -119,14 +119,24 @@ services:
       # Must byte-for-byte match the callback registered on the App itself.
       - key: GITHUB_CALLBACK_URL
         sync: false
-      # Optional. The app id and private key are only needed for app-level JWT
-      # calls, and the webhook secret only to accept webhook payloads; without
-      # them the server boots and those routes refuse requests instead.
-      - key: GITHUB_APP_ID
-        sync: false
+      # Optional, and safe to leave blank at creation — every one of these has
+      # an empty default, and the server boots without them.
+      #
+      #   GITHUB_APP_SLUG       the slug in github.com/apps/<slug>. Only builds
+      #                         the "install DevProof" link; without it the user
+      #                         lands on their generic installations page, which
+      #                         is one extra click rather than a dead end.
+      #   GITHUB_WEBHOOK_SECRET a string you invent and paste into the App's
+      #                         webhook settings. Without it the webhook route
+      #                         refuses every payload with a 503; nothing else
+      #                         is affected.
+      #
+      # GITHUB_APP_ID and GITHUB_PRIVATE_KEY are deliberately absent. They feed
+      # createAppJwt(), which nothing currently calls — they would only change a
+      # boolean on the webhook status endpoint. Sign-in and repository sync run
+      # on the user-to-server token from the client id/secret above, so there is
+      # nothing to generate until an app-level API call actually exists.
       - key: GITHUB_APP_SLUG
-        sync: false
-      - key: GITHUB_PRIVATE_KEY
         sync: false
       - key: GITHUB_WEBHOOK_SECRET
         sync: false
