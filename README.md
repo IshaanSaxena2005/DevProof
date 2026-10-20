@@ -103,6 +103,12 @@ The product is a full-stack TypeScript application:
 
 *Certifications, hackathons, and resume panel.*
 
+### 8. Growth
+
+![DevProof Growth](screenshots/growth.png)
+
+*Growth history charts reconstructed from stored analysis timestamps.*
+
 ---
 
 ---
