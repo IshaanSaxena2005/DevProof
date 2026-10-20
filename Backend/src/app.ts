@@ -40,6 +40,14 @@ const limiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  // The platform's own health check is exempt. Render polls /api/v1/health
+  // every few seconds from a single internal address, which counts as one
+  // client here: roughly 250 requests per window, against a limit of 200. The
+  // 429 that follows is read as a failed health check, so the instance is
+  // restarted — and the restart produces exactly the 502s the limiter exists
+  // to prevent. Excluding it costs nothing: the handler touches one row and
+  // is not an endpoint worth flooding.
+  skip: (req) => req.path === '/v1/health',
   message: 'Too many requests from this IP, please try again after 15 minutes'
 });
 app.use('/api', limiter);
