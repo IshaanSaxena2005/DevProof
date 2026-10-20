@@ -157,22 +157,23 @@ interface AnalysisSignals {
 
 /** Engine values per metric, derived from the signals above. */
 function metricScores(signals: AnalysisSignals): Record<AnalysisMetric, number> {
-  const documentation = 40 + (signals.hasReadme ? 40 : 0) + (signals.hasLicense ? 20 : 0);
-  const testing = 30 + (signals.testFiles > 0 ? 50 : 0) + (signals.testFiles > 3 ? 20 : 0);
-  const security = Math.max(100 - signals.secretWarnings * 25, 20);
+  const documentation = 35 + (signals.hasReadme ? 35 : 0) + (signals.hasLicense ? 25 : 0);
+  const testing = 25 + (signals.testFiles > 0 ? 35 : 0) + (signals.testFiles > 3 ? 15 : 0);
+  const security = Math.max(95 - signals.secretWarnings * 30, 25);
 
-  let quality = 85;
-  if (signals.todoCount > 5) quality -= 15;
-  if (!signals.hasCiCd) quality -= 10;
-  if (quality < 40) quality = 40;
+  let quality = 72;
+  if (signals.todoCount > 8) quality -= 18;
+  else if (signals.todoCount > 5) quality -= 12;
+  if (!signals.hasCiCd) quality -= 15;
+  if (quality < 35) quality = 35;
 
   return {
     DOCUMENTATION: documentation,
     TESTING: testing,
     SECURITY: security,
     CODE_QUALITY: quality,
-    MAINTAINABILITY: signals.hasCiCd ? 90 : 60,
-    DEPENDENCY_HEALTH: signals.hasLockfile ? 95 : 70,
+    MAINTAINABILITY: signals.hasCiCd ? 82 : 52,
+    DEPENDENCY_HEALTH: signals.hasLockfile ? 88 : 62,
   };
 }
 
@@ -289,12 +290,12 @@ const SAMPLE_REPOSITORIES: SampleRepositoryInput[] = [
     analyses: [
       {
         daysAgo: 300,
-        signals: { hasReadme: true, hasLicense: false, testFiles: 2, hasDocker: false, secretWarnings: 0, todoCount: 8, hasCiCd: false, hasLockfile: true },
+        signals: { hasReadme: true, hasLicense: false, testFiles: 2, hasDocker: false, secretWarnings: 0, todoCount: 12, hasCiCd: false, hasLockfile: true },
         findings: [CI_FINDING, TODO_FINDING],
       },
       {
         daysAgo: 12,
-        signals: { hasReadme: true, hasLicense: true, testFiles: 5, hasDocker: false, secretWarnings: 0, todoCount: 3, hasCiCd: false, hasLockfile: true },
+        signals: { hasReadme: true, hasLicense: true, testFiles: 4, hasDocker: false, secretWarnings: 0, todoCount: 7, hasCiCd: false, hasLockfile: true },
         findings: [CI_FINDING],
       },
     ],
@@ -316,7 +317,7 @@ const SAMPLE_REPOSITORIES: SampleRepositoryInput[] = [
     analyses: [
       {
         daysAgo: 35,
-        signals: { hasReadme: true, hasLicense: true, testFiles: 3, hasDocker: true, secretWarnings: 0, todoCount: 6, hasCiCd: false, hasLockfile: true },
+        signals: { hasReadme: true, hasLicense: true, testFiles: 2, hasDocker: true, secretWarnings: 0, todoCount: 9, hasCiCd: false, hasLockfile: true },
         findings: [TODO_FINDING, CI_FINDING],
       },
     ],
@@ -338,12 +339,12 @@ const SAMPLE_REPOSITORIES: SampleRepositoryInput[] = [
     analyses: [
       {
         daysAgo: 265,
-        signals: { hasReadme: true, hasLicense: false, testFiles: 0, hasDocker: true, secretWarnings: 0, todoCount: 9, hasCiCd: false, hasLockfile: true },
+        signals: { hasReadme: true, hasLicense: false, testFiles: 0, hasDocker: true, secretWarnings: 0, todoCount: 11, hasCiCd: false, hasLockfile: true },
         findings: [TESTING_FINDING, CI_FINDING],
       },
       {
         daysAgo: 60,
-        signals: { hasReadme: true, hasLicense: false, testFiles: 4, hasDocker: true, secretWarnings: 0, todoCount: 2, hasCiCd: false, hasLockfile: true },
+        signals: { hasReadme: true, hasLicense: false, testFiles: 3, hasDocker: true, secretWarnings: 0, todoCount: 4, hasCiCd: false, hasLockfile: true },
         findings: [CI_FINDING],
       },
     ],
@@ -365,7 +366,7 @@ const SAMPLE_REPOSITORIES: SampleRepositoryInput[] = [
     analyses: [
       {
         daysAgo: 95,
-        signals: { hasReadme: true, hasLicense: false, testFiles: 2, hasDocker: false, secretWarnings: 0, todoCount: 2, hasCiCd: false, hasLockfile: false },
+        signals: { hasReadme: true, hasLicense: false, testFiles: 1, hasDocker: false, secretWarnings: 0, todoCount: 3, hasCiCd: false, hasLockfile: false },
         findings: [CI_FINDING],
       },
     ],
@@ -387,7 +388,7 @@ const SAMPLE_REPOSITORIES: SampleRepositoryInput[] = [
     analyses: [
       {
         daysAgo: 120,
-        signals: { hasReadme: true, hasLicense: true, testFiles: 3, hasDocker: false, secretWarnings: 0, todoCount: 1, hasCiCd: false, hasLockfile: true },
+        signals: { hasReadme: true, hasLicense: true, testFiles: 2, hasDocker: false, secretWarnings: 0, todoCount: 2, hasCiCd: false, hasLockfile: true },
         findings: [CI_FINDING],
       },
     ],
@@ -409,7 +410,7 @@ const SAMPLE_REPOSITORIES: SampleRepositoryInput[] = [
     analyses: [
       {
         daysAgo: 150,
-        signals: { hasReadme: true, hasLicense: false, testFiles: 0, hasDocker: true, secretWarnings: 1, todoCount: 2, hasCiCd: false, hasLockfile: false },
+        signals: { hasReadme: true, hasLicense: false, testFiles: 0, hasDocker: true, secretWarnings: 1, todoCount: 3, hasCiCd: false, hasLockfile: false },
         findings: [TESTING_FINDING, SECRET_FINDING, CI_FINDING],
       },
     ],
