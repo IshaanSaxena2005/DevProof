@@ -11,6 +11,7 @@ import { certificationsService } from "../../../services/certifications";
 import GlassCard from "../../../components/GlassCard";
 import { LAStatLabel } from "./shared";
 import AtsDashboard from "./AtsDashboard";
+import JobMatchPanel from "./JobMatchPanel";
 import type {
   Certification,
   CertificationInput,
@@ -451,6 +452,7 @@ function ResumeCard({
               transient job comparison, then — collapsed — the extracted
               content the analysis is grounded in. */}
           <AtsDashboard ats={parsed?.ats ?? null} readOnly={readOnly} />
+          {!readOnly && <JobMatchPanel />}
           <ResumeAnalysisView
             analysis={analysis}
             sectionText={sectionText}
