@@ -87,7 +87,7 @@ export default function Navbar() {
               {isAuthenticated && user?.githubAccount ? (
                 <Link
                   to="/dashboard/repositories"
-                  className="flex items-center gap-2 text-sm font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20"
+                  className="flex items-center gap-2 text-base font-bold rounded-full px-5 py-2.5 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20"
                 >
                   <GithubIcon className="w-4 h-4 text-primary" />
                   @{user.githubAccount.username}
@@ -163,7 +163,7 @@ export default function Navbar() {
               {isAuthenticated && user?.githubAccount ? (
                 <Link
                   to="/dashboard/repositories"
-                  className="w-full flex items-center justify-center gap-2.5 text-base font-semibold rounded-full py-4 transition-all duration-300 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary text-center"
+                  className="w-full flex items-center justify-center gap-2.5 text-lg font-semibold rounded-full py-4 transition-all duration-300 active:scale-[0.97] bg-primary/10 border border-primary/20 text-primary text-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <GithubIcon className="w-5 h-5 text-primary" />
