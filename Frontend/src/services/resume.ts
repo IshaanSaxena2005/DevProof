@@ -1,5 +1,6 @@
 import { api, ApiError, BASE_URL } from "../lib/api.mts";
 import type {
+  JobMatchResponse,
   ResumeAnalyseResponse,
   ResumeResponse,
   ResumeUploadResponse,
@@ -46,6 +47,16 @@ export const resumeService = {
    */
   async analyse(): Promise<ResumeAnalyseResponse> {
     return api.post<ResumeAnalyseResponse>("/resume/analyse");
+  },
+
+  /**
+   * Compare a pasted job description against the stored resume.
+   *
+   * The posting is transient input: sent for this one comparison, validated
+   * server-side, and never persisted by either side.
+   */
+  async match(jobDescription: string): Promise<JobMatchResponse> {
+    return api.post<JobMatchResponse>("/resume/match", { jobDescription });
   },
 
   async remove(): Promise<void> {

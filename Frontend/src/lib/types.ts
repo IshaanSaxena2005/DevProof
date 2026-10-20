@@ -610,6 +610,12 @@ export interface ResumeParsed {
    * still render from `sections` and gain an analysis via POST /resume/analyse.
    */
   analysis?: ResumeAnalysis;
+  /**
+   * ATS Resume Intelligence, computed in the same server-side pass as
+   * `analysis`. Absent on records parsed before the feature existed —
+   * POST /resume/analyse re-reads the stored file and gains one.
+   */
+  ats?: AtsAnalysis;
 }
 
 /* ── Structured resume analysis (deterministic, evidence-preserving) ── */
@@ -700,6 +706,173 @@ export interface ResumeUploadResponse {
 
 export interface ResumeAnalyseResponse {
   resume: ResumeSummary;
+}
+
+/* ── ATS Resume Intelligence (parsed.ats + POST /resume/match) ─── */
+
+/**
+ * Mirrors Backend/src/services/ats — the stored `parsed.ats` envelope.
+ *
+ * Every number here is deterministic over the parsed document: absent on
+ * records uploaded before the feature (re-analyse gains one), never a
+ * placeholder, never fabricated client-side.
+ */
+export type AtsCheckStatus = 'passed' | 'needs_improvement' | 'not_detected' | 'unknown';
+
+export interface AtsCheck {
+  id: string;
+  label: string;
+  status: AtsCheckStatus;
+  detected: string | null;
+  whyItMatters: string;
+  improvement: string | null;
+  evidence: string[];
+}
+
+export type AtsCategoryId =
+  | 'parsing'
+  | 'sections'
+  | 'contact'
+  | 'keywords'
+  | 'structure'
+  | 'credentials'
+  | 'formatting';
+
+export interface AtsCategoryScore {
+  id: AtsCategoryId;
+  label: string;
+  /** Null = excluded from the total: no input to grade, not a failure. */
+  score: number | null;
+  weight: number;
+  summary: string;
+}
+
+export interface AtsScore {
+  overall: number;
+  methodologyVersion: number;
+  categories: AtsCategoryScore[];
+  basis: string;
+}
+
+export type Severity = 'high' | 'medium' | 'low';
+
+export interface AtsStrength {
+  id: string;
+  title: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface AtsWeakness {
+  id: string;
+  title: string;
+  severity: Severity;
+  explanation: string;
+  recommendation: string;
+  example: string | null;
+  evidence: string[];
+}
+
+export type RecommendationPriority = 'high' | 'medium' | 'low';
+
+export interface AtsRecommendation {
+  id: string;
+  priority: RecommendationPriority;
+  title: string;
+  why: string;
+  action: string;
+  evidence: string[];
+}
+
+export type KeywordSection =
+  | 'header'
+  | 'summary'
+  | 'skills'
+  | 'experience'
+  | 'projects'
+  | 'education'
+  | 'certifications'
+  | 'achievements'
+  | 'other';
+
+export interface AtsKeyword {
+  term: string;
+  category: string;
+  sections: KeywordSection[];
+  count: number;
+  source: 'taxonomy' | 'concept';
+}
+
+export interface AtsKeywordAnalysis {
+  keywords: AtsKeyword[];
+  distinctCount: number;
+  sectionCounts: Record<KeywordSection, number>;
+}
+
+export interface AtsAnalysis {
+  methodologyVersion: number;
+  analysedAt: string;
+  score: AtsScore;
+  sectionChecks: AtsCheck[];
+  formattingChecks: AtsCheck[];
+  keywords: AtsKeywordAnalysis;
+  strengths: AtsStrength[];
+  weaknesses: AtsWeakness[];
+  recommendations: AtsRecommendation[];
+}
+
+/* ── Job description matching (POST /resume/match — transient input) ── */
+
+export type RequirementKind = 'skill' | 'concept' | 'experience' | 'education' | 'certification';
+
+export interface JobRequirement {
+  kind: RequirementKind;
+  label: string;
+  /** 'not_evidenced' means this document does not say it — not that the
+   *  candidate lacks the capability. */
+  status: 'matched' | 'not_evidenced';
+  sections: KeywordSection[];
+  evidence: string[];
+  /** Same-category technologies, surfaced as context, never scored. */
+  related: string[];
+  source: 'required' | 'preferred';
+}
+
+export interface JobMatchPart {
+  label: string;
+  score: number | null;
+  weight: number;
+  summary: string;
+}
+
+export interface JobMatchScore {
+  overall: number | null;
+  parts: JobMatchPart[];
+  methodologyVersion: number;
+  basis: string;
+}
+
+export interface JobMatchResult {
+  methodologyVersion: number;
+  matchedAt: string;
+  score: JobMatchScore;
+  matched: JobRequirement[];
+  notEvidenced: JobRequirement[];
+  sectionsToImprove: { section: string; reason: string }[];
+  tailoring: string[];
+  detected: {
+    requiredSkills: number;
+    preferredSkills: number;
+    concepts: number;
+    experienceYears: number | null;
+    educationRequired: boolean;
+    certificationMentioned: boolean;
+  };
+  note: string;
+}
+
+export interface JobMatchResponse {
+  match: JobMatchResult;
 }
 
 /* ── Growth history (GET /growth/history) ─────────────── */
