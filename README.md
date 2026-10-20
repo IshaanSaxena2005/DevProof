@@ -99,6 +99,12 @@ Screenshots will be added as they are captured. See [docs/screenshots.md](docs/s
 
 *Aggregated view of repositories, skills, credentials, and target roles.*
 
+### 7. Skills Intelligence
+
+![DevProof Skills Intelligence](screenshots/08-skills-intelligence.png)
+
+*Skills with evidence ladder showing claimed, learned, and proven levels.*
+
 ---
 
 ### 9. Learning & Achievements
