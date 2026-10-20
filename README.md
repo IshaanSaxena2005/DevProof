@@ -91,41 +91,35 @@ The product is a full-stack TypeScript application:
 
 *Connected GitHub repositories with synchronization status and analysis triggers.*
 
-### 5. Repository Analysis
+### 6. Repository Analysis
 
 ![DevProof Repository Analysis](screenshots/06-repository-analysis.png)
 
 *Detailed repository analysis with six metric categories and severity-ranked findings.*
 
-### 6. Developer 360
+### 7. Developer 360
 
 ![DevProof Developer 360](screenshots/07-developer-360.png)
 
 *Aggregated view of repositories, skills, credentials, and target roles.*
 
-### 7. Skills Intelligence
+### 8. Skills Intelligence
 
 ![DevProof Skills Intelligence](screenshots/08-skills-intelligence.png)
 
 *Skills with evidence ladder showing claimed, learned, and proven levels.*
 
-### 8. Problem Solving
+### 9. Problem Solving
 
 ![DevProof Problem Solving](screenshots/09-problem-solving.png)
 
 *Activity heatmap, difficulty distribution, and coding-platform statistics.*
 
-### 9. Learning & Achievements
+### 10. Learning & Achievements
 
 ![DevProof Learning Achievements](screenshots/10-learning-achievements.png)
 
 *Certifications, hackathons, and resume panel.*
-
-### 10. Demo Overview
-
-![DevProof Demo Overview](screenshots/03-demo-overview.png)
-
-*Public demo mode with synthetic, labelled fixtures.*
 
 ---
 
