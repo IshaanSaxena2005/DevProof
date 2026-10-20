@@ -95,11 +95,11 @@ export const SAMPLE_IDENTITY: SampleIdentity = {
 };
 
 /** Badge text for the demo shell. */
-export const DEMO_BADGE = "Demo mode — sample data";
+export const DEMO_BADGE = "Demo mode — sample data (not real analytics)";
 
 /** The one-sentence explanation reused across pages. */
 export const SAMPLE_NOTICE =
-  "A fictional profile built from sample data. Nothing here was fetched from GitHub, LeetCode or GeeksforGeeks, and no account or record is created, changed or deleted.";
+  "A fictional profile built from sample data. Metrics, scores, and activity are illustrative examples — not real analysis results from GitHub, LeetCode or GeeksforGeeks. No account or record is created, changed, or deleted.";
 
 const DEMO_DOMAIN = "example.com";
 
@@ -1192,7 +1192,7 @@ function deriveAiInsights({
         `Across ${analyzed.length} analyzed sample repositories, engineering quality averages ` +
         `${developer360Score ?? 0}/100. Documentation (${documentation}/100) and dependency management ` +
         `(${dependencies}/100) are the strongest signals; automated testing (${testing}/100) and release ` +
-        `automation are the weakest. Sample insights over sample data — no model was called.`,
+        `automation are the weakest. These are illustrative metrics from sample data — not real analysis results.`,
       strengths: [
         {
           title: `${best.repo.name} is the strongest repository in the sample profile`,
