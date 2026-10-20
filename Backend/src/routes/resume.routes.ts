@@ -2,6 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import { ResumeController } from '../controllers/resume.controller';
 import { protect } from '../middlewares/auth.middleware';
+import { validateRequest } from '../middlewares/validate';
+import { matchJobSchema } from '../validators/resume.validator';
 
 const router = Router();
 
@@ -24,6 +26,7 @@ router.get('/', ResumeController.getResume);
 router.get('/download', ResumeController.downloadResume);
 router.post('/', upload.single('resume'), ResumeController.uploadResume);
 router.post('/analyse', ResumeController.analyseResume);
+router.post('/match', validateRequest(matchJobSchema), ResumeController.matchJob);
 router.delete('/', ResumeController.deleteResume);
 
 export default router;

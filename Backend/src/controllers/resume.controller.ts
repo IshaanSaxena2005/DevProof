@@ -75,4 +75,21 @@ export class ResumeController {
       next(error);
     }
   };
+
+  /**
+   * Compare a pasted job description against the caller's own stored resume.
+   *
+   * The job description is transient input: validated, compared, discarded —
+   * never stored and never logged. The match derives from the same
+   * owner-scoped resume row every other route here reads.
+   */
+  static matchJob = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { jobDescription } = req.body as { jobDescription: string };
+      const match = await ResumeService.matchJob(req.user!.id, jobDescription);
+      return successResponse(res, 200, 'Job description matched successfully', { match });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -8,6 +8,7 @@ import { AppError } from '../utils/appError';
 import { skillsNamedIn } from './skill.service';
 import { ResumeAnalysisService, type ResumeAnalysis } from './resumeAnalysis.service';
 import { analyseAts, type AtsAnalysis } from './ats';
+import { matchJobDescription, type JobMatchResult } from './ats/jobMatch';
 
 // ==========================================
 // RESUME SERVICE
@@ -245,6 +246,38 @@ export class ResumeService {
 
     await prisma.resume.delete({ where: { userId } });
     await ResumeService.removeFile(existing.storagePath);
+  }
+
+  /**
+   * Compare a pasted job description against this user's stored resume.
+   *
+   * Read-only and stateless: the job description is never persisted, and the
+   * comparison runs over the same owner-scoped row every other resume route
+   * reads — one user can never match against another's document. Records
+   * parsed before structured analysis existed have their sections re-read
+   * deterministically, so the endpoint works for them without a migration.
+   */
+  static async matchJob(userId: string, jobDescription: string): Promise<JobMatchResult> {
+    const existing = await prisma.resume.findUnique({ where: { userId } });
+    if (!existing) {
+      throw AppError.notFound('No resume has been uploaded.');
+    }
+    if (existing.parseError) {
+      throw AppError.badRequest(
+        'The stored resume could not be parsed, so there is nothing to match against. Upload a text-based PDF first.'
+      );
+    }
+
+    const parsed = existing.parsed as unknown as ParsedResume | null;
+    const sections = parsed?.sections ?? {};
+    if (Object.keys(sections).length === 0) {
+      throw AppError.badRequest(
+        'No sections could be read from the stored resume, so there is nothing to match against. Upload a resume with standard section headings.'
+      );
+    }
+
+    const analysis = parsed?.analysis ?? ResumeAnalysisService.analyse([], sections);
+    return matchJobDescription({ jobDescription, header: [], sections, analysis });
   }
 
   /** Absolute path for download, verified to sit inside the upload root. */
