@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import PublicPageLayout from "../../layouts/PublicPageLayout";
 
 export default function Product() {
