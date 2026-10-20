@@ -187,3 +187,85 @@ test("connect flow populates the dashboard with analysis results", async ({ page
 
   expect(errors).toEqual([]);
 });
+
+test("repository description editor adds and updates descriptions", async ({ page }) => {
+  const errors = collectPageErrors(page);
+  await serveLinkedGitHubSession(page);
+
+  const repoWithDesc = {
+    ...connectedRepo,
+    description: "Original description"
+  };
+
+  await page.route(REPO_LIST, (route) =>
+    route.fulfill(json({ success: true, data: { repositories: [repoWithDesc] } }))
+  );
+  await page.route("**/api/v1/repositories/e2e-repo-1*", (route) =>
+    route.fulfill(json({ success: true, data: { repository: repoWithDesc } }))
+  );
+
+  // Mock the description update endpoint
+  let updatedDescription: string | null = null;
+  await page.route("**/api/v1/repositories/e2e-repo-1/description", (route) => {
+    if (route.request().method() === "PATCH") {
+      route.request().postDataJSON().then((body: any) => {
+        updatedDescription = body.description;
+        const updated = { ...repoWithDesc, description: body.description };
+        route.fulfill(json({ success: true, message: "Repository description updated successfully", data: { repository: updated } }, 200));
+      });
+    } else {
+      route.fallback();
+    }
+  });
+
+  await page.goto("/dashboard/repositories");
+  await expect(page.getByRole("heading", { name: "e2e-repo" })).toBeVisible();
+
+  // Open the description editor
+  await page.getByRole("button", { name: /edit description/i }).click();
+  await expect(page.getByRole("textbox", { name: /repository description/i })).toBeVisible();
+
+  // Clear and enter new description
+  const textarea = page.getByRole("textbox", { name: /repository description/i });
+  await textarea.clear();
+  await textarea.fill("Updated repository description");
+
+  // Save
+  await page.getByRole("button", { name: /save/i }).click();
+
+  // Verify success message
+  await expect(page.getByText(/description updated/i)).toBeVisible();
+  expect(updatedDescription).toBe("Updated repository description");
+
+  expect(errors).toEqual([]);
+});
+
+test("description editor handles validation errors", async ({ page }) => {
+  const errors = collectPageErrors(page);
+  await serveLinkedGitHubSession(page);
+
+  await page.route(REPO_LIST, (route) =>
+    route.fulfill(json({ success: true, data: { repositories: [connectedRepo] } }))
+  );
+  await page.route("**/api/v1/repositories/e2e-repo-1*", (route) =>
+    route.fulfill(json({ success: true, data: { repository: connectedRepo } }))
+  );
+
+  await page.goto("/dashboard/repositories");
+  await expect(page.getByRole("heading", { name: "e2e-repo" })).toBeVisible();
+
+  // Open the description editor
+  await page.getByRole("button", { name: /add description/i }).click();
+  await expect(page.getByRole("textbox", { name: /repository description/i })).toBeVisible();
+
+  // Enter a description that exceeds the limit
+  const textarea = page.getByRole("textbox", { name: /repository description/i });
+  await textarea.fill("a".repeat(2001));
+
+  // Try to save - button should be disabled or validation should show
+  const saveButton = page.getByRole("button", { name: /save/i });
+  await expect(saveButton).toBeDisabled();
+
+  expect(errors).toEqual([]);
+});
+
