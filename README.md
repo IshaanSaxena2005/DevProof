@@ -61,8 +61,6 @@ The product is a full-stack TypeScript application:
 
 ## Product Screenshots
 
-Screenshots will be added as they are captured. See [docs/screenshots.md](docs/screenshots.md) for the complete checklist.
-
 ### 1. Landing Page
 
 ![DevProof Landing Page](screenshots/01-landing-page.png)
@@ -320,8 +318,8 @@ DevProof/
 │   ├── test/                 # Service tests (Prisma stubbed) + integration over HTTP
 │   └── Dockerfile
 │
-├── docs/                     # Architecture diagram (SVG + PNG), screenshot checklist
-├── screenshots/              # Product captures (see docs/screenshots.md)
+├── docs/                     # Architecture diagram (SVG + PNG)
+├── screenshots/              # Product captures
 ├── docker-compose.yml        # Full stack: postgres + backend + frontend
 └── package.json              # Root scripts delegating into Backend/Frontend
 ```
@@ -336,7 +334,7 @@ DevProof/
 - Tests: `Backend/test/`, `Frontend/test/`, `Frontend/e2e/`
 - CI workflows: `.github/workflows/`
 - Architecture docs: `docs/`
-- Screenshots: `screenshots/` (planned; see docs/screenshots.md)
+- Screenshots: `screenshots/`
 
 ---
 
