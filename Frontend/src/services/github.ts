@@ -48,4 +48,8 @@ export const githubService = {
   async disconnectGithub(): Promise<void> {
     await api.post("/auth/github/disconnect");
   },
+
+  async updateRepositoryDescription(repoId: string, description: string): Promise<void> {
+    await api.patch(`/repositories/${repoId}/description`, { description });
+  },
 };
