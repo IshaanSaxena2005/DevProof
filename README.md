@@ -119,6 +119,14 @@ Screenshots will be added as they are captured. See [docs/screenshots.md](docs/s
 
 ---
 
+### 9. Learning & Achievements
+
+![DevProof Learning Achievements](screenshots/10-learning-achievements.png)
+
+*Certifications, hackathons, and resume panel.*
+
+---
+
 ## System Architecture
 
 ```mermaid
