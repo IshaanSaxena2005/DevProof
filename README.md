@@ -537,16 +537,18 @@ cd Frontend && npm run test:e2e  # builds e2e bundle, runs Playwright
 
 ## Authors
 
-**Ishaan Saxena**
+**Ishaan Saxena**  
+[LinkedIn](https://www.linkedin.com/in/ishaan-saxena2005/) · [GitHub](https://github.com/IshaanSaxena2005)
 
-**Hardesh Agarwal**
+**Hardesh Agarwal**  
+[LinkedIn](https://www.linkedin.com/in/hardesh-agarwal/) · [GitHub](https://github.com/kinghardesh)
 
-Full-stack, AI-powered, and data-driven software systems.
+Built with a focus on evidence-based developer intelligence.
 
 ---
 
 ## License
 
-DevProof is proprietary software developed by **Ishaan Saxena and Hardesh Agarwal**. Unauthorized copying, redistribution, modification, or commercial use is not permitted without prior written permission from the copyright holder. (The repository does not currently carry a standalone `LICENSE` file; the terms above are the project's statement of record.)
+DevProof is proprietary software developed by **Hardesh Agarwal and Ishaan Saxena**. Unauthorized copying, redistribution, modification, or commercial use is not permitted without prior written permission from the copyright holder. (The repository does not currently carry a standalone `LICENSE` file; the terms above are the project's statement of record.)
 
 Third-party libraries, frameworks, APIs, fonts, icons, and services remain subject to their respective licenses.
