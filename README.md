@@ -63,7 +63,7 @@ The product is a full-stack TypeScript application:
 
 ### 1. Landing Page
 
-![DevProof Landing Page](screenshots/01-landing-page.png)
+![DevProof Landing Page](screenshots/landing-page.png)
 
 *The public landing page with the interactive Spline background and primary actions.*
 
