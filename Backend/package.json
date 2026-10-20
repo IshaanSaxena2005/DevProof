@@ -11,7 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "test:unit": "npm run build && node --test test/analysis-routes.test.js test/github-service.test.js test/github-webhook-routes.test.js test/github-app-service.test.js test/ai-service.test.js test/skill-service.test.js test/certification-service.test.js test/leetcode-service.test.js test/geeksforgeeks-service.test.js test/course-service.test.js test/hackathon-service.test.js test/growth-service.test.js test/career-readiness-service.test.js test/resume-service.test.js test/resume-ats-sections.test.js test/resume-ats-keywords.test.js test/resume-ats-formatting.test.js test/resume-ats-scoring.test.js test/resume-ats-findings.test.js test/env-template.test.js",
+    "test:unit": "npm run build && node --test test/analysis-routes.test.js test/github-service.test.js test/github-webhook-routes.test.js test/github-app-service.test.js test/ai-service.test.js test/skill-service.test.js test/certification-service.test.js test/leetcode-service.test.js test/geeksforgeeks-service.test.js test/course-service.test.js test/hackathon-service.test.js test/growth-service.test.js test/career-readiness-service.test.js test/resume-service.test.js test/resume-ats-sections.test.js test/resume-ats-keywords.test.js test/resume-ats-formatting.test.js test/resume-ats-scoring.test.js test/resume-ats-findings.test.js test/resume-ats-recommendations.test.js test/env-template.test.js",
     "test:integration": "npm run build && node --test test/integration/api.test.js"
   },
   "keywords": [
