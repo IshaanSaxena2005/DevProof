@@ -7,6 +7,7 @@ import { env } from '../config/env';
 import { AppError } from '../utils/appError';
 import { skillsNamedIn } from './skill.service';
 import { ResumeAnalysisService, type ResumeAnalysis } from './resumeAnalysis.service';
+import { analyseAts, type AtsAnalysis } from './ats';
 
 // ==========================================
 // RESUME SERVICE
@@ -95,6 +96,14 @@ export interface ParsedResume {
    * POST /resume/analyse, which re-reads the stored file.
    */
   analysis?: ResumeAnalysis;
+  /**
+   * ATS Resume Intelligence: deterministic score, section/formatting checks,
+   * keyword analysis, findings and recommendations — computed in the same
+   * pass as `analysis` from the same read. Absent on records parsed before
+   * this feature existed; POST /resume/analyse re-reads the stored file and
+   * gains one without a migration.
+   */
+  ats?: AtsAnalysis;
 }
 
 export interface ResumeUpload {
@@ -312,14 +321,19 @@ export class ResumeService {
     }
 
     const { header, sections } = ResumeService.splitSections(lines);
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const analysis = ResumeAnalysisService.analyse(header, sections);
 
     return {
       pageCount: document.numPages,
       parsed: {
         sections,
         detectedSkills: skillsNamedIn(text).map((skill) => skill.name),
-        wordCount: text.split(/\s+/).filter(Boolean).length,
-        analysis: ResumeAnalysisService.analyse(header, sections)
+        wordCount,
+        analysis,
+        // The ATS layer reads the very same structured output — one parse,
+        // two deterministic products, no second pass over the document.
+        ats: analyseAts({ header, sections, analysis, wordCount })
       }
     };
   }
