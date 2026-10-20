@@ -79,15 +79,9 @@ The product is a full-stack TypeScript application:
 
 *Connected GitHub repositories with synchronization status and analysis triggers.*
 
-### 6. Repository Analysis
+### 4. Developer 360
 
-![DevProof Repository Analysis](screenshots/06-repository-analysis.png)
-
-*Detailed repository analysis with six metric categories and severity-ranked findings.*
-
-### 7. Developer 360
-
-![DevProof Developer 360](screenshots/07-developer-360.png)
+![DevProof Developer 360](screenshots/developer-360.png)
 
 *Aggregated view of repositories, skills, credentials, and target roles.*
 
