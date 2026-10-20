@@ -73,7 +73,13 @@ The product is a full-stack TypeScript application:
 
 *Login and registration forms with email/password and GitHub App sign-in options.*
 
-### 3. Dashboard Overview
+### 3. Demo Overview
+
+![DevProof Demo Overview](screenshots/03-demo-overview.png)
+
+*Public demo mode with synthetic, labelled fixtures.*
+
+### 4. Dashboard Overview
 
 ![DevProof Dashboard Overview](screenshots/04-dashboard-overview.png)
 
