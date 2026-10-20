@@ -45,6 +45,7 @@ The product is a full-stack TypeScript application:
 - [Product Screenshots](#product-screenshots)
 - [System Architecture](#system-architecture)
 - [Key Features](#key-features)
+- [ATS Resume Intelligence](#ats-resume-intelligence)
 - [Data Flow & Evidence](#data-flow--evidence)
 - [Technology Stack](#technology-stack)
 - [Security & Authentication](#security--authentication)
@@ -201,6 +202,7 @@ Every feature below exists in the code today. The **Kind** column keeps the posi
 | **Certifications**                | CRUD records that promote skills up the evidence ladder                                                                                                                                                    | Provided  |
 | **Hackathons**                    | Self-reported participation records; by design they never promote a skill                                                                                                                                  | Provided  |
 | **Resume upload & analysis**      | PDF upload (5 MB max, byte-validated), text extracted locally with `pdfjs-dist`; technologies found in text are reported for confirmation, never written as skills automatically                           | Provided  |
+| **ATS Resume Intelligence**       | Deterministic, versioned scoring across seven weighted categories (ungraded categories are excluded, never zeroed), evidence-grounded strengths and weaknesses, prioritised recommendations, keyword intelligence over the shared skill taxonomy, and job-description matching — every claim traceable to lines the parser actually read | Measured  |
 | **Growth analytics**              | History reconstructed from stored timestamps — months without measurements are omitted, not back-filled                                                                                                    | Measured  |
 | **Career readiness**              | Weighted requirement checklists computed on read from stored evidence; every point names the requirement it came from                                                                                      | Measured  |
 | **AI insights**                   | Groq-backed summary of strengths, risks, and recommendations, grounded only in stored analyses, Zod-validated before rendering; with no evidence the model is never called                                 | Generated |
@@ -211,6 +213,47 @@ Every feature below exists in the code today. The **Kind** column keeps the posi
 ### Dashboard heading convention
 
 Every dashboard screen shows its page title exactly once, as the shared header's `h1`. Pages own everything below it: their subtitle (`PageContainer`) and real section headings — `h2` for section labels, `h3` for blocks inside them. The label components (`SLabel`, `SectionLabel`, `LALabel`, `BlockLabel`, …) are heading elements styled by their Tailwind classes; preflight makes a heading inherit the surrounding font metrics, so converting a label changed markup, never appearance. Value-captioning micro-labels inside cards stay paragraphs — they caption a value, they do not name a section. The shell also starts its tab order with a skip link onto the scrollable main region. The whole shape is pinned by `Frontend/test/pageTitles.test.mts`, `Frontend/test/headingSemantics.test.mts`, and the `Frontend/e2e/headings.spec.ts` journey.
+
+---
+
+## ATS Resume Intelligence
+
+The resume feature grades the document the way common applicant-tracking systems read it: deterministically over the parsed text, with every claim traceable to a line the parser actually read. The analysis is computed in the same server-side pass as the structured resume analysis (stored as `parsed.ats`), versioned by `methodologyVersion`, and rendered as the resume card's primary surface — the raw extracted content it is grounded in sits behind a disclosure rather than leading the view.
+
+### Score categories and calculation
+
+Seven weighted categories contribute to a 0–100 total:
+
+| Category    | Weight | What it grades |
+| ----------- | -----: | -------------- |
+| Parsing     |    10 | Whether the file could be read and routed at all |
+| Sections    |    25 | Presence and completeness of the sections a parser routes on (summary, skills, experience, education, …) |
+| Contact     |    15 | Machine-findable contact details and profile links in the header |
+| Keywords    |    20 | Technology and concept coverage against the shared skill taxonomy |
+| Structure   |    15 | Entry shape a parser can segment: roles, organisations, readable dates |
+| Credentials |    10 | Certifications as parseable records |
+| Formatting  |     5 | Date consistency, bullet structure, standard section headings |
+
+The overall score is the weighted mean of the categories that have input: a category with nothing to grade (no dated roles, no certifications) is **excluded and shown as "not graded"** — never scored as zero. Changing any weight or rule requires bumping `ATS_METHODOLOGY_VERSION`, and the score states its own basis in the UI: it is not issued by any ATS vendor and does not predict shortlisting.
+
+### Findings and recommendations
+
+Strengths and weaknesses derive from the same checks, each carrying the evidence lines it was derived from; every weakness ships with a concrete fix. Recommendations are ordered high → medium → low and de-duplicated across checks, so one underlying issue is never listed twice.
+
+### Keyword matching methodology
+
+Keywords come from the shared skill taxonomy (the list behind the Skills page) plus a fixed concept list, matched over the resume's sectioned text; each hit records which sections it appeared in and how often. Matching is literal and case-insensitive — there is no semantic embedding. Taxonomy skills render as filled chips, concepts as dashed ones, and nothing here is ever written to the user's skills: these are claims from the document, not evidence.
+
+### Job-description matching methodology
+
+`POST /resume/match` reads a pasted posting (40–20,000 characters, validated server-side, discarded after the comparison), extracts required/preferred skills, experience years, education and certification signals, and compares them against the same sectioned text. The match score is a weighted mean — 60 required skills / 15 preferred / 15 stated experience / 10 anchoring of matched terms inside experience or project text — excluding parts with no input; with no readable requirements, no score is produced at all. A requirement the document does not state renders as **"not stated in your resume"**, never as a capability the candidate lacks, and same-category related terms are shown as context but never counted as a match.
+
+### Known limitations
+
+- PDF-only, text-based PDFs: scanned, encrypted or image-only files reach the parse-error state — the file is kept and downloadable, and nothing is fabricated from it.
+- Matching is deterministic keyword-and-evidence comparison, not semantic parsing or proficiency assessment; it predicts nothing about interview outcomes.
+- Records uploaded before this feature carry no ATS analysis until **Re-analyse** re-reads the stored file.
+- The public demo shows the resume section without an ATS analysis (the sample document has none — fabricating one would contradict the feature's premise), and the job-description panel requires a signed-in session with a stored resume.
 
 ---
 
@@ -461,13 +504,13 @@ All routes are mounted under `/api/v1`. Endpoints marked **(auth)** require the 
 | **Coding profiles (auth)**  | `GET /coding-profiles`, `POST /coding-profiles`, `POST /coding-profiles/:platform/sync`, `DELETE /coding-profiles/:platform` — platform is `LEETCODE` or `GEEKSFORGEEKS`                                       |
 | **Growth (auth)**           | `GET /growth/history`                                                                                                                                                                                          |
 | **Career readiness (auth)** | `GET /career/readiness`                                                                                                                                                                                        |
-| **Resume (auth)**           | `GET /resume`, `POST /resume` (multipart field `resume`; PDF only, 5 MB max), `GET /resume/download`, `POST /resume/analyse`, `DELETE /resume`                                                                 |
+| **Resume (auth)**           | `GET /resume`, `POST /resume` (multipart field `resume`; PDF only, 5 MB max), `GET /resume/download`, `POST /resume/analyse`, `POST /resume/match` (JSON `jobDescription`, 40–20,000 chars, never persisted), `DELETE /resume` |
 | **AI (auth)**               | `GET /ai/insights`                                                                                                                                                                                             |
 | **Webhooks**                | `POST /webhooks/github` (HMAC-verified), `GET /webhooks/github/status`                                                                                                                                         |
 
 > **Note on Courses:** A courses subsystem (`/courses` CRUD with skill promotion) still exists in the codebase — including a mounted route group — but it is **designated for removal** and therefore excluded from this documentation and the feature list. Removing it cleanly requires dropping the `Course` model, its migrations, service, validator, tests, and the Learning page section; that has not been done yet, and this README does not pretend otherwise.
 
-Request constraints: resumes are PDF-only and validated by bytes; coding-profile usernames are fetched before anything is written (invalid or private handle leaves no row); every mutation is Zod-validated with field-level errors.
+Request constraints: resumes are PDF-only and validated by bytes; matched job descriptions are length-bounded (40–20,000 characters) and never stored; coding-profile usernames are fetched before anything is written (invalid or private handle leaves no row); every mutation is Zod-validated with field-level errors.
 
 ---
 
@@ -477,8 +520,8 @@ Four stages of testing, all executed locally against current source as part of t
 
 | Suite                   | Count | What it proves                                                                                                                                                                                                    |
 | ----------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Backend service**     | 107   | Business rules with Prisma stubbed: skill derivation and confidence ceilings, certification matching, LeetCode/GFG mapping, growth arithmetic, readiness scoring, resume validation, webhook signature handling   |
-| **Backend integration** | 43    | Real HTTP stack over real PostgreSQL: anonymous callers rejected on every protected route, field-level validation errors, cross-user isolation, skill promotion end to end                                        |
+| **Backend service**     | 186   | Business rules with Prisma stubbed: skill derivation and confidence ceilings, certification matching, LeetCode/GFG mapping, growth arithmetic, readiness scoring, resume validation, deterministic ATS scoring/findings/recommendations, keyword and job matching, webhook signature handling |
+| **Backend integration** | 47    | Real HTTP stack over real PostgreSQL: anonymous callers rejected on every protected route, field-level validation errors, cross-user isolation, skill promotion end to end, job-description matching over the caller's own resume |
 | **Frontend**            | 76    | Extracted logic under `node --test`: UTC date handling, difficulty fallbacks, demo fixtures and isolation, API-client envelope, page render-state rules, page-title and heading-semantics invariants              |
 | **Browser E2E**         | 23    | Playwright Chromium against production build + compiled backend: auth journeys, every dashboard section, demo mode, mocked repository flows, 390px overflow, console cleanliness, heading hierarchy and skip link |
 
@@ -493,7 +536,7 @@ cd Frontend && npm run test:e2e  # builds e2e bundle, runs Playwright
 **GitHub Actions CI** (`.github/workflows/ci.yml`) runs five jobs on every push and pull request to `main`:
 
 - **docs** — link, anchor, and image validation
-- **backend** — migrations on empty disposable Postgres, schema-drift check, build + 150 tests, production-dependency audit
+- **backend** — migrations on empty disposable Postgres, schema-drift check, build + 233 tests, production-dependency audit
 - **frontend** — typecheck, build, 76 tests, audit
 - **browser E2E** — 23 journeys
 - **docker** — both images build
