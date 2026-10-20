@@ -740,6 +740,101 @@ test('one user cannot see, download or re-analyse another user\'s resume', async
   assert.equal((await alice.get('/resume/download')).status, 200);
 });
 
+/* ── job description matching ─────────────────────────────────────────── */
+
+const MATCH_JD = [
+  'Principal Platform Reliability Initiative — Senior Backend Engineer',
+  'Requirements:',
+  '- 3+ years of experience building backend services',
+  '- Bachelor degree in Computer Science or equivalent',
+  '- Strong skills in TypeScript, Node.js, Express, PostgreSQL, MySQL, Kubernetes'
+].join('\n');
+
+test('an owner matches a job description against their own stored resume', async () => {
+  const { client } = await registerUser(server.baseUrl, 'resume-match');
+  await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+
+  const { status, body } = await client.post('/resume/match', { jobDescription: MATCH_JD });
+  assert.equal(status, 200);
+
+  const match = body.data.match;
+  assert.ok(match.score.overall >= 0 && match.score.overall <= 100);
+  assert.match(match.score.basis, /not a prediction of interview selection/);
+  assert.ok(match.matched.length > 0, 'the posting names technologies the resume has');
+  assert.ok(
+    match.notEvidenced.some((r) => r.label === 'MySQL'),
+    'a requirement the resume never names must surface as not evidenced'
+  );
+  assert.ok(
+    match.matched.some((r) => r.label === 'TypeScript'),
+    'a technology both texts name must surface as matched'
+  );
+  assert.match(match.note, /not proof of proficiency/);
+
+  // The pasted posting is transient: nothing about it is written to the row.
+  const stored = JSON.stringify((await client.get('/resume')).body.data.resume);
+  assert.equal(
+    stored.includes('Platform Reliability Initiative'),
+    false,
+    'the job description must never be persisted'
+  );
+});
+
+test('job matching requires a session and only ever reads the caller\'s resume', async () => {
+  const anon = createClient(server.baseUrl);
+  const anonymous = await anon.post('/resume/match', { jobDescription: MATCH_JD });
+  assert.equal(anonymous.status, 401, 'matching must require a session');
+
+  const alice = (await registerUser(server.baseUrl, 'match-alice')).client;
+  await uploadResume(server.baseUrl, alice.cookie, buildSyntheticResumePdf());
+
+  // Bob has no resume of his own: there is nothing to match, and he is
+  // never handed Alice's document to compare against.
+  const bob = (await registerUser(server.baseUrl, 'match-bob')).client;
+  assert.equal((await bob.post('/resume/match', { jobDescription: MATCH_JD })).status, 404);
+
+  // Alice is untouched by Bob's attempt.
+  assert.equal((await alice.post('/resume/match', { jobDescription: MATCH_JD })).status, 200);
+});
+
+test('invalid job descriptions are refused with field-level messages', async () => {
+  const { client } = await registerUser(server.baseUrl, 'match-invalid');
+  await uploadResume(server.baseUrl, client.cookie, buildSyntheticResumePdf());
+
+  // The project-wide zod contract: generic message, details per field.
+  const fieldMessages = (body) => (body.error ?? []).map((e) => e.message).join(' | ');
+
+  const missing = await client.post('/resume/match', {});
+  assert.equal(missing.status, 400);
+  assert.equal(missing.body.message, 'Validation Error');
+  assert.match(fieldMessages(missing.body), /job description is required/i);
+  assert.ok(
+    (missing.body.error ?? []).some((e) => e.field === 'body.jobDescription'),
+    'the message must name the offending field'
+  );
+
+  const tooShort = await client.post('/resume/match', { jobDescription: 'QA role' });
+  assert.equal(tooShort.status, 400);
+  assert.match(fieldMessages(tooShort.body), /at least 40 characters/i);
+
+  const tooLong = await client.post('/resume/match', { jobDescription: 'x'.repeat(20001) });
+  assert.equal(tooLong.status, 400);
+  assert.match(fieldMessages(tooLong.body), /20,000 characters or fewer/i);
+});
+
+test('an unreadable resume answers clearly instead of fabricating a match', async () => {
+  const { client } = await registerUser(server.baseUrl, 'match-unreadable');
+
+  // A parse failure: no sections to compare against.
+  const uploaded = await uploadResume(server.baseUrl, client.cookie, buildPdf([]));
+  assert.equal(uploaded.status, 201);
+  assert.match(uploaded.body.data.parseError, /no text/i);
+
+  const { status, body } = await client.post('/resume/match', { jobDescription: MATCH_JD });
+  assert.equal(status, 400);
+  assert.match(body.message, /could not be parsed/i);
+});
+
 /* ── login rate limiting (last: it exhausts the shared per-IP budget) ─── */
 
 test('repeated failed logins hit a dedicated 429 limiter without breaking other auth routes', async () => {
