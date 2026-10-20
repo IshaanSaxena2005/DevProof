@@ -91,9 +91,9 @@ The product is a full-stack TypeScript application:
 
 *Skills with evidence ladder showing claimed, learned, and proven levels.*
 
-### 9. Problem Solving
+### 6. Problem Solving
 
-![DevProof Problem Solving](screenshots/09-problem-solving.png)
+![DevProof Problem Solving](screenshots/problem-solving.png)
 
 *Activity heatmap, difficulty distribution, and coding-platform statistics.*
 
