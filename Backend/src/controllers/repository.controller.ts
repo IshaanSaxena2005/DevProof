@@ -249,15 +249,6 @@ export class RepositoryController {
       const { id } = req.params;
       const { description } = req.body;
 
-      if (typeof description !== 'string') {
-        throw AppError.badRequest('description must be a string');
-      }
-
-      const trimmed = description.trim();
-      if (trimmed.length > 2000) {
-        throw AppError.badRequest('GitHub description must be 2000 characters or less');
-      }
-
       const repo = await prisma.repository.findFirst({
         where: { id, userId: user.id }
       });
@@ -265,6 +256,8 @@ export class RepositoryController {
       if (!repo) {
         throw AppError.notFound('Repository not found');
       }
+
+      const trimmed = description?.trim() ?? "";
 
       // Prevent duplicate updates if description hasn't changed
       if (repo.description === (trimmed || null)) {
