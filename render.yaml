@@ -10,18 +10,30 @@
 # the GitHub App credentials are actually required; the rest have defaults or
 # degrade to a clear error on the one route that needs them.
 #
+# ── The browser never talks to this service directly ─────────────────
+# Frontend/vercel.json proxies /api/* from the dashboard's own domain to this
+# one. That is not a convenience: served from onrender.com, the session cookie
+# is third-party to a page on vercel.app, and Brave, Safari and every private
+# window drop it — sign-in succeeds, then the first /auth/me returns 401 and
+# the user lands back on the login page. Behind the proxy both cookies are
+# first-party and none of that applies.
+#
+# It follows that the two URLs below are vercel.app addresses, not this
+# service's, and that CORS no longer carries any weight: the requests are
+# same-origin by the time the browser sees them.
+#
 # ── After the first deploy, three things still have to be done by hand ─────
-#  1. Set VITE_API_URL on Vercel to https://<this-service>.onrender.com/api/v1
-#     and redeploy. The bundle currently live was built without it, so it calls
-#     http://localhost:5000/api/v1 and works on nobody's machine but a
-#     developer's.
+#  1. Set VITE_API_URL on Vercel to the relative path /api/v1 and redeploy.
+#     Vite bakes it in at build time, so the variable alone changes nothing
+#     until a build runs.
 #  2. Point the GitHub App's callback URL at
-#     https://<this-service>.onrender.com/api/v1/auth/github/callback
-#     and set GITHUB_CALLBACK_URL to the same string.
-#  3. Check FRONTEND_URL below still matches the Vercel production domain. It is
-#     both the CORS allow-list entry and the post-sign-in redirect target, and a
-#     Vercel *preview* deployment has a different hostname that this will not
-#     allow — by design, since previews are not trusted origins.
+#     https://<dashboard-domain>/api/v1/auth/github/callback
+#     and set GITHUB_CALLBACK_URL below to the same string. Both go through
+#     the proxy, which is what makes the OAuth state cookie first-party too.
+#  3. Check FRONTEND_URL below still matches the Vercel production domain. It
+#     is the post-sign-in redirect target, and a Vercel *preview* deployment
+#     has a different hostname that this will not match — by design, since
+#     previews are not trusted origins.
 #
 # ── What the free plan costs, chosen deliberately ──────────────────────────
 #  - The API sleeps after 15 minutes without traffic and takes about a minute
