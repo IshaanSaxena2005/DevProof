@@ -557,10 +557,7 @@ export default function Repositories() {
                       <RepositoryDescriptionEditor
                         repositoryId={repo.id}
                         currentDescription={repo.description}
-                        onUpdate={(newDesc) => {
-                          const updated = data.repositories.map((r) =>
-                            r.id === repo.id ? { ...r, description: newDesc } : r
-                          );
+                        onUpdate={() => {
                           reload();
                         }}
                         disabled={isDemo}

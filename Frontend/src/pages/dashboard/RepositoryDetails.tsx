@@ -301,7 +301,7 @@ export default function RepositoryDetails() {
             <RepositoryDescriptionEditor
               repositoryId={repo.id}
               currentDescription={repo.description}
-              onUpdate={(newDesc) => {
+              onUpdate={() => {
                 reload();
               }}
               disabled={isDemo}
