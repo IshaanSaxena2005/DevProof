@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2, ExternalLink, ShieldQuestion, Check } from "lucide-react";
+import { Loader2, ExternalLink, ShieldQuestion, Check, ChevronDown } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import { ApiError } from "../../../lib/api.mts";
 import { useDemoResource } from "../../../demo/DemoContext";
@@ -10,6 +10,7 @@ import { skillsService } from "../../../services/skills";
 import { certificationsService } from "../../../services/certifications";
 import GlassCard from "../../../components/GlassCard";
 import { LAStatLabel } from "./shared";
+import AtsDashboard from "./AtsDashboard";
 import type {
   Certification,
   CertificationInput,
@@ -445,14 +446,19 @@ function ResumeCard({
       )}
 
       {!resume.parseError && analysis && (
-        <ResumeAnalysisView
-          key={analysis.analysedAt}
-          analysis={analysis}
-          sectionText={sectionText}
-          detectedSkills={detected}
-          certifications={certifications}
-          onCertificationAdded={onCertificationAdded}
-        />
+        <div key={analysis.analysedAt}>
+          {/* Actionable first: the deterministic ATS analysis, then the
+              transient job comparison, then — collapsed — the extracted
+              content the analysis is grounded in. */}
+          <AtsDashboard ats={parsed?.ats ?? null} readOnly={readOnly} />
+          <ResumeAnalysisView
+            analysis={analysis}
+            sectionText={sectionText}
+            detectedSkills={detected}
+            certifications={certifications}
+            onCertificationAdded={onCertificationAdded}
+          />
+        </div>
       )}
 
       {/* Legacy records: sections without a structured analysis. The same
@@ -594,6 +600,24 @@ function ResumeAnalysisView({
 
   return (
     <div className="relative mt-5 border-t border-white/[0.07] pt-5">
+      <CertificationReview
+        analysis={analysis}
+        certifications={certifications}
+        onCertificationAdded={onCertificationAdded}
+      />
+
+      {/* Everything the parser extracted, collapsed: the dashboard above is
+          what to act on; this is the content it was grounded in, kept
+          reachable rather than removed. */}
+      <details className="group mt-6 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+        <summary className="flex cursor-pointer list-none [&::-webkit-details-marker]:hidden items-center justify-between gap-3 px-4 py-3 text-[12px] font-bold uppercase tracking-[0.18em] text-white/45 hover:text-white/70 transition-colors">
+          What the parser read from this document
+          <ChevronDown
+            className="w-3.5 h-3.5 shrink-0 transition-transform group-open:rotate-180"
+            aria-hidden="true"
+          />
+        </summary>
+        <div className="px-4 pb-4 pt-1 space-y-6">
       {/* Contact — owner-only by construction: this whole page sits behind
           the authenticated, per-user /resume route. Never logged, never sent
           anywhere else. */}
@@ -725,12 +749,6 @@ function ResumeAnalysisView({
         <SkillsChips detectedSkills={detectedSkills} />
       </div>
 
-      <CertificationReview
-        analysis={analysis}
-        certifications={certifications}
-        onCertificationAdded={onCertificationAdded}
-      />
-
       <AnalysisCategory title="Achievements" count={analysis.achievements.length}>
         <ul className="space-y-1.5">
           {analysis.achievements.map((a, i) => (
@@ -741,6 +759,8 @@ function ResumeAnalysisView({
           ))}
         </ul>
       </AnalysisCategory>
+        </div>
+      </details>
     </div>
   );
 }
