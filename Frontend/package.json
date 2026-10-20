@@ -61,7 +61,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --test test/activityDays.test.mts test/difficulty.test.mts test/demo.test.mts test/api.test.mts test/psViewState.test.mts test/pageTitles.test.mts",
+    "test": "node --test test/activityDays.test.mts test/difficulty.test.mts test/demo.test.mts test/api.test.mts test/psViewState.test.mts test/pageTitles.test.mts test/headingSemantics.test.mts",
     "build:e2e": "vite build --mode e2e --outDir dist-e2e",
     "test:e2e": "npm run build:e2e && playwright test"
   },
