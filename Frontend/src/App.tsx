@@ -57,6 +57,17 @@ const CareerReadiness = lazy(() => import("./pages/dashboard/CareerReadiness"));
 const AiInsights = lazy(() => import("./pages/dashboard/AiInsights"));
 const Settings = lazy(() => import("./pages/dashboard/Settings"));
 
+// Public pages
+const Product = lazy(() => import("./pages/public/Product"));
+const RepositoryIntelligence = lazy(() => import("./pages/public/RepositoryIntelligence"));
+const Developer360Public = lazy(() => import("./pages/public/Developer360"));
+const GrowthPublic = lazy(() => import("./pages/public/Growth"));
+const CareerReadinessPublic = lazy(() => import("./pages/public/CareerReadiness"));
+const Documentation = lazy(() => import("./pages/public/Documentation"));
+const Privacy = lazy(() => import("./pages/public/Privacy"));
+const Terms = lazy(() => import("./pages/public/Terms"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
 /** Spinner matching the session-restore one in ProtectedRoute. */
 function RouteLoading() {
   return (
@@ -179,6 +190,70 @@ export default function App() {
               </PageBoundary>
             }
           />
+          <Route
+            path="/product"
+            element={
+              <PageBoundary>
+                <Product />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/repository-intelligence"
+            element={
+              <PageBoundary>
+                <RepositoryIntelligence />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/developer-360"
+            element={
+              <PageBoundary>
+                <Developer360Public />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/growth"
+            element={
+              <PageBoundary>
+                <GrowthPublic />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/career-readiness"
+            element={
+              <PageBoundary>
+                <CareerReadinessPublic />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/documentation"
+            element={
+              <PageBoundary>
+                <Documentation />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/privacy"
+            element={
+              <PageBoundary>
+                <Privacy />
+              </PageBoundary>
+            }
+          />
+          <Route
+            path="/terms"
+            element={
+              <PageBoundary>
+                <Terms />
+              </PageBoundary>
+            }
+          />
 
           {/* Public demo.
 
@@ -223,8 +298,15 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* Fallback to landing page */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Fallback to 404 page */}
+          <Route
+            path="*"
+            element={
+              <PageBoundary>
+                <NotFound />
+              </PageBoundary>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
