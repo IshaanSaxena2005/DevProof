@@ -174,10 +174,18 @@ function UnavailableNote({ children }: { children: React.ReactNode }) {
 
 /* ── growth over time ────────────────────────────────── */
 
-/** Inner block heading, matching the small labels used on the cards above. */
+/**
+ * Inner block heading, matching the small labels used on the cards above.
+ *
+ * An h3, not a <p>: these labels (Average score by month, Improvement by
+ * repository, Milestones) are section headings inside the growth-over-time
+ * card, sitting under the page's h2 section labels. Preflight keeps an h3
+ * inheriting the surrounding font metrics, so the classes below — not the
+ * tag — decide how it looks.
+ */
 function BlockLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-3">{children}</p>
+    <h3 className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-3">{children}</h3>
   );
 }
 
