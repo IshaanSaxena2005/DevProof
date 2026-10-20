@@ -239,4 +239,52 @@ export class RepositoryController {
       next(error);
     }
   };
+
+  /**
+   * Update repository description on GitHub and in local database
+   */
+  static updateRepositoryDescription = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+      const { description } = req.body;
+
+      if (typeof description !== 'string') {
+        throw AppError.badRequest('description must be a string');
+      }
+
+      if (description.length > 2000) {
+        throw AppError.badRequest('GitHub description must be 2000 characters or less');
+      }
+
+      const repo = await prisma.repository.findFirst({
+        where: { id, userId: user.id }
+      });
+
+      if (!repo) {
+        throw AppError.notFound('Repository not found');
+      }
+
+      const accessToken = user.githubAccount?.accessToken;
+      if (!accessToken) {
+        throw AppError.unauthorized('GitHub account must be connected to update repository description');
+      }
+
+      // Update on GitHub first
+      await GitHubService.updateRepositoryDescription(repo.owner, repo.name, description, accessToken);
+
+      // Update local database after GitHub confirms
+      const updatedRepo = await prisma.repository.update({
+        where: { id },
+        data: {
+          description: description || null,
+          githubUpdatedAt: new Date()
+        }
+      });
+
+      return successResponse(res, 200, 'Repository description updated successfully', { repository: updatedRepo });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
