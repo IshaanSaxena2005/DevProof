@@ -97,9 +97,9 @@ The product is a full-stack TypeScript application:
 
 *Activity heatmap, difficulty distribution, and coding-platform statistics.*
 
-### 10. Learning & Achievements
+### 7. Learning & Achievements
 
-![DevProof Learning Achievements](screenshots/10-learning-achievements.png)
+![DevProof Learning Achievements](screenshots/learning-achievements.png)
 
 *Certifications, hackathons, and resume panel.*
 
