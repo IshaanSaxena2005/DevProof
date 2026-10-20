@@ -93,6 +93,12 @@ Screenshots will be added as they are captured. See [docs/screenshots.md](docs/s
 
 *Detailed repository analysis with six metric categories and severity-ranked findings.*
 
+### 6. Developer 360
+
+![DevProof Developer 360](screenshots/07-developer-360.png)
+
+*Aggregated view of repositories, skills, credentials, and target roles.*
+
 ---
 
 ### 9. Learning & Achievements
