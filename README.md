@@ -210,6 +210,10 @@ Every feature below exists in the code today. The **Kind** column keeps the posi
 | **Public demo mode** | Every dashboard section with synthetic, labelled fixtures; writes are refused before any request is sent | Synthetic |
 | **Responsive dashboard** | Ten route-split lazy-loaded sections, overflow-free at 390px (browser-tested) | — |
 
+### Dashboard heading convention
+
+Every dashboard screen shows its page title exactly once, as the shared header's `h1`. Pages own everything below it: their subtitle (`PageContainer`) and real section headings — `h2` for section labels, `h3` for blocks inside them. The label components (`SLabel`, `SectionLabel`, `LALabel`, `BlockLabel`, …) are heading elements styled by their Tailwind classes; preflight makes a heading inherit the surrounding font metrics, so converting a label changed markup, never appearance. Value-captioning micro-labels inside cards stay paragraphs — they caption a value, they do not name a section. The shell also starts its tab order with a skip link onto the scrollable main region. The whole shape is pinned by `Frontend/test/pageTitles.test.mts`, `Frontend/test/headingSemantics.test.mts`, and the `Frontend/e2e/headings.spec.ts` journey.
+
 ---
 
 ## Data Flow & Evidence
@@ -251,7 +255,7 @@ Versions are read from lockfiles — nothing is listed because it merely "would 
 | **Data** | PostgreSQL 16, Prisma ORM 5 | Persistence, migrations, typed queries |
 | **Files** | Multer (uploads), `pdfjs-dist` (local text extraction) | Resume intake and parsing without external services |
 | **Integrations** | GitHub App (REST + webhooks), LeetCode GraphQL, GeeksforGeeks page payloads, Groq (`openai/gpt-oss-120b`) | Evidence sources and optional AI layer |
-| **Testing** | node:test (service + integration), Playwright (20 browser journeys) | Unit, over-HTTP integration, and real-browser coverage |
+| **Testing** | node:test (service + integration), Playwright (23 browser journeys) | Unit, over-HTTP integration, and real-browser coverage |
 | **Delivery** | Docker Compose, GitHub Actions CI | Local full stack and per-push verification |
 
 ---
@@ -474,8 +478,8 @@ Four stages of testing, all executed locally against current source as part of t
 |-------|-------|----------------|
 | **Backend service** | 107 | Business rules with Prisma stubbed: skill derivation and confidence ceilings, certification matching, LeetCode/GFG mapping, growth arithmetic, readiness scoring, resume validation, webhook signature handling |
 | **Backend integration** | 43 | Real HTTP stack over real PostgreSQL: anonymous callers rejected on every protected route, field-level validation errors, cross-user isolation, skill promotion end to end |
-| **Frontend** | 63 | Extracted logic under `node --test`: UTC date handling, difficulty fallbacks, demo fixtures and isolation, API-client envelope, page render-state rules |
-| **Browser E2E** | 20 | Playwright Chromium against production build + compiled backend: auth journeys, every dashboard section, demo mode, mocked repository flows, 390px overflow, console cleanliness |
+| **Frontend** | 76 | Extracted logic under `node --test`: UTC date handling, difficulty fallbacks, demo fixtures and isolation, API-client envelope, page render-state rules, page-title and heading-semantics invariants |
+| **Browser E2E** | 23 | Playwright Chromium against production build + compiled backend: auth journeys, every dashboard section, demo mode, mocked repository flows, 390px overflow, console cleanliness, heading hierarchy and skip link |
 
 ```bash
 cd Backend  && npm test          # builds, then service + integration suites
@@ -488,8 +492,8 @@ cd Frontend && npm run test:e2e  # builds e2e bundle, runs Playwright
 **GitHub Actions CI** (`.github/workflows/ci.yml`) runs five jobs on every push and pull request to `main`:
 - **docs** — link, anchor, and image validation
 - **backend** — migrations on empty disposable Postgres, schema-drift check, build + 150 tests, production-dependency audit
-- **frontend** — typecheck, build, 63 tests, audit
-- **browser E2E** — 20 journeys
+- **frontend** — typecheck, build, 76 tests, audit
+- **browser E2E** — 23 journeys
 - **docker** — both images build
 
 **What automated suite does not prove:** Live GitHub OAuth, GitHub App installation flow, real webhook delivery, and live Groq responses need real credentials and stay outside CI — same code paths exercised with stubs, which is not the same as live round trip.
