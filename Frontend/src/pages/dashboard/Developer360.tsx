@@ -179,7 +179,10 @@ export default function Developer360() {
         />
         <div className="relative flex flex-col md:flex-row items-center md:items-start gap-8">
           <div className="flex flex-col items-center gap-3 shrink-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">Developer Score</p>
+            {/* The score card's own heading — an h3 so assistive tech sees it
+                as a section, not as body text. Same classes: preflight keeps an
+                h3 inheriting the surrounding font metrics. */}
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">Developer Score</h3>
             <ScoreRing score={score} />
             <p
               className="text-[12px] font-bold text-center"
