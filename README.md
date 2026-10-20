@@ -73,9 +73,9 @@ The product is a full-stack TypeScript application:
 
 *A consolidated view of developer intelligence, repository metrics, and activity signals.*
 
-### 5. Repository Intelligence
+### 3. Repositories
 
-![DevProof Repositories](screenshots/05-repositories.png)
+![DevProof Repositories](screenshots/repositories.png)
 
 *Connected GitHub repositories with synchronization status and analysis triggers.*
 
