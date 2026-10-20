@@ -10,6 +10,7 @@ import {
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock, LoadingBlock } from "../../components/StateBlocks";
+import RepositoryDescriptionEditor from "../../components/RepositoryDescriptionEditor";
 import { ApiError } from "../../lib/api.mts";
 import { githubService } from "../../services/github";
 import type {
@@ -297,9 +298,14 @@ export default function RepositoryDetails() {
               )}
             </div>
 
-            <p className="text-sm text-white/50 mb-4 leading-relaxed max-w-2xl">
-              {repo.description ?? "No description provided."}
-            </p>
+            <RepositoryDescriptionEditor
+              repositoryId={repo.id}
+              currentDescription={repo.description}
+              onUpdate={(newDesc) => {
+                reload();
+              }}
+              disabled={isDemo}
+            />
 
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-white/35">
               <span><span className="text-white/50">Owner:</span> {repo.owner}</span>
