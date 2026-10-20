@@ -363,4 +363,23 @@ export class GitHubService {
 
     return null;
   }
+
+  /**
+   * Update repository description on GitHub
+   * Requires write permission on the repository
+   */
+  static async updateRepositoryDescription(
+    owner: string,
+    repo: string,
+    description: string,
+    accessToken: string
+  ): Promise<void> {
+    const response = await fetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
+      method: 'PATCH',
+      headers: this.headers(accessToken, 'application/vnd.github.v3+json'),
+      body: JSON.stringify({ description })
+    });
+
+    this.assertOk(response, `updating description for ${owner}/${repo}`);
+  }
 }
