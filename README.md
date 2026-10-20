@@ -117,6 +117,12 @@ Screenshots will be added as they are captured. See [docs/screenshots.md](docs/s
 
 *Certifications, hackathons, and resume panel.*
 
+### 10. Demo Overview
+
+![DevProof Demo Overview](screenshots/03-demo-overview.png)
+
+*Public demo mode with synthetic, labelled fixtures.*
+
 ---
 
 ---
