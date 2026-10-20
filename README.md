@@ -63,89 +63,59 @@ The product is a full-stack TypeScript application:
 
 Screenshots will be added as they are captured. See [docs/screenshots.md](docs/screenshots.md) for the complete checklist.
 
-<!-- ### 1. Landing Page -->
+### 1. Landing Page
 
-<!-- ![DevProof Landing Page](screenshots/01-landing-page.png) -->
+![DevProof Landing Page](screenshots/01-landing-page.png)
 
-<!-- *The public landing page with the interactive Spline background and primary actions.* -->
+*The public landing page with the interactive Spline background and primary actions.*
 
-<!-- ### 2. Authentication -->
+### 2. Authentication
 
-<!-- ![DevProof Authentication](screenshots/02-login-register.png) -->
+![DevProof Authentication](screenshots/02-authentication.png)
 
-<!-- *Login and registration forms with email/password and GitHub App sign-in options.* -->
+*Login and registration forms with email/password and GitHub App sign-in options.*
 
-<!-- ### 3. Dashboard Overview -->
+### 3. Dashboard Overview
 
-<!-- ![DevProof Dashboard Overview](screenshots/04-dashboard-overview.png) -->
+![DevProof Dashboard Overview](screenshots/04-dashboard-overview.png)
 
-<!-- *A consolidated view of developer intelligence, repository metrics, and activity signals.* -->
+*A consolidated view of developer intelligence, repository metrics, and activity signals.*
 
-<!-- ### 4. Repository Intelligence -->
+### 4. Repository Intelligence
 
-<!-- ![DevProof Repositories](screenshots/05-repositories.png) -->
+![DevProof Repositories](screenshots/05-repositories.png)
 
-<!-- *Connected GitHub repositories with synchronization status and analysis triggers.* -->
+*Connected GitHub repositories with synchronization status and analysis triggers.*
 
-<!-- ### 5. Repository Analysis -->
+### 5. Repository Analysis
 
-<!-- ![DevProof Repository Analysis](screenshots/06-repository-analysis.png) -->
+![DevProof Repository Analysis](screenshots/06-repository-analysis.png)
 
-<!-- *Detailed repository analysis with six metric categories and severity-ranked findings.* -->
+*Detailed repository analysis with six metric categories and severity-ranked findings.*
 
-<!-- ### 6. Developer 360 -->
+### 6. Developer 360
 
-<!-- ![DevProof Developer 360](screenshots/07-developer-360.png) -->
+![DevProof Developer 360](screenshots/07-developer-360.png)
 
-<!-- *Aggregated view of repositories, skills, credentials, and target roles.* -->
+*Aggregated view of repositories, skills, credentials, and target roles.*
 
-<!-- ### 7. Skills Intelligence -->
+### 7. Skills Intelligence
 
-<!-- ![DevProof Skills Intelligence](screenshots/08-skills-intelligence.png) -->
+![DevProof Skills Intelligence](screenshots/08-skills-intelligence.png)
 
-<!-- *Skills with evidence ladder showing claimed, learned, and proven levels.* -->
+*Skills with evidence ladder showing claimed, learned, and proven levels.*
 
-<!-- ### 8. Problem Solving -->
+### 8. Problem Solving
 
-<!-- ![DevProof Problem Solving](screenshots/09-problem-solving.png) -->
+![DevProof Problem Solving](screenshots/09-problem-solving.png)
 
-<!-- *Activity heatmap, difficulty distribution, and coding-platform statistics.* -->
+*Activity heatmap, difficulty distribution, and coding-platform statistics.*
 
-<!-- ### 9. Learning & Achievements -->
+### 9. Learning & Achievements
 
-<!-- ![DevProof Learning Achievements](screenshots/10-learning-achievements.png) -->
+![DevProof Learning Achievements](screenshots/10-learning-achievements.png)
 
-<!-- *Certifications, hackathons, and resume panel.* -->
-
-<!-- ### 10. Growth Analytics -->
-
-<!-- ![DevProof Growth Analytics](screenshots/11-growth-analytics.png) -->
-
-<!-- *Growth history charts reconstructed from stored analysis timestamps.* -->
-
-<!-- ### 11. Career Readiness -->
-
-<!-- ![DevProof Career Readiness](screenshots/12-career-readiness.png) -->
-
-<!-- *Readiness score with per-requirement evidence and recommendations.* -->
-
-<!-- ### 12. AI Insights -->
-
-<!-- ![DevProof AI Insights](screenshots/13-ai-insights.png) -->
-
-<!-- *Groq-backed insights grounded in stored analyses, or honest empty state.* -->
-
-<!-- ### 13. Settings -->
-
-<!-- ![DevProof Settings](screenshots/14-settings.png) -->
-
-<!-- *Account management, data export, and connected-platform controls.* -->
-
-<!-- ### 14. Mobile Responsive -->
-
-<!-- ![DevProof Mobile Responsive](screenshots/15-mobile-responsive.png) -->
-
-<!-- *Dashboard at 390px viewport with no horizontal overflow.* -->
+*Certifications, hackathons, and resume panel.*
 
 ---
 
