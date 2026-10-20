@@ -5,7 +5,7 @@ describe("Repository Description Validation", () => {
   it("should accept valid descriptions under 2000 characters", () => {
     const valid = "A simple repository description";
     assert.strictEqual(typeof valid, "string");
-    assert.strictEqual(valid.length, 34);
+    assert.strictEqual(valid.length, 31);
     assert.ok(valid.length <= 2000);
   });
 
