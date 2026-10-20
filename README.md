@@ -105,6 +105,20 @@ Screenshots will be added as they are captured. See [docs/screenshots.md](docs/s
 
 *Skills with evidence ladder showing claimed, learned, and proven levels.*
 
+### 8. Problem Solving
+
+![DevProof Problem Solving](screenshots/09-problem-solving.png)
+
+*Activity heatmap, difficulty distribution, and coding-platform statistics.*
+
+### 9. Learning & Achievements
+
+![DevProof Learning Achievements](screenshots/10-learning-achievements.png)
+
+*Certifications, hackathons, and resume panel.*
+
+---
+
 ---
 
 ### 9. Learning & Achievements
