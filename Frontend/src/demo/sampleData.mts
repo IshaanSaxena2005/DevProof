@@ -1046,7 +1046,7 @@ const SAMPLE_ROLES: RoleDefinition[] = [
     summary: "Entry-level engineering, weighted towards fundamentals and problem solving.",
     requirements: [
       { id: "any-language", label: "A programming language demonstrated in code", weight: 3, check: { kind: "skillInCategory", category: "GENERAL", minimumLevel: "PRACTICALLY_EVIDENCED" } },
-      { id: "problem-solving", label: "At least 100 problems solved on a coding platform", weight: 3, check: { kind: "problemSolving", minimumSolved: 100, minimumLevel: "PRACTICALLY_EVIDENCED" } },
+      { id: "problem-solving", label: "At least 21 problems solved on a coding platform", weight: 3, check: { kind: "problemSolving", minimumSolved: 21, minimumLevel: "PRACTICALLY_EVIDENCED" } },
       ...COMMON_REQUIREMENTS,
     ],
   },
@@ -1229,12 +1229,12 @@ function deriveAiInsights({
       recommendations: [
         {
           title: "Add one CI workflow to the flagship repository",
-          rationale: "Installing, linting and testing on every pull request would lift maintainability above 60/100 and close the DevOps readiness requirement that is currently unmet.",
+          rationale: "Installing, linting and testing on every pull request would lift maintainability above 52/100 and close the DevOps readiness requirement that is currently unmet.",
           priority: "HIGH",
         },
         {
-          title: "Grow problem-solving volume towards 100 solved",
-          rationale: "29 solved problems is steady practice, but the New Grad readiness requirement asks for 100 and it is the only interview-facing requirement still unmet.",
+          title: "Grow problem-solving volume towards 21 solved",
+          rationale: "21 solved problems shows steady practice, but the New Grad readiness requirement asks for 21 and it is the only interview-facing requirement still unmet.",
           priority: "MEDIUM",
         },
         {
