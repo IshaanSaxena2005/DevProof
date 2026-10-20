@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Loader2, X, Check, AlertCircle, Edit2, Plus } from "lucide-react";
 import { githubService } from "../services/github";
@@ -22,8 +22,29 @@ export default function RepositoryDescriptionEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const hasDescription = currentDescription !== null && currentDescription.trim() !== "";
+
+  // Auto-focus textarea when entering edit mode
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isEditing]);
+
+  // Handle Escape key to cancel
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isEditing) {
+        handleCancel();
+      }
+    };
+    if (isEditing) {
+      window.addEventListener("keydown", handleEscape);
+      return () => window.removeEventListener("keydown", handleEscape);
+    }
+  }, [isEditing]);
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -100,6 +121,7 @@ export default function RepositoryDescriptionEditor({
             <button
               onClick={handleStartEdit}
               className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary/70 hover:text-primary transition-colors cursor-pointer"
+              aria-label={hasDescription ? "Edit repository description" : "Add repository description"}
             >
               {hasDescription ? (
                 <>
@@ -113,17 +135,19 @@ export default function RepositoryDescriptionEditor({
                 </>
               )}
             </button>
-            {success && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-1.5 text-[11px] text-primary"
-              >
-                <Check className="w-3 h-3" />
-                Description updated
-              </motion.div>
-            )}
+            <div role="status" aria-live="polite">
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-1.5 text-[11px] text-primary"
+                >
+                  <Check className="w-3 h-3" />
+                  Description updated
+                </motion.div>
+              )}
+            </div>
           </motion.div>
         ) : (
           <motion.div
@@ -133,7 +157,12 @@ export default function RepositoryDescriptionEditor({
             exit={{ opacity: 0, y: -8 }}
             className="space-y-3"
           >
+            <label htmlFor={`repo-desc-${repositoryId}`} className="sr-only">
+              Repository description
+            </label>
             <textarea
+              id={`repo-desc-${repositoryId}`}
+              ref={textareaRef}
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value);
@@ -144,16 +173,20 @@ export default function RepositoryDescriptionEditor({
               rows={3}
               className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-white placeholder-white/25 outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all resize-none"
               disabled={isSaving}
+              aria-describedby={error ? `repo-desc-error-${repositoryId}` : undefined}
+              aria-invalid={error !== null}
             />
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-white/30">
+                <span className="text-[10px] text-white/30" aria-live="polite">
                   {description.length}/2000
                 </span>
                 {error && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
+                    id={`repo-desc-error-${repositoryId}`}
+                    role="alert"
                     className="flex items-center gap-1 text-[10px] text-red-400"
                   >
                     <AlertCircle className="w-3 h-3" />
@@ -166,6 +199,7 @@ export default function RepositoryDescriptionEditor({
                   onClick={handleCancel}
                   disabled={isSaving}
                   className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Cancel editing description"
                 >
                   <X className="w-3 h-3" />
                   Cancel
@@ -178,6 +212,7 @@ export default function RepositoryDescriptionEditor({
                     backgroundColor: isSaving ? "#0a3d00" : "#16ff00",
                     color: "#000"
                   }}
+                  aria-label="Save repository description"
                 >
                   {isSaving ? (
                     <>
