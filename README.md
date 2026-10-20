@@ -85,9 +85,9 @@ The product is a full-stack TypeScript application:
 
 *Aggregated view of repositories, skills, credentials, and target roles.*
 
-### 8. Skills Intelligence
+### 5. Skills
 
-![DevProof Skills Intelligence](screenshots/08-skills-intelligence.png)
+![DevProof Skills](screenshots/skills.png)
 
 *Skills with evidence ladder showing claimed, learned, and proven levels.*
 
