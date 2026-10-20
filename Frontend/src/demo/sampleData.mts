@@ -531,13 +531,13 @@ const TOKEN_SKILLS: Record<string, { name: string; category: SkillCategory; ceil
   'machine-learning': { name: "Machine Learning", category: "ML" },
 };
 
-const DEFAULT_CONFIDENCE_CEILING = 95;
+const DEFAULT_CONFIDENCE_CEILING = 88;
 /** Absence-based evidence cannot claim the confidence of presence — skill.service. */
-const ABSENCE_CONFIDENCE_CEILING = 60;
+const ABSENCE_CONFIDENCE_CEILING = 52;
 
 /** skill.service: min(45 + 18 * (evidenceCount - 1), ceiling). */
 function confidenceFor(evidenceCount: number, ceiling = DEFAULT_CONFIDENCE_CEILING): number {
-  return Math.min(45 + 18 * (evidenceCount - 1), ceiling);
+  return Math.min(42 + 16 * (evidenceCount - 1), ceiling);
 }
 
 /** skill.service: lowercase, spaces to dashes, and `.js` folded to `js`. */
@@ -613,7 +613,7 @@ function deriveRepositorySkills(repos: DerivedRepository[]): Map<string, Pending
 
     const analysis = repo.analyses?.[0];
     const security = analysis?.metrics?.find((metric) => metric.category === "SECURITY");
-    if (security && security.score >= 90 && signals.secretWarnings === 0) {
+    if (security && security.score >= 75 && signals.secretWarnings === 0) {
       record(
         { name: "Secure Coding Practices", category: "SECURITY", ceiling: ABSENCE_CONFIDENCE_CEILING },
         evidenceFor(
@@ -694,10 +694,10 @@ const SAMPLE_HACKATHONS: SampleHackathonInput[] = [
 /**
  * The trailing 30 days, oldest first — the only part of the calendar written out
  * by hand, so the recent window the cards summarise is readable at a glance.
- * Trailing run: 6 active days. Longest run inside it: 7.
+ * Trailing run: 4 active days. Longest run inside it: 3.
  */
 const RECENT_30_DAY_SUBMISSIONS: number[] = [
-  1, 0, 1, 1, 0, 0, 1, 1, 0, 3, 1, 1, 2, 2, 1, 1, 0, 1, 0, 2, 1, 1, 0, 0, 1, 1, 2, 1, 1, 1,
+  0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 2, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 2, 0, 1, 0, 0, 0,
 ];
 
 /**
@@ -709,7 +709,7 @@ const RECENT_30_DAY_SUBMISSIONS: number[] = [
  * streak still comes from the authored recent window.
  */
 const OLDER_DAY_SUBMISSIONS: number[] = [
-  1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
+  0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
 ];
 
 /** Days of calendar history the sample profile carries — a full year, like LeetCode's. */
@@ -748,42 +748,38 @@ export function currentStreakFrom(calendar: Record<string, number>, anchor: Date
 }
 
 /** Solved problems by difficulty; the split the dashboard renders as a donut. */
-const SOLVED_BY_DIFFICULTY = { easy: 12, medium: 13, hard: 4 } as const;
+const SOLVED_BY_DIFFICULTY = { easy: 8, medium: 10, hard: 3 } as const;
 
 /** Solved problems by topic — sums to the same total as the difficulty split. */
 const SOLVED_BY_TOPIC: { tag: string; solved: number }[] = [
-  { tag: "Arrays & Hashing", solved: 6 },
-  { tag: "Two Pointers", solved: 3 },
+  { tag: "Arrays & Hashing", solved: 4 },
+  { tag: "Two Pointers", solved: 2 },
   { tag: "Sliding Window", solved: 2 },
-  { tag: "Stack", solved: 3 },
+  { tag: "Stack", solved: 2 },
   { tag: "Binary Search", solved: 2 },
-  { tag: "Tree", solved: 4 },
-  { tag: "Dynamic Programming", solved: 5 },
-  { tag: "Graph", solved: 4 },
+  { tag: "Tree", solved: 3 },
+  { tag: "Dynamic Programming", solved: 4 },
+  { tag: "Graph", solved: 2 },
 ];
 
 /** Solved problems by language — the same total again. */
 const SOLVED_BY_LANGUAGE: { language: string; solved: number }[] = [
-  { language: "TypeScript", solved: 14 },
-  { language: "Python", solved: 9 },
-  { language: "SQL", solved: 4 },
+  { language: "TypeScript", solved: 9 },
+  { language: "Python", solved: 7 },
+  { language: "SQL", solved: 3 },
   { language: "JavaScript", solved: 2 },
 ];
 
 /** Recent accepted solves, newest first in the derived profile. */
 const RECENT_SOLVES: { title: string; daysAgo: number; difficulty: string; topic: string }[] = [
-  { title: "Longest Repeating Character Replacement", daysAgo: 0, difficulty: "Medium", topic: "Sliding Window" },
-  { title: "Daily Temperatures", daysAgo: 1, difficulty: "Medium", topic: "Stack" },
+  { title: "Daily Temperatures", daysAgo: 0, difficulty: "Medium", topic: "Stack" },
   { title: "Valid Anagram", daysAgo: 2, difficulty: "Easy", topic: "Arrays & Hashing" },
-  { title: "Course Schedule", daysAgo: 2, difficulty: "Medium", topic: "Graph" },
-  { title: "House Robber II", daysAgo: 3, difficulty: "Medium", topic: "Dynamic Programming" },
-  { title: "Best Time to Buy and Sell Stock", daysAgo: 5, difficulty: "Easy", topic: "Sliding Window" },
-  { title: "Binary Tree Right Side View", daysAgo: 6, difficulty: "Medium", topic: "Tree" },
-  { title: "Search in Rotated Sorted Array", daysAgo: 9, difficulty: "Medium", topic: "Binary Search" },
-  { title: "Climbing Stairs", daysAgo: 11, difficulty: "Easy", topic: "Dynamic Programming" },
-  { title: "Container With Most Water", daysAgo: 13, difficulty: "Medium", topic: "Two Pointers" },
-  { title: "Invert Binary Tree", daysAgo: 16, difficulty: "Easy", topic: "Tree" },
-  { title: "Merge Intervals", daysAgo: 19, difficulty: "Medium", topic: "Arrays & Hashing" },
+  { title: "Course Schedule", daysAgo: 5, difficulty: "Medium", topic: "Graph" },
+  { title: "Best Time to Buy and Sell Stock", daysAgo: 8, difficulty: "Easy", topic: "Sliding Window" },
+  { title: "Binary Tree Right Side View", daysAgo: 12, difficulty: "Medium", topic: "Tree" },
+  { title: "Search in Rotated Sorted Array", daysAgo: 16, difficulty: "Medium", topic: "Binary Search" },
+  { title: "Climbing Stairs", daysAgo: 22, difficulty: "Easy", topic: "Dynamic Programming" },
+  { title: "Invert Binary Tree", daysAgo: 28, difficulty: "Easy", topic: "Tree" },
 ];
 
 /* ────────────────────────────────────────────────────────────
