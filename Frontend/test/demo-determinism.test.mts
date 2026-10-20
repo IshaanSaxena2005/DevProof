@@ -4,7 +4,7 @@ import { sampleData } from "../src/demo/sampleData.mts";
 
 describe("Demo Data Determinism", () => {
   it("repository metrics should not be perfect 100s", () => {
-    const repos = sampleData.repositoriesResponse().repositories;
+    const repos = sampleData.repositoriesResponse.repositories;
     for (const repo of repos) {
       const latest = repo.analyses?.[0];
       if (latest) {
@@ -17,15 +17,15 @@ describe("Demo Data Determinism", () => {
   });
 
   it("skill confidence should respect realistic ceilings", () => {
-    const skills = sampleData.skillsResponse().skills;
+    const skills = sampleData.skillsResponse.skills;
     for (const skill of skills) {
       assert.ok(skill.confidence <= 88, `Skill ${skill.name} confidence ${skill.confidence} exceeds ceiling`);
     }
   });
 
   it("problem-solving totals should match across breakdowns", () => {
-    const ps = sampleData.codingProfilesResponse().profiles;
-    const leetcode = ps.find((p) => p.platform === "leetcode");
+    const ps = sampleData.codingProfilesResponse.profiles;
+    const leetcode = ps.find((p) => p.platform.toLowerCase() === "leetcode");
     assert.ok(leetcode, "LeetCode profile should exist");
 
     const byDifficulty = leetcode?.rawStats?.difficultySolved;
@@ -43,16 +43,16 @@ describe("Demo Data Determinism", () => {
   });
 
   it("cross-page repository count should be consistent", () => {
-    const repos = sampleData.repositoriesResponse().repositories;
-    const d360 = sampleData.developer360Response();
-    const overview = sampleData.overviewResponse();
+    const repos = sampleData.repositoriesResponse.repositories;
+    const d360 = sampleData.developer360.overview;
+    const overview = d360.totalRepositories;
 
-    assert.strictEqual(repos.length, d360.repositoriesCount, "Repositories count in D360 must match repository list");
-    assert.strictEqual(repos.length, overview.repositoryCount, "Repositories count in Overview must match repository list");
+    assert.strictEqual(repos.length, d360.totalRepositories, "Repositories count in D360 must match repository list");
+    assert.strictEqual(repos.length, overview, "Repositories count in Overview must match repository list");
   });
 
   it("languages in repository list must match repository details", () => {
-    const repos = sampleData.repositoriesResponse().repositories;
+    const repos = sampleData.repositoriesResponse.repositories;
     for (const repo of repos) {
       const detail = sampleData.repositoryResponse(repo.id);
       assert.strictEqual(detail.repository.language, repo.language, `Language mismatch for ${repo.name}`);
@@ -60,17 +60,28 @@ describe("Demo Data Determinism", () => {
   });
 
   it("growth history should reference existing repositories", () => {
-    const growth = sampleData.growthHistoryResponse();
-    const repos = sampleData.repositoriesResponse().repositories;
+    const growth = sampleData.growth;
+    const repos = sampleData.repositoriesResponse.repositories;
     const repoNames = new Set(repos.map((r) => r.name));
 
-    for (const entry of growth.history ?? []) {
-      assert.ok(repoNames.has(entry.repository), `Growth entry references unknown repository: ${entry.repository}`);
+    // Check milestones reference existing repositories
+    for (const entry of growth.milestones ?? []) {
+      if (entry.label.includes("First repository connected")) {
+        // Full name is included, so we extract the repo name
+        const fullName = entry.detail;
+        const repoName = fullName.split("/")[1];
+        assert.ok(repoNames.has(repoName), `Growth milestone references unknown repository: ${repoName}`);
+      }
+    }
+
+    // Check trends reference existing repositories
+    for (const trend of growth.trends ?? []) {
+      assert.ok(repoNames.has(trend.repository), `Growth trend references unknown repository: ${trend.repository}`);
     }
   });
 
   it("career readiness scores should be based on actual requirements", () => {
-    const readiness = sampleData.careerReadinessResponse();
+    const readiness = sampleData.career.readiness;
     for (const role of readiness.roles ?? []) {
       assert.ok(role.score >= 0 && role.score <= 100, `Role score ${role.score} must be 0-100`);
       assert.ok(role.requirementsMet <= role.requirementsTotal, "Met requirements cannot exceed total");
@@ -78,8 +89,8 @@ describe("Demo Data Determinism", () => {
   });
 
   it("AI insights should match aggregated metrics", () => {
-    const insights = sampleData.aiInsightsResponse();
-    const repos = sampleData.repositoriesResponse().repositories;
+    const insights = sampleData.ai;
+    const repos = sampleData.repositoriesResponse.repositories;
 
     if (insights.hasEvidence && insights.insights) {
       const summary = insights.insights.summary;
