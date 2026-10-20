@@ -67,21 +67,9 @@ The product is a full-stack TypeScript application:
 
 *The public landing page with the interactive Spline background and primary actions.*
 
-### 2. Authentication
+### 2. Dashboard Overview
 
-![DevProof Authentication](screenshots/02-authentication.png)
-
-*Login and registration forms with email/password and GitHub App sign-in options.*
-
-### 3. Demo Overview
-
-![DevProof Demo Overview](screenshots/03-demo-overview.png)
-
-*Public demo mode with synthetic, labelled fixtures.*
-
-### 4. Dashboard Overview
-
-![DevProof Dashboard Overview](screenshots/04-dashboard-overview.png)
+![DevProof Dashboard Overview](screenshots/overview.png)
 
 *A consolidated view of developer intelligence, repository metrics, and activity signals.*
 
