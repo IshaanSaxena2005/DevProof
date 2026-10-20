@@ -253,7 +253,8 @@ export class RepositoryController {
         throw AppError.badRequest('description must be a string');
       }
 
-      if (description.length > 2000) {
+      const trimmed = description.trim();
+      if (trimmed.length > 2000) {
         throw AppError.badRequest('GitHub description must be 2000 characters or less');
       }
 
@@ -265,19 +266,24 @@ export class RepositoryController {
         throw AppError.notFound('Repository not found');
       }
 
+      // Prevent duplicate updates if description hasn't changed
+      if (repo.description === (trimmed || null)) {
+        return successResponse(res, 200, 'Description unchanged', { repository: repo });
+      }
+
       const accessToken = user.githubAccount?.accessToken;
       if (!accessToken) {
         throw AppError.unauthorized('GitHub account must be connected to update repository description');
       }
 
       // Update on GitHub first
-      await GitHubService.updateRepositoryDescription(repo.owner, repo.name, description, accessToken);
+      await GitHubService.updateRepositoryDescription(repo.owner, repo.name, trimmed, accessToken);
 
       // Update local database after GitHub confirms
       const updatedRepo = await prisma.repository.update({
         where: { id },
         data: {
-          description: description || null,
+          description: trimmed || null,
           githubUpdatedAt: new Date()
         }
       });
