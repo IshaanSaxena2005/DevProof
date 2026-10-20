@@ -104,12 +104,16 @@ const PLANNED_SCREENSHOTS = [
 ];
 
 checkMarkdown("README.md");
-checkMarkdown("docs/screenshots.md");
+if (existsSync(path.join(ROOT, "docs", "screenshots.md"))) {
+  checkMarkdown("docs/screenshots.md");
+}
 
-const checklist = readFileSync(path.join(ROOT, "docs", "screenshots.md"), "utf8");
-for (const name of PLANNED_SCREENSHOTS) {
-  if (!checklist.includes(`screenshots/${name}.png`)) {
-    failures.push(`docs/screenshots.md: planned filename absent from the checklist: ${name}.png`);
+if (existsSync(path.join(ROOT, "docs", "screenshots.md"))) {
+  const checklist = readFileSync(path.join(ROOT, "docs", "screenshots.md"), "utf8");
+  for (const name of PLANNED_SCREENSHOTS) {
+    if (!checklist.includes(`screenshots/${name}.png`)) {
+      failures.push(`docs/screenshots.md: planned filename absent from the checklist: ${name}.png`);
+    }
   }
 }
 

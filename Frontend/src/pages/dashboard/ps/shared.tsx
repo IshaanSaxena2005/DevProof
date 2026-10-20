@@ -47,7 +47,14 @@ export function Reveal({
   );
 }
 
-/** Micro label above each section — same treatment as Developer360's SLabel. */
+/**
+ * Micro label above each section — same treatment as Developer360's SLabel.
+ *
+ * An h2, not a <p>: these are the page's section headings, and the outline a
+ * screen reader or Ctrl+F builds is only as good as the elements behind it.
+ * Tailwind's preflight keeps an h2 inheriting the surrounding font metrics,
+ * so the classes below — not the tag — are what the label looks like.
+ */
 export function SectionLabel({
   children,
   right,
@@ -59,7 +66,7 @@ export function SectionLabel({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-4">
-      <p className={titleCase ? "text-[11px] font-bold text-white/30" : "text-[11px] font-bold uppercase tracking-[0.2em] text-white/30"}>{children}</p>
+      <h2 className={titleCase ? "text-[11px] font-bold text-white/30" : "text-[11px] font-bold uppercase tracking-[0.2em] text-white/30"}>{children}</h2>
       {right}
     </div>
   );

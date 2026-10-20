@@ -12,6 +12,16 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden text-white relative">
+      {/* First in the tab order: keyboard and screen-reader users reach the
+          page content without walking the whole sidebar on every route
+          change. Hidden until focused, then styled as the app's primary pill. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:border focus:border-primary/40 focus:bg-primary/15 focus:px-4 focus:py-2 focus:text-xs focus:font-bold focus:uppercase focus:tracking-widest focus:text-primary"
+      >
+        Skip to content
+      </a>
+
       {/* ── Full-screen video background ── */}
       <video
         key={VIDEO_URL}
@@ -76,7 +86,7 @@ export default function DashboardLayout() {
         <Header onMenuClick={() => setMobileSidebarOpen(true)} />
 
         {/* Scrollable sub-views container */}
-        <main className="flex-1 overflow-y-auto main-scroll px-6 py-8 relative z-10">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto main-scroll px-6 py-8 relative z-10 outline-none">
           <div className="max-w-6xl mx-auto w-full">
             <Outlet />
           </div>

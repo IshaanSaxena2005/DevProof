@@ -74,8 +74,13 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label above each block — an h2 so the page keeps a real outline
+ * under the header's h1. Preflight makes the tag visually inert; the classes
+ * below are the whole treatment.
+ */
 function SLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-[12px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
+  return <h2 className={`text-[12px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</h2>;
 }
 
 /** "2026-10" -> "Oct 2026". */
@@ -169,10 +174,18 @@ function UnavailableNote({ children }: { children: React.ReactNode }) {
 
 /* ── growth over time ────────────────────────────────── */
 
-/** Inner block heading, matching the small labels used on the cards above. */
+/**
+ * Inner block heading, matching the small labels used on the cards above.
+ *
+ * An h3, not a <p>: these labels (Average score by month, Improvement by
+ * repository, Milestones) are section headings inside the growth-over-time
+ * card, sitting under the page's h2 section labels. Preflight keeps an h3
+ * inheriting the surrounding font metrics, so the classes below — not the
+ * tag — decide how it looks.
+ */
 function BlockLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-3">{children}</p>
+    <h3 className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-3">{children}</h3>
   );
 }
 
@@ -357,11 +370,7 @@ export default function Growth() {
 
   if (loading) {
     return (
-      <PageContainer
-        title="Growth & Analytics"
-        description="Your measured engineering growth across repositories and skills."
-        headingClassName="text-xl md:text-2xl font-bold text-white"
-      >
+      <PageContainer description="Your measured engineering growth across repositories and skills.">
         <LoadingBlock label="Loading your growth evidence…" />
       </PageContainer>
     );
@@ -369,11 +378,7 @@ export default function Growth() {
 
   if (error || !data?.overview) {
     return (
-      <PageContainer
-        title="Growth & Analytics"
-        description="Your measured engineering growth across repositories and skills."
-        headingClassName="text-xl md:text-2xl font-bold text-white"
-      >
+      <PageContainer description="Your measured engineering growth across repositories and skills.">
         <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
       </PageContainer>
     );
@@ -395,13 +400,11 @@ export default function Growth() {
 
   return (
     <PageContainer
-      title="Growth & Analytics"
       description={
         isDemo
           ? "The sample profile's measured history, reconstructed from its own analysis records."
           : "Your measured engineering growth across repositories, analyses, and skills."
       }
-      headingClassName="text-xl md:text-2xl font-bold text-white"
     >
       {isDemo && (
         <div className="mb-6">

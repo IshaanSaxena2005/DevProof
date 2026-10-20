@@ -78,30 +78,35 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
     (path.startsWith("/dashboard/repositories/") ? "Repository Details" : "Dashboard");
 
   return (
-    <header className="h-16 px-6 border-b border-white/[0.08] flex items-center justify-between bg-black/[0.15] backdrop-blur-xl">
+    <header className="h-16 px-4 sm:px-6 border-b border-white/[0.08] flex items-center justify-between bg-black/[0.15] backdrop-blur-xl">
       {/* Left: Mobile trigger & Page title */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+          className="lg:hidden p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition-colors shrink-0"
           aria-label="Open sidebar"
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h2
-          className={`text-base md:text-lg font-bold text-white hidden sm:block ${
+        {/* The page title of whatever screen is open, and the document's only
+            page-level heading: the pages below render subtitles and section
+            headings, never a second copy of this title. `min-w-0` + `truncate`
+            keep it inside the bar on narrow viewports, where it used to be
+            hidden entirely rather than shortened. */}
+        <h1
+          className={`text-sm md:text-lg font-bold text-white min-w-0 truncate ${
             TITLE_CASE_PATHS.has(path) ? "" : "uppercase tracking-wider"
           }`}
         >
           {pageTitle}
-        </h2>
+        </h1>
         {isDemo && <DemoBadge compact />}
       </div>
 
       {/* Right: status, profile. A dashboard search field and a notifications
           bell were removed: they had no backing behavior, and non-functional
           controls (a bell with a fake unread dot) read as broken or dishonest. */}
-      <div className="flex items-center gap-4 md:gap-5">
+      <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
         {/* Way out of the demo, always one click away. */}
         {isDemo && (
           <Link
@@ -109,16 +114,22 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
             title="Leave the sample profile and return to the homepage"
             className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-primary hover:bg-primary/20 transition-all shrink-0"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Exit Demo</span>
+            <LogOut className="w-3.5 h-3.5 shrink-0" />
+            {/* Icon-only below `sm`: the bar has to fit the page title too, and
+                the link keeps its title/accessible name either way. */}
+            <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">
+              Exit Demo
+            </span>
           </Link>
         )}
 
         {/* GitHub link status — the real linked account, or the sample one */}
         {demoAccount ? (
+          // Sample-account status: icon-only already below `sm`, where the
+          // title needs the room — the badge and Exit Demo still say "demo".
           <div
             title="Sample account — no GitHub account is connected in the demo"
-            className="flex items-center gap-2 border border-primary/20 bg-primary/10 rounded-full px-3 py-1.5 shrink-0"
+            className="hidden sm:flex items-center gap-2 border border-primary/20 bg-primary/10 rounded-full px-3 py-1.5 shrink-0"
           >
             <GithubIcon className="w-3.5 h-3.5 text-primary" />
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest hidden sm:inline">

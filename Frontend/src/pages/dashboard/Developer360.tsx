@@ -97,8 +97,16 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label above each block.
+ *
+ * An h2, not a <p>: these are the page's section headings, and they sit under
+ * the header's h1 (the page title) in the document outline. Preflight keeps
+ * the h2 inheriting the surrounding font metrics, so the classes — not the
+ * tag — decide how it looks.
+ */
 function SLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</p>;
+  return <h2 className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>{children}</h2>;
 }
 
 /* ── page ────────────────────────────────────────────── */
@@ -129,9 +137,10 @@ export default function Developer360() {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="w-full flex flex-col gap-8 pb-8"
     >
+      {/* The page title — "Developer 360" — lives in the shared header; this
+          block opens with the subtitle instead of repeating it. */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">Developer 360</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
           {isDemo
             ? "The sample profile's engineering evidence, compiled from its six fictional repositories."
             : "Your engineering profile, compiled from analyzed repositories and recorded skill evidence."}
@@ -170,7 +179,10 @@ export default function Developer360() {
         />
         <div className="relative flex flex-col md:flex-row items-center md:items-start gap-8">
           <div className="flex flex-col items-center gap-3 shrink-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">Developer Score</p>
+            {/* The score card's own heading — an h3 so assistive tech sees it
+                as a section, not as body text. Same classes: preflight keeps an
+                h3 inheriting the surrounding font metrics. */}
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">Developer Score</h3>
             <ScoreRing score={score} />
             <p
               className="text-[12px] font-bold text-center"

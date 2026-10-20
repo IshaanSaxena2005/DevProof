@@ -189,8 +189,6 @@ export default function LearningAchievements() {
 
   return (
     <PageContainer
-      title="Learning & Achievements"
-      headingClassName="text-xl md:text-2xl font-bold text-white"
       description={
         isDemo
           ? "The sample profile's courses, credentials and hackathons — fictional records, clearly labelled."

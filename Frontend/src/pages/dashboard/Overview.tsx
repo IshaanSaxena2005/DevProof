@@ -84,7 +84,7 @@ export default function Overview() {
 
   if (loading) {
     return (
-      <PageContainer title="Overview" description="Loading your engineering summary…">
+      <PageContainer description="Loading your engineering summary…">
         <LoadingBlock />
       </PageContainer>
     );
@@ -92,7 +92,7 @@ export default function Overview() {
 
   if (error || !data?.overview) {
     return (
-      <PageContainer title="Overview" description="Your evidence-based engineering metrics.">
+      <PageContainer description="Your evidence-based engineering metrics.">
         <ErrorBlock message={error ?? "No overview data returned."} onRetry={reload} />
       </PageContainer>
     );
@@ -106,7 +106,6 @@ export default function Overview() {
 
   return (
     <PageContainer
-      title="Overview"
       description={
         firstName
           ? `Welcome back, ${firstName}. Here is a summary of your engineering evidence.`

@@ -15,7 +15,7 @@
 
 DevProof transforms real engineering activity — GitHub repositories, coding-platform profiles, certifications, hackathons, and parsed resumes — into a structured, evidence-backed developer intelligence profile.
 
-Instead of asking what a developer *claims* they can do, DevProof shows what their work demonstrates. Every metric is one of three honest kinds, clearly distinguished in the interface:
+Instead of asking what a developer _claims_ they can do, DevProof shows what their work demonstrates. Every metric is one of three honest kinds, clearly distinguished in the interface:
 
 - **Measured** — repository analysis metrics, coding-platform statistics fetched from LeetCode and GeeksforGeeks, growth and readiness scores computed from stored evidence
 - **Provided** — certifications, hackathons, claimed skills, and resume content entered by the user, labelled as such
@@ -33,6 +33,7 @@ Instead of asking what a developer *claims* they can do, DevProof shows what the
 DevProof consolidates distributed engineering signals into one profile where skills are derived from evidence, scores trace back to individual findings, and unavailable data reads as unavailable — never as a fabricated zero.
 
 The product is a full-stack TypeScript application:
+
 - **Frontend:** React SPA with route-split lazy loading, public read-only demo mode, and a dark glassmorphism dashboard design
 - **Backend:** Express API with GitHub App integration, webhook intake, PostgreSQL persistence through Prisma, and an optional Groq-powered insight layer
 - **Analysis Engine:** Static analysis scoring six categories (documentation, testing, security, code quality, maintainability, dependency health) with severity-ranked findings
@@ -61,91 +62,65 @@ The product is a full-stack TypeScript application:
 
 ## Product Screenshots
 
-Screenshots will be added as they are captured. See [docs/screenshots.md](docs/screenshots.md) for the complete checklist.
+### 1. Landing Page
 
-<!-- ### 1. Landing Page -->
+![DevProof Landing Page](screenshots/landing-page.png)
 
-<!-- ![DevProof Landing Page](screenshots/01-landing-page.png) -->
+_The public landing page with the interactive Spline background and primary actions._
 
-<!-- *The public landing page with the interactive Spline background and primary actions.* -->
+### 2. Dashboard Overview
 
-<!-- ### 2. Authentication -->
+![DevProof Dashboard Overview](screenshots/overview.png)
 
-<!-- ![DevProof Authentication](screenshots/02-login-register.png) -->
+_A consolidated view of developer intelligence, repository metrics, and activity signals._
 
-<!-- *Login and registration forms with email/password and GitHub App sign-in options.* -->
+### 3. Repositories
 
-<!-- ### 3. Dashboard Overview -->
+![DevProof Repositories](screenshots/repositories.png)
 
-<!-- ![DevProof Dashboard Overview](screenshots/04-dashboard-overview.png) -->
+_Connected GitHub repositories with synchronization status and analysis triggers._
 
-<!-- *A consolidated view of developer intelligence, repository metrics, and activity signals.* -->
+### 4. Developer 360
 
-<!-- ### 4. Repository Intelligence -->
+![DevProof Developer 360](screenshots/developer-360.png)
 
-<!-- ![DevProof Repositories](screenshots/05-repositories.png) -->
+_Aggregated view of repositories, skills, credentials, and target roles._
 
-<!-- *Connected GitHub repositories with synchronization status and analysis triggers.* -->
+### 5. Skills
 
-<!-- ### 5. Repository Analysis -->
+![DevProof Skills](screenshots/skills.png)
 
-<!-- ![DevProof Repository Analysis](screenshots/06-repository-analysis.png) -->
+_Skills with evidence ladder showing claimed, learned, and proven levels._
 
-<!-- *Detailed repository analysis with six metric categories and severity-ranked findings.* -->
+### 6. Problem Solving
 
-<!-- ### 6. Developer 360 -->
+![DevProof Problem Solving](screenshots/problem-solving.png)
 
-<!-- ![DevProof Developer 360](screenshots/07-developer-360.png) -->
+_Activity heatmap, difficulty distribution, and coding-platform statistics._
 
-<!-- *Aggregated view of repositories, skills, credentials, and target roles.* -->
+### 7. Learning & Achievements
 
-<!-- ### 7. Skills Intelligence -->
+![DevProof Learning Achievements](screenshots/learning-achievements.png)
 
-<!-- ![DevProof Skills Intelligence](screenshots/08-skills-intelligence.png) -->
+_Certifications, hackathons, and resume panel._
 
-<!-- *Skills with evidence ladder showing claimed, learned, and proven levels.* -->
+### 8. Growth
 
-<!-- ### 8. Problem Solving -->
+![DevProof Growth](screenshots/growth.png)
 
-<!-- ![DevProof Problem Solving](screenshots/09-problem-solving.png) -->
+_Growth history charts reconstructed from stored analysis timestamps._
 
-<!-- *Activity heatmap, difficulty distribution, and coding-platform statistics.* -->
+### 9. Career Readiness
 
-<!-- ### 9. Learning & Achievements -->
+![DevProof Career Readiness](screenshots/career-readiness.png)
 
-<!-- ![DevProof Learning Achievements](screenshots/10-learning-achievements.png) -->
+_Readiness score with per-requirement evidence and recommendations._
 
-<!-- *Certifications, hackathons, and resume panel.* -->
+### 10. AI Insights
 
-<!-- ### 10. Growth Analytics -->
+![DevProof AI Insights](screenshots/ai-insights.png)
 
-<!-- ![DevProof Growth Analytics](screenshots/11-growth-analytics.png) -->
-
-<!-- *Growth history charts reconstructed from stored analysis timestamps.* -->
-
-<!-- ### 11. Career Readiness -->
-
-<!-- ![DevProof Career Readiness](screenshots/12-career-readiness.png) -->
-
-<!-- *Readiness score with per-requirement evidence and recommendations.* -->
-
-<!-- ### 12. AI Insights -->
-
-<!-- ![DevProof AI Insights](screenshots/13-ai-insights.png) -->
-
-<!-- *Groq-backed insights grounded in stored analyses, or honest empty state.* -->
-
-<!-- ### 13. Settings -->
-
-<!-- ![DevProof Settings](screenshots/14-settings.png) -->
-
-<!-- *Account management, data export, and connected-platform controls.* -->
-
-<!-- ### 14. Mobile Responsive -->
-
-<!-- ![DevProof Mobile Responsive](screenshots/15-mobile-responsive.png) -->
-
-<!-- *Dashboard at 390px viewport with no horizontal overflow.* -->
+_Groq-backed insights grounded in stored analyses, or honest empty state._
 
 ---
 
@@ -156,36 +131,36 @@ flowchart TD
     U[User / Browser] --> R[React + TypeScript + Vite]
     R --> API[Typed API Client]
     API --> EXPRESS[Express + TypeScript REST API]
-    
+
     EXPRESS --> AUTH[Authentication Middleware]
     AUTH --> VALID[Request Validation]
     VALID --> CONTROLLERS[API Controllers]
     CONTROLLERS --> SERVICES[Services Layer]
-    
+
     SERVICES --> ANALYSIS[Repository Analysis Engine]
     SERVICES --> SKILLS[Skills & Evidence Services]
     SERVICES --> CODING[Coding-Platform Integrations]
     SERVICES --> RESUME[Resume Processing]
     SERVICES --> GROWTH[Growth & Career-Readiness]
     SERVICES --> AI[Optional AI Insights]
-    
+
     SERVICES --> PRISMA[Prisma ORM]
     PRISMA --> PG[PostgreSQL]
-    
+
     SERVICES <--> GH[GitHub App / API]
     SERVICES <--> GH_WEB[GitHub Webhooks]
     CODING <--> LC[LeetCode]
     CODING <--> GFG[GeeksforGeeks]
     AI <--> GROQ[Groq AI]
-    
+
     R --> VERCEL[Vercel Deployment]
     EXPRESS --> RENDER[Render Deployment]
     PG --> PG_HOST[PostgreSQL Hosting]
-    
+
     classDef base fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px,color:#212529
     classDef accent fill:#e8f5e9,stroke:#16ff00,stroke-width:1px,color:#212529
     classDef ext fill:#ffffff,stroke:#dee2e6,stroke-width:1px,color:#212529,stroke-dasharray:3 3
-    
+
     class U,R,API,EXPRESS,AUTH,VALID,CONTROLLERS,SERVICES,PRISMA,PG,VERCEL,RENDER,PG_HOST base
     class ANALYSIS,SKILLS,GROWTH accent
     class GH,GH_WEB,LC,GFG,GROQ ext
@@ -199,7 +174,8 @@ flowchart TD
 
 **Persistence:** PostgreSQL stores all application data through Prisma ORM. Every repository, analysis, skill, certification, and credential row is scoped to one authenticated user. Cross-account reads are blocked at the API layer.
 
-**External Integrations:** 
+**External Integrations:**
+
 - GitHub: App REST reads plus inbound webhooks verified with timing-safe HMAC SHA-256
 - LeetCode & GeeksforGeeks: Public statistics fetched from undocumented endpoints
 - Groq: Optional AI insight generation; unset key means the endpoint returns a clear 503
@@ -212,25 +188,29 @@ flowchart TD
 
 Every feature below exists in the code today. The **Kind** column keeps the positioning honest.
 
-| Feature | Description | Kind |
-|---------|-------------|------|
-| **Authentication & sessions** | Email/password with bcrypt hashing; JWT session in HTTP-only cookie; session restored on refresh | Provided |
-| **GitHub App sign-in** | Authorize and install are separate steps; client IDs validated (`Iv1.`/`Iv23`); access tokens stay server-side | Provided |
-| **Repository sync** | Connect, sync, and disconnect GitHub repositories per installation without duplicating rows | Measured |
-| **Repository analysis engine** | Static analysis scores six categories (documentation, testing, security, code quality, maintainability, dependency health) with severity-ranked findings; un-analyzed repositories read "Analysis Pending" | Measured |
-| **Developer 360** | One aggregated view of repositories, analyses, skills, credentials, and target roles | Measured |
-| **Skills intelligence** | Skills derived from repository evidence and certifications on a claimed → learned → proven ladder; self-reported records never outrank measured ones | Mixed |
-| **LeetCode & GeeksforGeeks sync** | Public profile statistics fetched per platform; statistics a platform does not publish render as unavailable, never as zero | Measured |
-| **Problem-solving activity** | 26-week submission heatmap, difficulty donut, activity chart, and streaks derived from platform calendars | Measured |
-| **Certifications** | CRUD records that promote skills up the evidence ladder | Provided |
-| **Hackathons** | Self-reported participation records; by design they never promote a skill | Provided |
-| **Resume upload & analysis** | PDF upload (5 MB max, byte-validated), text extracted locally with `pdfjs-dist`; technologies found in text are reported for confirmation, never written as skills automatically | Provided |
-| **Growth analytics** | History reconstructed from stored timestamps — months without measurements are omitted, not back-filled | Measured |
-| **Career readiness** | Weighted requirement checklists computed on read from stored evidence; every point names the requirement it came from | Measured |
-| **AI insights** | Groq-backed summary of strengths, risks, and recommendations, grounded only in stored analyses, Zod-validated before rendering; with no evidence the model is never called | Generated |
-| **Account & platform management** | Settings page for profile updates, data export, account deletion, and GitHub/coding-platform connections | Provided |
-| **Public demo mode** | Every dashboard section with synthetic, labelled fixtures; writes are refused before any request is sent | Synthetic |
-| **Responsive dashboard** | Ten route-split lazy-loaded sections, overflow-free at 390px (browser-tested) | — |
+| Feature                           | Description                                                                                                                                                                                                | Kind      |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **Authentication & sessions**     | Email/password with bcrypt hashing; JWT session in HTTP-only cookie; session restored on refresh                                                                                                           | Provided  |
+| **GitHub App sign-in**            | Authorize and install are separate steps; client IDs validated (`Iv1.`/`Iv23`); access tokens stay server-side                                                                                             | Provided  |
+| **Repository sync**               | Connect, sync, and disconnect GitHub repositories per installation without duplicating rows                                                                                                                | Measured  |
+| **Repository analysis engine**    | Static analysis scores six categories (documentation, testing, security, code quality, maintainability, dependency health) with severity-ranked findings; un-analyzed repositories read "Analysis Pending" | Measured  |
+| **Developer 360**                 | One aggregated view of repositories, analyses, skills, credentials, and target roles                                                                                                                       | Measured  |
+| **Skills intelligence**           | Skills derived from repository evidence and certifications on a claimed → learned → proven ladder; self-reported records never outrank measured ones                                                       | Mixed     |
+| **LeetCode & GeeksforGeeks sync** | Public profile statistics fetched per platform; statistics a platform does not publish render as unavailable, never as zero                                                                                | Measured  |
+| **Problem-solving activity**      | 26-week submission heatmap, difficulty donut, activity chart, and streaks derived from platform calendars                                                                                                  | Measured  |
+| **Certifications**                | CRUD records that promote skills up the evidence ladder                                                                                                                                                    | Provided  |
+| **Hackathons**                    | Self-reported participation records; by design they never promote a skill                                                                                                                                  | Provided  |
+| **Resume upload & analysis**      | PDF upload (5 MB max, byte-validated), text extracted locally with `pdfjs-dist`; technologies found in text are reported for confirmation, never written as skills automatically                           | Provided  |
+| **Growth analytics**              | History reconstructed from stored timestamps — months without measurements are omitted, not back-filled                                                                                                    | Measured  |
+| **Career readiness**              | Weighted requirement checklists computed on read from stored evidence; every point names the requirement it came from                                                                                      | Measured  |
+| **AI insights**                   | Groq-backed summary of strengths, risks, and recommendations, grounded only in stored analyses, Zod-validated before rendering; with no evidence the model is never called                                 | Generated |
+| **Account & platform management** | Settings page for profile updates, data export, account deletion, and GitHub/coding-platform connections                                                                                                   | Provided  |
+| **Public demo mode**              | Every dashboard section with synthetic, labelled fixtures; writes are refused before any request is sent                                                                                                   | Synthetic |
+| **Responsive dashboard**          | Ten route-split lazy-loaded sections, overflow-free at 390px (browser-tested)                                                                                                                              | —         |
+
+### Dashboard heading convention
+
+Every dashboard screen shows its page title exactly once, as the shared header's `h1`. Pages own everything below it: their subtitle (`PageContainer`) and real section headings — `h2` for section labels, `h3` for blocks inside them. The label components (`SLabel`, `SectionLabel`, `LALabel`, `BlockLabel`, …) are heading elements styled by their Tailwind classes; preflight makes a heading inherit the surrounding font metrics, so converting a label changed markup, never appearance. Value-captioning micro-labels inside cards stay paragraphs — they caption a value, they do not name a section. The shell also starts its tab order with a skip link onto the scrollable main region. The whole shape is pinned by `Frontend/test/pageTitles.test.mts`, `Frontend/test/headingSemantics.test.mts`, and the `Frontend/e2e/headings.spec.ts` journey.
 
 ---
 
@@ -247,6 +227,7 @@ DevProof turns activity into evidence through a clear pipeline:
 7. **Optional AI Explanations** — Groq-backed insights grounded only in stored analyses; Zod-validated before rendering; absent when no evidence exists
 
 **What Can and Cannot Be Inferred:**
+
 - Repository findings are generated by the implemented analysis engine
 - Coding-platform metrics depend on data those platforms expose (GFG has no difficulty breakdown, which is rendered as unavailable)
 - Certifications and hackathons are user-provided and never independently verified
@@ -259,22 +240,22 @@ DevProof turns activity into evidence through a clear pipeline:
 
 Versions are read from lockfiles — nothing is listed because it merely "would fit."
 
-| Layer | Technology | Role |
-|-------|-----------|------|
-| **UI** | React 19, TypeScript (strict) | Component model and type safety across both apps |
-| **Build** | Vite 8 | Dev server and production bundler; `--mode e2e` builds the browser-test bundle |
-| **Styling** | Tailwind CSS 4, custom glass-panel design tokens | Utility styling and dark dashboard theme |
-| **Routing** | React Router 7 | Route tables shared between `/dashboard` and `/demo` |
-| **Animation** | Motion (`motion/react`), Lucide icons, Spline | Entrance animations, iconography, WebGL landing background |
-| **API** | Node.js 20+, Express 4, TypeScript | HTTP server, routing, middleware pipeline |
-| **Validation** | Zod | Request schemas and AI-response validation |
-| **Security** | bcryptjs, jsonwebtoken, Helmet, CORS, express-rate-limit | Hashing, sessions, headers, origin policy, throttling |
-| **Logging** | Morgan + Winston | Request and application logging |
-| **Data** | PostgreSQL 16, Prisma ORM 5 | Persistence, migrations, typed queries |
-| **Files** | Multer (uploads), `pdfjs-dist` (local text extraction) | Resume intake and parsing without external services |
-| **Integrations** | GitHub App (REST + webhooks), LeetCode GraphQL, GeeksforGeeks page payloads, Groq (`openai/gpt-oss-120b`) | Evidence sources and optional AI layer |
-| **Testing** | node:test (service + integration), Playwright (20 browser journeys) | Unit, over-HTTP integration, and real-browser coverage |
-| **Delivery** | Docker Compose, GitHub Actions CI | Local full stack and per-push verification |
+| Layer            | Technology                                                                                                | Role                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **UI**           | React 19, TypeScript (strict)                                                                             | Component model and type safety across both apps                               |
+| **Build**        | Vite 8                                                                                                    | Dev server and production bundler; `--mode e2e` builds the browser-test bundle |
+| **Styling**      | Tailwind CSS 4, custom glass-panel design tokens                                                          | Utility styling and dark dashboard theme                                       |
+| **Routing**      | React Router 7                                                                                            | Route tables shared between `/dashboard` and `/demo`                           |
+| **Animation**    | Motion (`motion/react`), Lucide icons, Spline                                                             | Entrance animations, iconography, WebGL landing background                     |
+| **API**          | Node.js 20+, Express 4, TypeScript                                                                        | HTTP server, routing, middleware pipeline                                      |
+| **Validation**   | Zod                                                                                                       | Request schemas and AI-response validation                                     |
+| **Security**     | bcryptjs, jsonwebtoken, Helmet, CORS, express-rate-limit                                                  | Hashing, sessions, headers, origin policy, throttling                          |
+| **Logging**      | Morgan + Winston                                                                                          | Request and application logging                                                |
+| **Data**         | PostgreSQL 16, Prisma ORM 5                                                                               | Persistence, migrations, typed queries                                         |
+| **Files**        | Multer (uploads), `pdfjs-dist` (local text extraction)                                                    | Resume intake and parsing without external services                            |
+| **Integrations** | GitHub App (REST + webhooks), LeetCode GraphQL, GeeksforGeeks page payloads, Groq (`openai/gpt-oss-120b`) | Evidence sources and optional AI layer                                         |
+| **Testing**      | node:test (service + integration), Playwright (23 browser journeys)                                       | Unit, over-HTTP integration, and real-browser coverage                         |
+| **Delivery**     | Docker Compose, GitHub Actions CI                                                                         | Local full stack and per-push verification                                     |
 
 ---
 
@@ -282,21 +263,22 @@ Versions are read from lockfiles — nothing is listed because it merely "would 
 
 Verified implementation behavior — each item exists in the code today:
 
-| Control | Implementation |
-|---------|----------------|
-| **Password storage** | bcrypt hashes; plaintext passwords never stored or logged |
-| **Session** | Single JWT in HTTP-only, SameSite cookie — never in `localStorage` or `sessionStorage`; tokens never sent to frontend |
-| **GitHub sign-in** | GitHub **App** flow: client ID validated (`Iv1.`/`Iv23` prefix); access tokens stay server-side; repositories enumerated per installation |
-| **Data scoping** | Every repository, analysis, skill, and credential row is owned by one authenticated user; cross-account reads blocked at API |
-| **Request validation** | Zod schemas on every mutating endpoint; field-level errors returned |
-| **Transport hardening** | Helmet security headers; credentialed CORS restricted to configured frontend origin |
-| **Rate limiting** | 200 requests / 15 min per IP on `/api`, plus dedicated 10 attempts / 15 min budget on password login |
-| **Webhook intake** | GitHub payloads verified with timing-safe HMAC SHA-256 comparison; unverifiable payload refused with 503 |
-| **Resume privacy** | PDFs validated by content (not declared type), stored server-side under gitignored `uploads/` with generated filenames; text extracted locally |
-| **Demo isolation** | Demo routes sit outside auth guard; API client refuses every write before request sent; demo renders only synthetic sample identity |
-| **Secrets** | Everything sensitive arrives via environment variables; `.env` files gitignored; templates carry placeholders only |
+| Control                 | Implementation                                                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Password storage**    | bcrypt hashes; plaintext passwords never stored or logged                                                                                      |
+| **Session**             | Single JWT in HTTP-only, SameSite cookie — never in `localStorage` or `sessionStorage`; tokens never sent to frontend                          |
+| **GitHub sign-in**      | GitHub **App** flow: client ID validated (`Iv1.`/`Iv23` prefix); access tokens stay server-side; repositories enumerated per installation      |
+| **Data scoping**        | Every repository, analysis, skill, and credential row is owned by one authenticated user; cross-account reads blocked at API                   |
+| **Request validation**  | Zod schemas on every mutating endpoint; field-level errors returned                                                                            |
+| **Transport hardening** | Helmet security headers; credentialed CORS restricted to configured frontend origin                                                            |
+| **Rate limiting**       | 200 requests / 15 min per IP on `/api`, plus dedicated 10 attempts / 15 min budget on password login                                           |
+| **Webhook intake**      | GitHub payloads verified with timing-safe HMAC SHA-256 comparison; unverifiable payload refused with 503                                       |
+| **Resume privacy**      | PDFs validated by content (not declared type), stored server-side under gitignored `uploads/` with generated filenames; text extracted locally |
+| **Demo isolation**      | Demo routes sit outside auth guard; API client refuses every write before request sent; demo renders only synthetic sample identity            |
+| **Secrets**             | Everything sensitive arrives via environment variables; `.env` files gitignored; templates carry placeholders only                             |
 
 **Known Limitations:**
+
 - Session is one JWT with fixed lifetime (7 days default) and no refresh-token endpoint
 - Rate limiters key on client IP: behind reverse proxy set `TRUST_PROXY` to hop count
 - LeetCode and GeeksforGeeks read from undocumented, unversioned endpoints; upstream shape change degrades statistics rather than crashing sync
@@ -330,13 +312,14 @@ DevProof/
 │   ├── test/                 # Service tests (Prisma stubbed) + integration over HTTP
 │   └── Dockerfile
 │
-├── docs/                     # Architecture diagram (SVG + PNG), screenshot checklist
-├── screenshots/              # Product captures (see docs/screenshots.md)
+├── docs/                     # Architecture diagram (SVG + PNG)
+├── screenshots/              # Product captures
 ├── docker-compose.yml        # Full stack: postgres + backend + frontend
 └── package.json              # Root scripts delegating into Backend/Frontend
 ```
 
 **Where to look:**
+
 - Frontend pages: `Frontend/src/pages/dashboard/`
 - Reusable components: `Frontend/src/components/`
 - API clients: `Frontend/src/services/`
@@ -346,7 +329,7 @@ DevProof/
 - Tests: `Backend/test/`, `Frontend/test/`, `Frontend/e2e/`
 - CI workflows: `.github/workflows/`
 - Architecture docs: `docs/`
-- Screenshots: `screenshots/` (planned; see docs/screenshots.md)
+- Screenshots: `screenshots/`
 
 ---
 
@@ -416,15 +399,15 @@ Root-level shortcuts (`npm run dev:backend`, `dev:frontend`, `build`, `test`, `d
 
 ### Troubleshooting
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| Backend exits on start; connection refused | Postgres not running, or wrong port | `cd Backend && docker compose up -d` — local port is **5434** |
-| `Cannot find module …` after a pull | New dependency | `cd Backend && npm install` |
-| Missing table/column after a pull | New migration or stale client | `npx prisma migrate deploy && npx prisma generate` |
-| `DATABASE_URL is required` at boot | `Backend/.env` missing | Copy `Backend/.env.example` to `Backend/.env` and set `JWT_SECRET` |
-| "GitHub OAuth is not configured…" or bounce to `/login?error=` | OAuth-App credentials where **GitHub App** is required | Use GitHub App client id (`Iv1.` / `Iv23`); OAuth-App ids rejected on purpose |
-| AI Insights returns 503 | `GROQ_API_KEY` unset | Set it — or ignore it; rest of app works without it |
-| Landing loads but every dashboard request fails | Backend not running or wrong API URL | Start backend; point `Frontend/.env` (`VITE_API_URL`) at it if not on `localhost:5000` |
+| Symptom                                                        | Cause                                                  | Fix                                                                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Backend exits on start; connection refused                     | Postgres not running, or wrong port                    | `cd Backend && docker compose up -d` — local port is **5434**                          |
+| `Cannot find module …` after a pull                            | New dependency                                         | `cd Backend && npm install`                                                            |
+| Missing table/column after a pull                              | New migration or stale client                          | `npx prisma migrate deploy && npx prisma generate`                                     |
+| `DATABASE_URL is required` at boot                             | `Backend/.env` missing                                 | Copy `Backend/.env.example` to `Backend/.env` and set `JWT_SECRET`                     |
+| "GitHub OAuth is not configured…" or bounce to `/login?error=` | OAuth-App credentials where **GitHub App** is required | Use GitHub App client id (`Iv1.` / `Iv23`); OAuth-App ids rejected on purpose          |
+| AI Insights returns 503                                        | `GROQ_API_KEY` unset                                   | Set it — or ignore it; rest of app works without it                                    |
+| Landing loads but every dashboard request fails                | Backend not running or wrong API URL                   | Start backend; point `Frontend/.env` (`VITE_API_URL`) at it if not on `localhost:5000` |
 
 ---
 
@@ -434,28 +417,28 @@ Both apps ship a template — copy `Backend/.env.example` to `Backend/.env` and 
 
 ### Backend — `Backend/.env`
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string (local compose: port **5434**) |
-| `JWT_SECRET` | ✅ | Session-token signing key, minimum 8 characters — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-| `PORT` | no | API port (default `5000`) |
-| `NODE_ENV` | no | `development` / `production` / `test` |
-| `JWT_EXPIRES_IN` | no | Session lifetime (default `7d`) |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | no | GitHub **App** sign-in; id must start with `Iv1.` or `Iv23` — anything else rejected |
-| `GITHUB_CALLBACK_URL` | no | OAuth callback registered on App (default `http://localhost:5000/api/v1/auth/github/callback`) |
-| `GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` | no | App-authenticated calls (installation enumeration, App JWT). Key is App's `.pem` content pasted verbatim — literal `\n` escapes will not work |
-| `GITHUB_APP_SLUG` | no | Only shapes "install DevProof" link |
-| `GITHUB_WEBHOOK_SECRET` | no | Shared HMAC secret you invent and paste into App's webhook settings; without it every webhook refused with 503 |
-| `FRONTEND_URL` | no | CORS origin (default `http://localhost:5173`) |
-| `TRUST_PROXY` | no | Proxy hop count (positive integer, usually `1`) when TLS terminates in front of API; empty when directly exposed — `true` never accepted |
-| `GROQ_API_KEY` | no | Enables AI insights; unset means clear 503 on that endpoint only |
-| `GROQ_MODEL` | no | Model override (default `openai/gpt-oss-120b`) |
+| Variable                                    | Required | Purpose                                                                                                                                       |
+| ------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                              | ✅       | PostgreSQL connection string (local compose: port **5434**)                                                                                   |
+| `JWT_SECRET`                                | ✅       | Session-token signing key, minimum 8 characters — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`    |
+| `PORT`                                      | no       | API port (default `5000`)                                                                                                                     |
+| `NODE_ENV`                                  | no       | `development` / `production` / `test`                                                                                                         |
+| `JWT_EXPIRES_IN`                            | no       | Session lifetime (default `7d`)                                                                                                               |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | no       | GitHub **App** sign-in; id must start with `Iv1.` or `Iv23` — anything else rejected                                                          |
+| `GITHUB_CALLBACK_URL`                       | no       | OAuth callback registered on App (default `http://localhost:5000/api/v1/auth/github/callback`)                                                |
+| `GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY`      | no       | App-authenticated calls (installation enumeration, App JWT). Key is App's `.pem` content pasted verbatim — literal `\n` escapes will not work |
+| `GITHUB_APP_SLUG`                           | no       | Only shapes "install DevProof" link                                                                                                           |
+| `GITHUB_WEBHOOK_SECRET`                     | no       | Shared HMAC secret you invent and paste into App's webhook settings; without it every webhook refused with 503                                |
+| `FRONTEND_URL`                              | no       | CORS origin (default `http://localhost:5173`)                                                                                                 |
+| `TRUST_PROXY`                               | no       | Proxy hop count (positive integer, usually `1`) when TLS terminates in front of API; empty when directly exposed — `true` never accepted      |
+| `GROQ_API_KEY`                              | no       | Enables AI insights; unset means clear 503 on that endpoint only                                                                              |
+| `GROQ_MODEL`                                | no       | Model override (default `openai/gpt-oss-120b`)                                                                                                |
 
 ### Frontend — `Frontend/.env`
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `VITE_API_URL` | no | Backend base URL; falls back to `http://localhost:5000/api/v1` |
+| Variable       | Required | Purpose                                                        |
+| -------------- | -------- | -------------------------------------------------------------- |
+| `VITE_API_URL` | no       | Backend base URL; falls back to `http://localhost:5000/api/v1` |
 
 Never commit `.env` files, OAuth secrets, JWT secrets, or API keys — all are gitignored, and committed templates carry placeholders only.
 
@@ -465,22 +448,22 @@ Never commit `.env` files, OAuth secrets, JWT secrets, or API keys — all are g
 
 All routes are mounted under `/api/v1`. Endpoints marked **(auth)** require the session cookie; everything else is public or webhook-authenticated.
 
-| Group | Endpoints |
-|-------|-----------|
-| **Health** | `GET /health` |
-| **Auth** | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` (auth), `GET /auth/github`, `GET /auth/github/callback`, `POST /auth/github/sync` (auth), `POST /auth/github/disconnect` (auth) |
-| **Repositories (auth)** | `GET /repositories`, `GET /repositories/github`, `GET /repositories/:id`, `POST /repositories/connect`, `POST /repositories/sync`, `DELETE /repositories/:id` |
-| **Analysis (auth)** | `POST /analysis/trigger`, `GET /analysis/repo/:repositoryId`, `GET /analysis/:id` |
-| **Developer 360 (auth)** | `GET /developer360/overview` |
-| **Skills (auth)** | `GET /skills`, `POST /skills`, `POST /skills/derive`, `DELETE /skills/:id` |
-| **Certifications (auth)** | `GET /certifications`, `POST /certifications`, `PATCH /certifications/:id`, `DELETE /certifications/:id` |
-| **Hackathons (auth)** | `GET /hackathons`, `POST /hackathons`, `PATCH /hackathons/:id`, `DELETE /hackathons/:id` |
-| **Coding profiles (auth)** | `GET /coding-profiles`, `POST /coding-profiles`, `POST /coding-profiles/:platform/sync`, `DELETE /coding-profiles/:platform` — platform is `LEETCODE` or `GEEKSFORGEEKS` |
-| **Growth (auth)** | `GET /growth/history` |
-| **Career readiness (auth)** | `GET /career/readiness` |
-| **Resume (auth)** | `GET /resume`, `POST /resume` (multipart field `resume`; PDF only, 5 MB max), `GET /resume/download`, `POST /resume/analyse`, `DELETE /resume` |
-| **AI (auth)** | `GET /ai/insights` |
-| **Webhooks** | `POST /webhooks/github` (HMAC-verified), `GET /webhooks/github/status` |
+| Group                       | Endpoints                                                                                                                                                                                                      |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Health**                  | `GET /health`                                                                                                                                                                                                  |
+| **Auth**                    | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` (auth), `GET /auth/github`, `GET /auth/github/callback`, `POST /auth/github/sync` (auth), `POST /auth/github/disconnect` (auth) |
+| **Repositories (auth)**     | `GET /repositories`, `GET /repositories/github`, `GET /repositories/:id`, `POST /repositories/connect`, `POST /repositories/sync`, `DELETE /repositories/:id`                                                  |
+| **Analysis (auth)**         | `POST /analysis/trigger`, `GET /analysis/repo/:repositoryId`, `GET /analysis/:id`                                                                                                                              |
+| **Developer 360 (auth)**    | `GET /developer360/overview`                                                                                                                                                                                   |
+| **Skills (auth)**           | `GET /skills`, `POST /skills`, `POST /skills/derive`, `DELETE /skills/:id`                                                                                                                                     |
+| **Certifications (auth)**   | `GET /certifications`, `POST /certifications`, `PATCH /certifications/:id`, `DELETE /certifications/:id`                                                                                                       |
+| **Hackathons (auth)**       | `GET /hackathons`, `POST /hackathons`, `PATCH /hackathons/:id`, `DELETE /hackathons/:id`                                                                                                                       |
+| **Coding profiles (auth)**  | `GET /coding-profiles`, `POST /coding-profiles`, `POST /coding-profiles/:platform/sync`, `DELETE /coding-profiles/:platform` — platform is `LEETCODE` or `GEEKSFORGEEKS`                                       |
+| **Growth (auth)**           | `GET /growth/history`                                                                                                                                                                                          |
+| **Career readiness (auth)** | `GET /career/readiness`                                                                                                                                                                                        |
+| **Resume (auth)**           | `GET /resume`, `POST /resume` (multipart field `resume`; PDF only, 5 MB max), `GET /resume/download`, `POST /resume/analyse`, `DELETE /resume`                                                                 |
+| **AI (auth)**               | `GET /ai/insights`                                                                                                                                                                                             |
+| **Webhooks**                | `POST /webhooks/github` (HMAC-verified), `GET /webhooks/github/status`                                                                                                                                         |
 
 > **Note on Courses:** A courses subsystem (`/courses` CRUD with skill promotion) still exists in the codebase — including a mounted route group — but it is **designated for removal** and therefore excluded from this documentation and the feature list. Removing it cleanly requires dropping the `Course` model, its migrations, service, validator, tests, and the Learning page section; that has not been done yet, and this README does not pretend otherwise.
 
@@ -492,12 +475,12 @@ Request constraints: resumes are PDF-only and validated by bytes; coding-profile
 
 Four stages of testing, all executed locally against current source as part of this documentation pass:
 
-| Suite | Count | What it proves |
-|-------|-------|----------------|
-| **Backend service** | 107 | Business rules with Prisma stubbed: skill derivation and confidence ceilings, certification matching, LeetCode/GFG mapping, growth arithmetic, readiness scoring, resume validation, webhook signature handling |
-| **Backend integration** | 43 | Real HTTP stack over real PostgreSQL: anonymous callers rejected on every protected route, field-level validation errors, cross-user isolation, skill promotion end to end |
-| **Frontend** | 63 | Extracted logic under `node --test`: UTC date handling, difficulty fallbacks, demo fixtures and isolation, API-client envelope, page render-state rules |
-| **Browser E2E** | 20 | Playwright Chromium against production build + compiled backend: auth journeys, every dashboard section, demo mode, mocked repository flows, 390px overflow, console cleanliness |
+| Suite                   | Count | What it proves                                                                                                                                                                                                    |
+| ----------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Backend service**     | 107   | Business rules with Prisma stubbed: skill derivation and confidence ceilings, certification matching, LeetCode/GFG mapping, growth arithmetic, readiness scoring, resume validation, webhook signature handling   |
+| **Backend integration** | 43    | Real HTTP stack over real PostgreSQL: anonymous callers rejected on every protected route, field-level validation errors, cross-user isolation, skill promotion end to end                                        |
+| **Frontend**            | 76    | Extracted logic under `node --test`: UTC date handling, difficulty fallbacks, demo fixtures and isolation, API-client envelope, page render-state rules, page-title and heading-semantics invariants              |
+| **Browser E2E**         | 23    | Playwright Chromium against production build + compiled backend: auth journeys, every dashboard section, demo mode, mocked repository flows, 390px overflow, console cleanliness, heading hierarchy and skip link |
 
 ```bash
 cd Backend  && npm test          # builds, then service + integration suites
@@ -508,10 +491,11 @@ cd Frontend && npm run test:e2e  # builds e2e bundle, runs Playwright
 **Isolation guarantees:** Integration tests use dedicated `<database>_test` schema derived from your `DATABASE_URL`; browser suite runs against dropped-and-recreated `devproof_e2e_test` database on port 5399 with GitHub and Groq disabled; E2E account passwords generated per run and never committed.
 
 **GitHub Actions CI** (`.github/workflows/ci.yml`) runs five jobs on every push and pull request to `main`:
+
 - **docs** — link, anchor, and image validation
 - **backend** — migrations on empty disposable Postgres, schema-drift check, build + 150 tests, production-dependency audit
-- **frontend** — typecheck, build, 63 tests, audit
-- **browser E2E** — 20 journeys
+- **frontend** — typecheck, build, 76 tests, audit
+- **browser E2E** — 23 journeys
 - **docker** — both images build
 
 **What automated suite does not prove:** Live GitHub OAuth, GitHub App installation flow, real webhook delivery, and live Groq responses need real credentials and stay outside CI — same code paths exercised with stubs, which is not the same as live round trip.
@@ -528,6 +512,7 @@ cd Frontend && npm run test:e2e  # builds e2e bundle, runs Playwright
 - **Health Status:** [api/v1/health](https://devproof-api-elvz.onrender.com/api/v1/health) — confirmed healthy with connected database at time of check
 
 **Configuration:**
+
 - Vercel serves the frontend as a static build
 - Render hosts the backend API
 - `VITE_API_URL` points to production API base URL

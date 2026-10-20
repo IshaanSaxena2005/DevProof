@@ -104,11 +104,16 @@ function Bar({ score, color }: { score: number; color: string }) {
   );
 }
 
+/**
+ * Section label on the detail page — an h2, under the entity name it belongs
+ * to. Preflight keeps the tag visually inert, so the classes are the whole
+ * treatment and the rendering does not move.
+ */
 function SectionLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
+    <h2 className={`text-[11px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 ${className}`}>
       {children}
-    </p>
+    </h2>
   );
 }
 
@@ -245,7 +250,9 @@ export default function RepositoryDetails() {
         <div className="flex flex-col md:flex-row md:items-start gap-6 justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3 mb-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{repo.name}</h1>
+              {/* The page title ("Repository Details") is the header's h1 —
+                  this is the entity's own heading beneath it, so it is an h2. */}
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{repo.name}</h2>
               <span
                 className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border"
                 style={repo.isPrivate
