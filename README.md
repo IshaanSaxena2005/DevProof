@@ -109,6 +109,18 @@ The product is a full-stack TypeScript application:
 
 *Growth history charts reconstructed from stored analysis timestamps.*
 
+### 9. Career Readiness
+
+![DevProof Career Readiness](screenshots/career-readiness.png)
+
+*Readiness score with per-requirement evidence and recommendations.*
+
+### 10. AI Insights
+
+![DevProof AI Insights](screenshots/ai-insights.png)
+
+*Groq-backed insights grounded in stored analyses, or honest empty state.*
+
 ---
 
 ---
