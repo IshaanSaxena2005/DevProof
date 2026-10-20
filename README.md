@@ -540,7 +540,7 @@ cd Frontend && npm run test:e2e  # builds e2e bundle, runs Playwright
 **Ishaan Saxena**  
 [LinkedIn](https://www.linkedin.com/in/ishaan-saxena2005/) · [GitHub](https://github.com/IshaanSaxena2005)
 
-**Hardesh Agarwal** 
+**Hardesh Agarwal**  
 [LinkedIn](https://www.linkedin.com/in/hardesh-agarwal/) · [GitHub](https://github.com/kinghardesh)
 
 Built with a focus on evidence-based developer intelligence.
