@@ -6,6 +6,7 @@ import PageContainer from "../../components/PageContainer";
 import GlassCard from "../../components/GlassCard";
 import EmptyState from "../../components/EmptyState";
 import { ErrorBlock } from "../../components/StateBlocks";
+import RepositoryDescriptionEditor from "../../components/RepositoryDescriptionEditor";
 import { ApiError } from "../../lib/api.mts";
 import { useAuth } from "../../hooks/useAuth";
 import { githubService } from "../../services/github";
@@ -553,9 +554,17 @@ export default function Repositories() {
                         {repo.name}
                       </h2>
                       <p className="text-xs text-white/35 mb-1.5">{repo.language ?? "Unknown language"}</p>
-                      <p className="text-xs line-clamp-2" style={{ color: "var(--text-tertiary)" }}>
-                        {repo.description ?? "No description provided."}
-                      </p>
+                      <RepositoryDescriptionEditor
+                        repositoryId={repo.id}
+                        currentDescription={repo.description}
+                        onUpdate={(newDesc) => {
+                          const updated = data.repositories.map((r) =>
+                            r.id === repo.id ? { ...r, description: newDesc } : r
+                          );
+                          reload();
+                        }}
+                        disabled={isDemo}
+                      />
 
                       <div className="flex items-center gap-4 mt-3 text-[12px] text-white/35">
                         <span className="flex items-center gap-1">
