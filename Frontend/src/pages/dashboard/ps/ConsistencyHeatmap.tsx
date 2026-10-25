@@ -39,52 +39,57 @@ export default function ConsistencyHeatmap({
   // windows on this page (see activityDays.mts). A local-day grid would look up
   // the wrong cell for anyone who is not on UTC.
   const today = utcToday();
-  const totalDays = weeks * 7;
-  const cells: (number | null)[] = [];
+
+  // GitHub-style calendar weeks: the grid ends on today, and the start is
+  // shifted back to the nearest Sunday, so every column is a real Sun..Sat
+  // week. That is what makes the blocks read as "1 Jun → 7, 8 → 14, …":
+  // each month's 1st begins a fresh column, the grid is 7 rows of weekdays,
+  // and a column never straddles two week ranges.
+  const rawStart = addUtcDays(today, -(weeks * 7 - 1));
+  const start = addUtcDays(rawStart, -rawStart.getUTCDay());
+  const totalDays = Math.round((today.getTime() - start.getTime()) / 86_400_000) + 1;
+  const numWeeks = Math.ceil(totalDays / 7);
 
   // Check if any platform provides submission calendar data
   const hasCalendarData = Object.keys(activity).length > 0;
 
-  for (let i = 0; i < totalDays; i++) {
-    // The grid ends on today, so it spans exactly `totalDays` past days.
-    const date = addUtcDays(today, -(totalDays - 1 - i));
-    const key = utcDayKey(date);
-    // Only show data if platform is connected AND provides calendar data
-    cells.push(active && hasCalendarData ? levelForCount(activity[key] ?? 0) : 0);
-  }
-
-  // Group into weeks of 7 for column layout
   const columns: (number | null)[][] = [];
-  for (let w = 0; w < weeks; w++) {
-    columns.push(cells.slice(w * 7, w * 7 + 7));
+  for (let w = 0; w < numWeeks; w++) {
+    const col: (number | null)[] = [];
+    for (let d = 0; d < 7; d++) {
+      const date = addUtcDays(start, w * 7 + d);
+      // Row order is Sun..Sat to match the day labels. Days after today are
+      // rendered as empty placeholders, never as zero-activity days — the
+      // grid ends on today, so no future day is shown.
+      const future = date.getTime() > today.getTime();
+      col.push(
+        future
+          ? null
+          : active && hasCalendarData
+            ? levelForCount(activity[utcDayKey(date)] ?? 0)
+            : 0
+      );
+    }
+    columns.push(col);
   }
 
-  // Compute weekday labels from the actual first column's weekday so the labels
-  // always match the rows regardless of what day the grid starts on.
-  const firstCellDate = addUtcDays(today, -(totalDays - 1));
-  const firstWeekday = firstCellDate.getUTCDay(); // 0=Sun .. 6=Sat
-  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const dayLabels: (string | null)[] = [];
-  for (let i = 0; i < 7; i++) {
-    const actualDay = (firstWeekday + i) % 7;
-    // Show only Mon, Wed, Fri, Sun — skip Tue, Thu, Sat to keep the labels
-    // sparse and readable, matching the original intent.
-    dayLabels.push(["Mon", "Wed", "Fri", "Sun"].includes(DAY_LABELS[actualDay])
-      ? DAY_LABELS[actualDay]
-      : "");
-  }
+  // Weekday labels are now fixed by construction: column rows are always
+  // Sun..Sat (each column starts on a Sunday), so labels never drift. Show
+  // only Mon, Wed, Fri to keep the label column sparse and readable.
+  const dayLabels: (string | null)[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) =>
+    ["Mon", "Wed", "Fri"].includes(d) ? d : ""
+  );
 
-  // Month labels above the first week of each month
+  // Month labels above the week column that contains the month's 1st — the
+  // same anchor GitHub uses, so "Jun" sits over the 1 Jun → 7 block.
   const monthMarks: { index: number; label: string }[] = [];
-  let lastMonth = -1;
-  columns.forEach((col, idx) => {
-    const firstReal = col.find((c) => c !== null);
-    if (firstReal === undefined) return;
-    const cellIndex = col.indexOf(firstReal);
-    const date = addUtcDays(today, -(totalDays - 1 - (idx * 7 + cellIndex)));
-    if (date.getUTCMonth() !== lastMonth) {
-      lastMonth = date.getUTCMonth();
-      monthMarks.push({ index: idx, label: formatUtcDay(date, { month: "short" }) });
+  columns.forEach((_, idx) => {
+    for (let d = 0; d < 7; d++) {
+      const date = addUtcDays(start, idx * 7 + d);
+      if (date.getTime() <= today.getTime() && date.getUTCDate() === 1) {
+        monthMarks.push({ index: idx, label: formatUtcDay(date, { month: "short" }) });
+        break;
+      }
     }
   });
 
@@ -141,13 +146,12 @@ export default function ConsistencyHeatmap({
                     ))}
                   </div>
 
-                  {/* Cells — 26 equal columns across the full available width */}
+                  {/* Cells — one calendar week per column, evenly stretched */}
                   <div className="ps-heatmap-cells">
                     {columns.map((col, ci) => (
                       <div key={ci} className="ps-heatmap-week">
                         {col.map((level, ri) => {
-                          const idx = ci * 7 + ri;
-                          const date = addUtcDays(today, -(totalDays - 1 - idx));
+                          const date = addUtcDays(start, ci * 7 + ri);
                           const key = utcDayKey(date);
                           const count = activity[key] ?? 0;
                           return (

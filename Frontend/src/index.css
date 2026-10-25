@@ -71,9 +71,11 @@ input:focus, textarea:focus, select:focus {
 /* ─── Problem-Solving Activity Heatmap ─────────────────────────────────────
    Full-width GitHub-style contribution calendar.
 
-   The grid distributes all week columns evenly across the card's available
-   width using CSS Grid `1fr` columns, so the calendar fills the card instead
-   of collapsing to a 12px-minimum grid pinned to the left.
+   The grid's week count comes from the data (calendar-aligned Sun..Sat
+   columns ending on today), so the column count is NOT hardcoded: both the
+   month-label row and the cell grid flow one week per column (`grid-auto-
+   flow: column`) and stretch every column evenly with `grid-auto-columns:
+   1fr`.
 
    Desktop: cells grow with the card width.
    Tablet: cells scale down with the card.
@@ -88,7 +90,8 @@ input:focus, textarea:focus, select:focus {
 
 .ps-heatmap-months {
   display: grid;
-  grid-template-columns: repeat(26, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 3px;
   margin-bottom: 4px;
   /* Indent by the day-label gutter so month marks align with their week
@@ -142,11 +145,11 @@ input:focus, textarea:focus, select:focus {
 
 .ps-heatmap-cells {
   display: grid;
-  /* One week per COLUMN. Without auto-flow column the 26 week wrappers
-     auto-flow row-by-row and the grid grows ~26 rows tall (~630px), which
-     stretched the entire card vertically. */
+  /* One week per COLUMN (dynamic count), 7 fixed day rows. Without auto-flow
+     column the week wrappers auto-flow row-by-row and the grid grows many
+     rows tall, which stretched the entire card vertically. */
   grid-auto-flow: column;
-  grid-template-columns: repeat(26, 1fr);
+  grid-auto-columns: 1fr;
   grid-template-rows: repeat(7, 12px);
   gap: 3px;
   flex: 1;
@@ -169,7 +172,7 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.30);
 }
 
-/* Tablet/medium: keep the 26-column distribution but let the grid breathe
+/* Tablet/medium: keep the 1fr column distribution but let the grid breathe
    a little less aggressively so very wide cards do not produce giant cells. */
 @media (max-width: 1023px) {
   .ps-heatmap-cells {
@@ -191,9 +194,8 @@ input:focus, textarea:focus, select:focus {
     -webkit-overflow-scrolling: touch;
   }
   .ps-heatmap-months,
-  .ps-heatmap-body,
   .ps-heatmap-cells {
-    grid-template-columns: repeat(26, minmax(10px, 1fr));
+    grid-auto-columns: 10px;
   }
   .ps-heatmap-cells {
     grid-template-rows: repeat(7, 10px);
