@@ -88,7 +88,10 @@ const COMMON_REQUIREMENTS: RoleRequirement[] = [
     id: 'security-hygiene',
     label: 'No exposed secrets or unsafe patterns detected',
     weight: 1,
-    check: { kind: 'analysisMetric', metric: MetricCategory.SECURITY, minimumScore: 70 }
+    // 80, not 70: the security metric starts at 100 and drops 25 per secret
+    // detection, so 80 is the exact floor that still demands a clean sweep —
+    // one detected hardcoded secret (75) fails this and should.
+    check: { kind: 'analysisMetric', metric: MetricCategory.SECURITY, minimumScore: 80 }
   }
 ];
 
