@@ -18,6 +18,9 @@ import { AppError } from '../utils/appError';
 
 const GROQ_CHAT_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 const REQUEST_TIMEOUT_MS = 30_000;
+/** Backoff between 429 retries — scaled up per attempt (attempt n waits
+ * RATE_LIMIT_RETRY_MS × n), tuned under a ~5s provider suggestion. */
+const RATE_LIMIT_RETRY_MS = 4_000;
 
 /**
  * Shape the model's JSON reply must match. response_format:'json_object'
@@ -185,12 +188,41 @@ export class AiService {
    * timeout below), a non-2xx response, an empty reply, invalid JSON, and
    * JSON that parses but doesn't match InsightsSchema are all handled
    * separately so the real cause is never swallowed into a generic 500.
+   *
+   * Free-tier TPM rate limits surface as 429 with a server-suggested retry
+   * delay; those are retried a couple of times here so the dashboard's
+   * regenerate button does not fail just because a burst of requests landed
+   * within the same tokens-per-minute window.
    */
   private static async callGroq(prompt: string): Promise<AiInsights> {
     if (!env.GROQ_API_KEY) {
       throw AppError.serviceUnavailable('AI insights are not configured on this server (missing GROQ_API_KEY).');
     }
 
+    const maxAttempts = 3;
+    let rateLimitError: string | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const result = await AiService.fetchInsights(prompt, attempt === maxAttempts);
+      if (typeof result === "string") {
+        // 429 — the string is the provider's own message; wait and retry.
+        rateLimitError = result;
+        if (attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS * attempt));
+        }
+      } else {
+        return result;
+      }
+    }
+
+    throw AppError.serviceUnavailable(
+      `AI provider is rate limited right now. Please try again in a few seconds.${rateLimitError ? ` (${rateLimitError})` : ''}`
+    );
+  }
+
+  /** One request/response round-trip. Returns a retry-delay message when the
+   * provider rate limits us, or the validated insights on success. */
+  private static async fetchInsights(prompt: string, isLastAttempt: boolean): Promise<AiInsights | string> {
     // fetch() has no built-in timeout — without this, a hung provider would
     // hang the request indefinitely instead of failing cleanly.
     const controller = new AbortController();
@@ -230,6 +262,14 @@ export class AiService {
 
     if (!response.ok) {
       const body = await response.text();
+      // 429 is transient by design (TPM window); telling the caller to retry
+      // client-side pushes the burden of backoff onto a user clicking a
+      // button. Signal it so callGroq can back off and try again itself.
+      if (response.status === 429 && !isLastAttempt) {
+        // Groq suggests a retry delay in the body — surface just the server
+        // message so the final error stays human-readable.
+        return body.includes('Rate limit') ? 'token rate limit reached' : 'rate limited';
+      }
       throw AppError.serviceUnavailable(`AI provider returned ${response.status}: ${body.slice(0, 300)}`);
     }
 
