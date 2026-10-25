@@ -98,6 +98,7 @@ export class AnalysisEngineService {
 
     let todoCount = 0;
     let secretWarnings = 0;
+    let execWarnings = 0;
 
     // Sample inspect key files
     const sampleFilesToInspect = filePaths
@@ -139,6 +140,7 @@ export class AnalysisEngineService {
       // Dangerous Code Scanner Patterns
       const execMatch = DYNAMIC_EXECUTION.exec(content);
       if (execMatch) {
+        execWarnings++;
         findings.push({
           severity: SeverityLevel.HIGH,
           category: 'SECURITY',
@@ -155,11 +157,23 @@ export class AnalysisEngineService {
     // ==========================================
     // DIMENSIONAL METRIC CALCULATIONS
     // ==========================================
+    //
+    // Every score starts from 0 and only moves up on real, checked signals.
+    // The previous baselines (40 for documentation, 30 for testing, 85 for
+    // code quality, 70 for dependencies) were free credit: an empty repo
+    // scored mid-range before any evidence existed, and because the career
+    // readiness thresholds sat exactly at those baselines, nearly every
+    // score pinned at 100 — a number that proved nothing.
+    //
+    // Absence of a detected problem still scores as "not detected", which for
+    // secret scanning is the limit of static analysis — a clean sweep is
+    // reported as such in the detail, never as "this code is secure".
 
-    // 1. Documentation Score (0-100)
-    let docScore = 40;
-    if (hasReadme) docScore += 40;
-    if (hasLicense) docScore += 20;
+    // 1. Documentation Score (0-100): README is the load-bearing artifact.
+    let docScore = 0;
+    if (hasReadme) docScore += 60;
+    if (hasLicense) docScore += 25;
+    docScore = Math.min(docScore, 100);
     metrics.push({
       category: MetricCategory.DOCUMENTATION,
       name: 'Documentation Quality',
@@ -198,44 +212,58 @@ export class AnalysisEngineService {
       });
     }
 
-    // 3. Security Score (0-100)
-    let securityScore = 100 - secretWarnings * 25;
+    // 3. Security Score (0-100): starts at a clean sweep (no detections) and
+    // is docked per finding — secrets harder than dynamic-execution hits.
+    let securityScore = 100 - secretWarnings * 25 - execWarnings * 10;
     if (securityScore < 20) securityScore = 20;
     metrics.push({
       category: MetricCategory.SECURITY,
       name: 'Security Vulnerabilities & Secrets',
       score: securityScore,
-      detail: secretWarnings === 0 ? 'No exposed secret patterns detected.' : `${secretWarnings} potential secret warnings found.`
+      detail:
+        secretWarnings === 0 && execWarnings === 0
+          ? 'No exposed secret or dynamic-execution patterns detected in sampled files.'
+          : `${secretWarnings} potential secret warning(s), ${execWarnings} dynamic-execution finding(s).`
     });
 
-    // 4. Code Quality & Maintainability Score (0-100)
-    let qualityScore = 85;
+    // 4. Code Quality & Maintainability Score (0-100): only structural
+    // evidence moves this up — testing and CI remain the proxies available
+    // to a tree-level scan. A repo with neither sits at 40 by construction.
+    let qualityScore = 40;
+    if (hasTests) qualityScore += 15;
+    if (hasCiCd) qualityScore += 25;
+    if (hasDocker) qualityScore += 10;
     if (todoCount > 5) qualityScore -= 15;
-    if (!hasCiCd) qualityScore -= 10;
-    if (qualityScore < 40) qualityScore = 40;
+    if (qualityScore < 20) qualityScore = 20;
 
     metrics.push({
       category: MetricCategory.CODE_QUALITY,
       name: 'Code Quality & Clean Architecture',
       score: qualityScore,
-      detail: `Clean modular layout with ${todoCount} pending TODO markers.`
+      detail: `${todoCount} pending TODO marker(s); ${hasCiCd ? 'CI configured' : 'no CI detected'}; ${hasTests ? 'tests present' : 'no tests detected'}.`
     });
 
     metrics.push({
       category: MetricCategory.MAINTAINABILITY,
       name: 'Maintainability & CI/CD',
-      score: hasCiCd ? 90 : 60,
+      score: hasCiCd ? 85 : 30,
       detail: hasCiCd ? 'GitHub Actions / CI workflows configured.' : 'No CI/CD build pipelines detected.'
     });
 
-    // 5. Dependency Health Score (0-100)
+    // 5. Dependency Health Score (0-100): a lockfile is the actual evidence.
+    // Repositories without a JS package manifest are not judgeable by this
+    // check and score neutral (70) rather than penalised.
     let depScore = 70;
-    if (packageJsonPath && hasLockfile) depScore = 95;
+    if (packageJsonPath) depScore = hasLockfile ? 95 : 45;
     metrics.push({
       category: MetricCategory.DEPENDENCY_HEALTH,
       name: 'Dependency Management',
       score: depScore,
-      detail: hasLockfile ? 'Lockfile (package-lock.json / yarn.lock) verified.' : 'Missing lockfile.'
+      detail: packageJsonPath
+        ? hasLockfile
+          ? 'Lockfile (package-lock.json / yarn.lock / pnpm-lock.yaml) verified.'
+          : 'package.json present but no lockfile committed.'
+        : 'No package.json — dependency management not judgeable by this check.'
     });
 
     // Calculate Overall Weighted Score
@@ -244,7 +272,7 @@ export class AnalysisEngineService {
 
     let healthStatus = 'NEEDS_REVIEW';
     if (overallScore >= 80) healthStatus = 'EXCELLENT';
-    else if (overallScore >= 65) healthStatus = 'GOOD';
+    else if (overallScore >= 60) healthStatus = 'GOOD';
 
     // If no critical findings, add positive finding
     if (findings.length === 0) {
