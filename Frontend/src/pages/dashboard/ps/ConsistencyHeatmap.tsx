@@ -40,13 +40,16 @@ export default function ConsistencyHeatmap({
   // the wrong cell for anyone who is not on UTC.
   const today = utcToday();
 
-  // GitHub-style calendar weeks: the grid ends on today, and the start is
-  // shifted back to the nearest Sunday, so every column is a real Sun..Sat
-  // week. That is what makes the blocks read as "1 Jun → 7, 8 → 14, …":
-  // each month's 1st begins a fresh column, the grid is 7 rows of weekdays,
-  // and a column never straddles two week ranges.
+  // Calendar weeks, Monday-anchored: the grid ends on today, and the start is
+  // shifted back to the nearest Monday, so every column is a real Mon..Sun
+  // week with Monday as its first row. That is what makes the blocks read as
+  // "1 Jun → 7, next starts 8 → 14": the column holding a month's 1st begins
+  // it, columns never straddle a week boundary at their head, and the top
+  // corner of the grid is a Monday.
   const rawStart = addUtcDays(today, -(weeks * 7 - 1));
-  const start = addUtcDays(rawStart, -rawStart.getUTCDay());
+  // 0=Sun .. 6=Sat → days to subtract to reach that week's Monday.
+  const mondayOffset = (rawStart.getUTCDay() + 6) % 7;
+  const start = addUtcDays(rawStart, -mondayOffset);
   const totalDays = Math.round((today.getTime() - start.getTime()) / 86_400_000) + 1;
   const numWeeks = Math.ceil(totalDays / 7);
 
@@ -58,9 +61,10 @@ export default function ConsistencyHeatmap({
     const col: (number | null)[] = [];
     for (let d = 0; d < 7; d++) {
       const date = addUtcDays(start, w * 7 + d);
-      // Row order is Sun..Sat to match the day labels. Days after today are
-      // rendered as empty placeholders, never as zero-activity days — the
-      // grid ends on today, so no future day is shown.
+      // Row order is Mon..Sun (the start is a Monday, so row 0 is Monday).
+      // Days after today are rendered as empty placeholders, never as
+      // zero-activity days — the grid ends on today, so no future day is
+      // shown.
       const future = date.getTime() > today.getTime();
       col.push(
         future
@@ -73,10 +77,10 @@ export default function ConsistencyHeatmap({
     columns.push(col);
   }
 
-  // Weekday labels are now fixed by construction: column rows are always
-  // Sun..Sat (each column starts on a Sunday), so labels never drift. Show
-  // only Mon, Wed, Fri to keep the label column sparse and readable.
-  const dayLabels: (string | null)[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) =>
+  // Weekday labels are fixed by construction: columns always start on a
+  // Monday, so row 0 is Monday, row 6 Sunday. Show only Mon, Wed, Fri to keep
+  // the label column sparse and readable.
+  const dayLabels: (string | null)[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) =>
     ["Mon", "Wed", "Fri"].includes(d) ? d : ""
   );
 
