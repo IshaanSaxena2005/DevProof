@@ -231,16 +231,7 @@ export default function LearningAchievements() {
         <LAReveal delay={0.04}>
           <LALabel>Resume</LALabel>
           <ResumeSection
-            certifications={certifications}
             readOnly={isDemo}
-            onCertificationAdded={(result) => {
-              // A confirmed resume candidate becomes a normal certification
-              // record through the existing API — refresh the combined
-              // section and surface any promoted skills exactly like a
-              // manual save does.
-              setPromotedSkills(result.promotedSkills);
-              reloadCerts();
-            }}
           />
         </LAReveal>
       </div>

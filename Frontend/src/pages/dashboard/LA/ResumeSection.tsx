@@ -1,23 +1,17 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2, ExternalLink, ShieldQuestion, Check, ChevronDown } from "lucide-react";
-import { useAuth } from "../../../hooks/useAuth";
+import { Loader2, ExternalLink, ChevronDown } from "lucide-react";
 import { ApiError } from "../../../lib/api.mts";
 import { useDemoResource } from "../../../demo/DemoContext";
 import { sampleData } from "../../../demo/sampleData.mts";
 import { resumeService } from "../../../services/resume";
 import { skillsService } from "../../../services/skills";
-import { certificationsService } from "../../../services/certifications";
 import GlassCard from "../../../components/GlassCard";
 import { LAStatLabel } from "./shared";
 import AtsDashboard from "./AtsDashboard";
 import JobMatchPanel from "./JobMatchPanel";
 import type {
-  Certification,
-  CertificationInput,
-  CertificationMutationResponse,
   ResumeAnalysis,
-  ResumeCertificationCandidate,
   ResumeSummary,
   SkillWithEvidence,
 } from "../../../lib/types";
@@ -58,123 +52,17 @@ function formatDuration(months: number | null): string | null {
   return parts.join(" ");
 }
 
-/** Normalised comparison key: case, punctuation and filler words never make
- * two titles different or the same on their own. */
-function normalise(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\b(the|a|an)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-type DuplicateMatch = {
-  type: "exact" | "possible";
-  existing: Certification;
-  /** Human-readable reason, shown to the user verbatim. */
-  reason: string;
-};
-
-/**
- * Conservative duplicate detection against the user's OWN records only.
- *
- * Strong identity: same credential ID, same credential link, or same title
- * AND issuer. Anything weaker — a similar title alone — is a "possible"
- * duplicate, never a claim. Nothing is ever merged or deleted here; the user
- * decides, and the backend enforces ownership independently.
- */
-function findDuplicate(
-  candidate: { title: string; issuer: string | null; credentialId: string | null; credentialUrl: string | null },
-  existing: Certification[]
-): DuplicateMatch | null {
-  for (const cert of existing) {
-    if (
-      candidate.credentialId &&
-      cert.credentialId &&
-      cert.credentialId.toLowerCase() === candidate.credentialId.toLowerCase()
-    ) {
-      return { type: "exact", existing: cert, reason: "same credential ID" };
-    }
-    if (
-      candidate.credentialUrl &&
-      cert.credentialUrl &&
-      cert.credentialUrl.toLowerCase() === candidate.credentialUrl.toLowerCase()
-    ) {
-      return { type: "exact", existing: cert, reason: "same credential link" };
-    }
-  }
-
-  const title = normalise(candidate.title);
-  const issuer = candidate.issuer ? normalise(candidate.issuer) : null;
-
-  for (const cert of existing) {
-    const certTitle = normalise(cert.name);
-    if (certTitle === title && (issuer === null || normalise(cert.issuer) === issuer)) {
-      return { type: "exact", existing: cert, reason: "same title and issuer" };
-    }
-    if (certTitle === title) {
-      return { type: "possible", existing: cert, reason: "same title, but your record names a different issuer" };
-    }
-    if (issuer !== null && normalise(cert.issuer) === issuer && (certTitle.includes(title) || title.includes(certTitle))) {
-      return { type: "possible", existing: cert, reason: "a similar title from the same issuer" };
-    }
-  }
-  return null;
-}
-
-/** "Nov 2023" → yyyy-mm-dd (day 1 is a display anchor for the month, not a
- * claim — the month itself is what the resume states). A bare "2023" returns
- * null: prefiling January would invent a month the resume never wrote. */
-function isoDateFromResumeText(text: string | null): string | null {
-  if (!text) return null;
-  // Only a month-bearing date can be held by the date input honestly.
-  if (!/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(text)) return null;
-  const parsed = new Date(text);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toISOString().slice(0, 10);
-}
-
-/** Dismissed candidates persist per user, in this browser only. Dismissal is
- * a display preference, never a deletion — nothing on the server changes. */
-function loadDismissed(userId: string): string[] {
-  try {
-    const raw = localStorage.getItem(`devproof:resume:dismissed-certs:${userId}`);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveDismissed(userId: string, titles: string[]) {
-  try {
-    localStorage.setItem(`devproof:resume:dismissed-certs:${userId}`, JSON.stringify(titles));
-  } catch {
-    /* storage unavailable — dismissal stays in memory for this session */
-  }
-}
-
 /**
  * Resume management, relocated from the Professional Profile page.
  *
  * Reuses the existing /resume backend (GET/POST/DELETE/analyse + download)
  * through resumeService — no second implementation. The structured analysis
- * shown here is what the parser actually extracted; certifications detected
- * in the resume are review candidates that reach /certifications only after
- * the user confirms them, and extracted technologies are never written as
- * skills.
+ * shown here is what the parser actually extracted; extracted technologies
+ * are never written as skills.
  */
 export default function ResumeSection({
-  certifications,
-  onCertificationAdded,
   readOnly = false,
 }: {
-  /** The user's existing certification records — used for duplicate
-   * detection against the authenticated user's own data only. */
-  certifications: Certification[];
-  /** Called after a confirmed certification is created, so the parent can
-   * refresh the combined section and surface any promoted skills. */
-  onCertificationAdded: (result: CertificationMutationResponse) => void;
   /**
    * Demo mode: show the sample resume, with every upload/manage control off.
    *
@@ -251,8 +139,6 @@ export default function ResumeSection({
           onReplace={() => fileInput.current?.click()}
           onRemove={remove}
           onReanalyse={reload}
-          certifications={certifications}
-          onCertificationAdded={onCertificationAdded}
           readOnly={readOnly}
         />
       ) : (
@@ -313,8 +199,6 @@ function ResumeCard({
   onReplace,
   onRemove,
   onReanalyse,
-  certifications,
-  onCertificationAdded,
   readOnly = false,
 }: {
   resume: ResumeSummary;
@@ -323,8 +207,6 @@ function ResumeCard({
   onRemove: () => void;
   /** Parent-owned refetch after a successful re-analysis. */
   onReanalyse: () => void;
-  certifications: Certification[];
-  onCertificationAdded: (result: CertificationMutationResponse) => void;
   readOnly?: boolean;
 }) {
   const [reanalysing, setReanalysing] = useState(false);
@@ -457,8 +339,6 @@ function ResumeCard({
             analysis={analysis}
             sectionText={sectionText}
             detectedSkills={detected}
-            certifications={certifications}
-            onCertificationAdded={onCertificationAdded}
           />
         </div>
       )}
@@ -587,30 +467,17 @@ function ResumeAnalysisView({
   analysis,
   sectionText,
   detectedSkills,
-  certifications,
-  onCertificationAdded,
 }: {
   analysis: ResumeAnalysis;
   /** Raw section text — used only as a labelled fallback when a category
    * exists on the page but no entry could be structured from it. */
   sectionText: Record<string, string>;
   detectedSkills: string[];
-  certifications: Certification[];
-  onCertificationAdded: (result: CertificationMutationResponse) => void;
 }) {
   const contact = analysis.contact;
 
   return (
     <div className="relative mt-5 border-t border-white/[0.07] pt-5">
-      <CertificationReview
-        analysis={analysis}
-        certifications={certifications}
-        onCertificationAdded={onCertificationAdded}
-      />
-
-      {/* Everything the parser extracted, collapsed: the dashboard above is
-          what to act on; this is the content it was grounded in, kept
-          reachable rather than removed. */}
       <details className="group mt-6 rounded-xl border border-white/[0.07] bg-white/[0.02]">
         <summary className="flex cursor-pointer list-none [&::-webkit-details-marker]:hidden items-center justify-between gap-3 px-4 py-3 text-[12px] font-bold uppercase tracking-[0.18em] text-white/45 hover:text-white/70 transition-colors">
           What the parser read from this document
@@ -767,268 +634,3 @@ function ResumeAnalysisView({
   );
 }
 
-/** Certification candidates with the review → edit → confirm workflow.
- * Nothing here creates a record until the user presses Save. */
-function CertificationReview({
-  analysis,
-  certifications,
-  onCertificationAdded,
-}: {
-  analysis: ResumeAnalysis;
-  certifications: Certification[];
-  onCertificationAdded: (result: CertificationMutationResponse) => void;
-}) {
-  // Dismissal is a per-browser display preference, keyed per account so two
-  // users on one machine never inherit each other's dismissals.
-  const { user } = useAuth();
-  const storageUserId = user?.id ?? "anonymous";
-
-  const [dismissed, setDismissed] = useState<string[]>(() => loadDismissed(storageUserId));
-
-  const candidates = analysis.certifications;
-  const visible = candidates.filter((c) => !dismissed.includes(normalise(c.title)));
-
-  function dismiss(candidate: ResumeCertificationCandidate) {
-    const next = [...dismissed, normalise(candidate.title)];
-    setDismissed(next);
-    saveDismissed(storageUserId, next);
-  }
-
-  function restore() {
-    setDismissed([]);
-    saveDismissed(storageUserId, []);
-  }
-
-  if (candidates.length === 0) return null;
-
-  return (
-    <div className="mt-6">
-      <SectionHeading>Certifications detected in your resume</SectionHeading>
-      <div className="space-y-3">
-        {visible.map((candidate, i) => (
-          <CertCandidateCard
-            key={`${candidate.evidence}-${i}`}
-            candidate={candidate}
-            existing={certifications}
-            onDismiss={() => dismiss(candidate)}
-            onCertificationAdded={onCertificationAdded}
-          />
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
-        <p className="text-[10px] text-white/25">
-          Lines your resume mentions. Nothing is added to your certifications until you confirm it,
-          and a mention is never treated as verified.
-        </p>
-        {dismissed.length > 0 && (
-          <button
-            onClick={restore}
-            className="text-[10px] uppercase tracking-widest text-white/35 hover:text-white/70 underline underline-offset-2 cursor-pointer"
-          >
-            Restore {dismissed.length} dismissed
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CertCandidateCard({
-  candidate,
-  existing,
-  onDismiss,
-  onCertificationAdded,
-}: {
-  candidate: ResumeCertificationCandidate;
-  existing: Certification[];
-  onDismiss: () => void;
-  onCertificationAdded: (result: CertificationMutationResponse) => void;
-}) {
-  const duplicate = findDuplicate(candidate, existing);
-
-  const [mode, setMode] = useState<"view" | "editing" | "added">(duplicate?.type === "exact" ? "view" : "view");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Editable fields — the user may fix anything the parser got wrong before
-  // a record exists. Prefilled from the candidate; blank where absent.
-  const [title, setTitle] = useState(candidate.title);
-  const [issuer, setIssuer] = useState(candidate.issuer ?? "");
-  const [issueDate, setIssueDate] = useState(isoDateFromResumeText(candidate.issueDate) ?? "");
-  const [credentialId, setCredentialId] = useState(candidate.credentialId ?? "");
-  const [credentialUrl, setCredentialUrl] = useState(candidate.credentialUrl ?? "");
-
-  async function confirm() {
-    if (!title.trim() || !issuer.trim()) {
-      setError("A certification needs at least a name and an issuer.");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      const input: CertificationInput = {
-        name: title.trim(),
-        issuer: issuer.trim(),
-        ...(credentialId.trim() ? { credentialId: credentialId.trim() } : {}),
-        ...(credentialUrl.trim() ? { credentialUrl: credentialUrl.trim() } : {}),
-        ...(issueDate ? { issueDate: new Date(issueDate).toISOString() } : {}),
-      };
-      const result = await certificationsService.add(input);
-      setMode("added");
-      onCertificationAdded(result);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not save the certification.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (mode === "added") {
-    return (
-      <div className="rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
-        <p className="text-[12px] text-white/70 flex items-center gap-2">
-          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span>
-            <span className="font-semibold text-white">{title}</span> was added to Courses &
-            Certifications below.
-          </span>
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`rounded-xl border px-4 py-3 ${
-        duplicate?.type === "exact"
-          ? "border-white/[0.08] bg-white/[0.015]"
-          : "border-violet-400/20 bg-violet-400/[0.04]"
-      }`}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[13px] font-semibold text-white/85">{candidate.title}</p>
-            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/12 bg-white/[0.04] text-white/50">
-              Extracted from resume — not independently verified
-            </span>
-            {candidate.needsReview && (
-              <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-amber-400/25 bg-amber-400/10 text-amber-300">
-                <ShieldQuestion className="w-2.5 h-2.5" />
-                Needs review
-              </span>
-            )}
-          </div>
-          <p className="text-[12px] text-white/45 mt-1 flex flex-wrap gap-x-2">
-            {candidate.issuer && <span>{candidate.issuer}</span>}
-            {candidate.issueDate && <span>· {candidate.issueDate}</span>}
-            {candidate.credentialId && <span>· ID {candidate.credentialId}</span>}
-            {candidate.credentialUrl && (
-              <a href={candidate.credentialUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                link
-                <ExternalLink className="w-2.5 h-2.5" />
-              </a>
-            )}
-          </p>
-          <p className="text-[11px] text-white/30 mt-1.5 italic leading-relaxed">
-            “{candidate.evidence}”
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          {duplicate?.type === "exact" ? (
-            <span className="text-[10px] uppercase tracking-widest text-white/40 px-2 py-1.5">
-              Already in your certifications
-            </span>
-          ) : (
-            <button
-              onClick={() => setMode(mode === "editing" ? "view" : "editing")}
-              className="text-[10px] font-bold uppercase tracking-widest px-3.5 py-2 rounded-full border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer"
-              aria-expanded={mode === "editing"}
-            >
-              {mode === "editing" ? "Cancel" : duplicate ? "Review & add anyway" : "Review & add"}
-            </button>
-          )}
-          <button
-            onClick={onDismiss}
-            className="text-[10px] font-bold uppercase tracking-widest px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.04] text-white/50 hover:text-white/80 hover:border-white/25 transition-all cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
-
-      {duplicate && (
-        <p
-          className={`text-[11px] mt-2 leading-relaxed ${
-            duplicate.type === "exact" ? "text-white/45" : "text-amber-200/70"
-          }`}
-        >
-          {duplicate.type === "exact" ? (
-            <>
-              Matches your existing record “{duplicate.existing.name}” ({duplicate.reason}).
-            </>
-          ) : (
-            <>
-              Possible duplicate — {duplicate.reason}: “{duplicate.existing.name}” (issued by{" "}
-              {duplicate.existing.issuer}). Review before adding.
-            </>
-          )}
-        </p>
-      )}
-
-      {mode === "editing" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-3 border-t border-white/[0.07]">
-          {[
-            { id: `cert-title-${candidate.title}`, label: "Certification name *", value: title, set: setTitle, placeholder: "AWS Solutions Architect Associate" },
-            { id: `cert-issuer-${candidate.title}`, label: "Issuing organization *", value: issuer, set: setIssuer, placeholder: "Amazon Web Services" },
-            { id: `cert-id-${candidate.title}`, label: "Credential ID", value: credentialId, set: setCredentialId, placeholder: "Optional" },
-            { id: `cert-url-${candidate.title}`, label: "Credential URL", value: credentialUrl, set: setCredentialUrl, placeholder: "https://…" },
-          ].map((f) => (
-            <div key={f.id}>
-              <label htmlFor={f.id} className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">
-                {f.label}
-              </label>
-              <input
-                id={f.id}
-                value={f.value}
-                onChange={(e) => f.set(e.target.value)}
-                placeholder={f.placeholder}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm text-white placeholder:text-white/25 outline-none focus:border-white/25"
-              />
-            </div>
-          ))}
-          <div>
-            <label htmlFor={`cert-date-${candidate.title}`} className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">
-              Issue date
-            </label>
-            <input
-              id={`cert-date-${candidate.title}`}
-              type="date"
-              value={issueDate}
-              onChange={(e) => setIssueDate(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm text-white outline-none focus:border-white/25"
-            />
-            {!issueDate && candidate.issueDate && (
-              <p className="text-[10px] text-white/25 mt-1">
-                Your resume says “{candidate.issueDate}” — pick the exact date to record one.
-              </p>
-            )}
-          </div>
-          <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
-            <button
-              onClick={confirm}
-              disabled={saving}
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-all cursor-pointer disabled:opacity-40"
-              style={{ backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
-            >
-              {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              {saving ? "Adding…" : duplicate ? "Add anyway" : "Add to certifications"}
-            </button>
-            {error && <p className="text-[12px] text-red-300">{error}</p>}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
