@@ -911,7 +911,11 @@ export default function ProblemSolving() {
             <ConsistencyHeatmap
               active={anyConnected}
               activity={calendar}
-              weeks={26}
+              /* A full year, matching GitHub's own contribution calendar the
+                 dense small-box layout is modelled on: at GitHub's cell pitch
+                 52 weeks fit the card, while 26 weeks of small cells would
+                 leave most of the card empty. */
+              weeks={52}
               footerNote="Cells represent days with problem-solving submissions from platforms that provide submission calendar data (e.g., LeetCode). This is practice evidence, not GitHub commit activity."
             />
           </div>

@@ -69,20 +69,14 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ─── Problem-Solving Activity Heatmap ─────────────────────────────────────
-   Full-width GitHub-style contribution calendar.
+   GitHub-style contribution calendar.
 
-   The grid's week count comes from the data (calendar-aligned Sun..Sat
-   columns ending on today), so the column count is NOT hardcoded: both the
-   month-label row and the cell grid flow one week per column (`grid-auto-
-   flow: column`) and stretch every column evenly with `grid-auto-columns:
-   1fr`.
-
-   Desktop: cells grow with the card width.
-   Tablet: cells scale down with the card.
-   Mobile: cells have a floor so they never get too small; the calendar area
-   scrolls horizontally inside its card when the viewport is narrower than the
-   minimum comfortable grid width, while month/day labels stay pinned to the
-   left so they remain readable.
+   Cells are SMALL FIXED SQUARES on a fixed pitch (13px cell + 3px gap, like
+   github.com's own graph) — they do not stretch with the card width, so the
+   grid reads as 7 rows of dense little boxes in strict date order. Columns
+   flow one per week with `grid-auto-flow: column`; the column count comes
+   from the data (Monday-anchored Mon..Sun weeks ending on today), so it is
+   never hardcoded. Weeks wider than the card scroll horizontally inside it.
    ─────────────────────────────────────────────────────────────────────────── */
 .ps-heatmap-grid {
   width: 100%;
@@ -91,7 +85,7 @@ input:focus, textarea:focus, select:focus {
 .ps-heatmap-months {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-auto-columns: 13px;
   gap: 3px;
   margin-bottom: 4px;
   /* Indent by the day-label gutter so month marks align with their week
@@ -124,7 +118,7 @@ input:focus, textarea:focus, select:focus {
 
 .ps-heatmap-day-labels {
   display: grid;
-  grid-template-rows: repeat(7, 12px);
+  grid-template-rows: repeat(7, 13px);
   gap: 3px;
   align-content: start;
   /* Fixed width so the months row can indent by a matching gutter. */
@@ -145,19 +139,19 @@ input:focus, textarea:focus, select:focus {
 
 .ps-heatmap-cells {
   display: grid;
-  /* One week per COLUMN (dynamic count), 7 fixed day rows. Without auto-flow
-     column the week wrappers auto-flow row-by-row and the grid grows many
-     rows tall, which stretched the entire card vertically. */
+  /* One week per COLUMN (dynamic count), 7 fixed 13px day rows — small
+     square GitHub boxes on a fixed pitch. Without auto-flow column the week
+     wrappers auto-flow row-by-row and the grid grows many rows tall. */
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  grid-template-rows: repeat(7, 12px);
+  grid-auto-columns: 13px;
+  grid-template-rows: repeat(7, 13px);
   gap: 3px;
-  flex: 1;
+  flex: none;
 }
 
 .ps-heatmap-week {
   display: grid;
-  grid-template-rows: repeat(7, 12px);
+  grid-template-rows: repeat(7, 13px);
   gap: 3px;
 }
 
@@ -186,8 +180,9 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
-/* Mobile: floor the cell size so they stay readable; the calendar scrolls
-   inside its card when narrower than the comfortable minimum. */
+/* Mobile: the fixed-pitch grid is far wider than the viewport, so the
+   calendar scrolls horizontally inside its card — same floor sizes, square
+   cells stay readable. */
 @media (max-width: 639px) {
   .ps-heatmap-grid {
     overflow-x: auto;
