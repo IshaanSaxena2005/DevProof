@@ -94,6 +94,9 @@ input:focus, textarea:focus, select:focus {
 }
 .ps-heatmap-month {
   position: relative;
+  /* Pin every month slot to the single label row: with auto-flow column and
+     no row constraint the slots would each take a new implicit row. */
+  grid-row: 1;
   /* A real height (not 0) so the absolutely-positioned label draws inside
      this row instead of overflowing down onto the "Mon" day label below. */
   height: 11px;
@@ -140,8 +143,9 @@ input:focus, textarea:focus, select:focus {
 .ps-heatmap-cells {
   display: grid;
   /* One week per COLUMN (dynamic count), 7 fixed 13px day rows — small
-     square GitHub boxes on a fixed pitch. Without auto-flow column the week
-     wrappers auto-flow row-by-row and the grid grows many rows tall. */
+     square GitHub boxes on a fixed pitch. The week wrapper must span all
+     7 rows explicitly: auto-placement alone puts each wrapper in a single
+     (row, column) cell, so all 53 weeks overload 7 row tracks and overlap. */
   grid-auto-flow: column;
   grid-auto-columns: 13px;
   grid-template-rows: repeat(7, 13px);
@@ -151,6 +155,7 @@ input:focus, textarea:focus, select:focus {
 
 .ps-heatmap-week {
   display: grid;
+  grid-row: 1 / -1;
   grid-template-rows: repeat(7, 13px);
   gap: 3px;
 }
